@@ -37,7 +37,7 @@ Ban = collections.namedtuple('Ban', 'names hosts status reason thread')
 
 
 def setup(bot):
-    bot._bans = list(get_ban_list())
+    bot._bans = get_ban_list()
 
 
 ###############################################################################
@@ -45,7 +45,7 @@ def setup(bot):
 @sopel.module.commands('updatebans')
 def update_bans(bot, trigger):
     try:
-        bot._bans = list(get_ban_list())
+        bot._bans = get_ban_list()
         bot.say(random.choice(BANUPDATE))
     except:
         bot.say(random.choice(UPDATEFAILED))
@@ -108,10 +108,7 @@ def get_ban_list():
     wiki = pyscp.wikidot.Wiki('05command')
     soup = wiki('alexandra-s-ban-page')._soup
     rows = soup('tr')[1:]
-    for r in rows:
-        ban = parse_ban(r)
-        if ban:
-            yield ban
+    return [b for b in map(parse_ban, rows) if b]
 
 
 def parse_ban(row):

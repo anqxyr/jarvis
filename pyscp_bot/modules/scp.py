@@ -140,7 +140,7 @@ def lastcreated(bot, trigger):
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
     bot._pages = list(
-        bot._wiki.list_pages(body='title created_by rating tags'))
+        bot._wiki.list_pages(body='title created_by rating tags', limit=10))
 
 ###############################################################################
 
