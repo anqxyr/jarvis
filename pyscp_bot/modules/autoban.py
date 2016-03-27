@@ -10,45 +10,28 @@ import pyscp
 import re
 import sopel
 import time
-import random
-
-###############################################################################
-
-BANUPDATE = [
-    'Banlist updated, boss.']
-UPDATEFAILED = [
-    "I tried, but it doesn't look like it's working."]
-OPALERTNICK = [
-    'The user was kicked out and told wash their mouth with soap.',
-    "This guy is just untasteful, and I don't want their ilk here.",
-    'Was this a troll? It was probably a troll.']
-OPALERTBAN = [
-    '{} (better known as {}) was exiled from this fine and pure kingdom.',
-    ('{} was kicked and banned because they look like {} and their face '
-        'is ugly and they smell :| .'),
-    "Another old troll - {} (they're actually {})",
-    'This guys is banned - {} (aka {})']
+import pyscp_bot.jarvis as vocab
 
 ###############################################################################
 
 Ban = collections.namedtuple('Ban', 'names hosts status reason thread')
 
-###############################################################################
-
 
 def setup(bot):
-    bot._bans = get_ban_list()
-
+    bot.memory['bans'] = get_ban_list()
 
 ###############################################################################
+
 
 @sopel.module.commands('updatebans')
 def update_bans(bot, trigger):
+    if trigger.sender != '#site67':
+        return
     try:
-        bot._bans = get_ban_list()
-        bot.say(random.choice(BANUPDATE))
+        bot.memory['bans'] = get_ban_list()
+        bot.say(vocab.banlist_updated(trigger.nick))
     except:
-        bot.say(random.choice(UPDATEFAILED))
+        bot.say(vocab.banlist_update_failed(trigger.nick))
 
 
 @sopel.module.event('JOIN')
@@ -60,7 +43,7 @@ def join_event(bot, trigger):
     for word in bad_words:
         if word in trigger.nick.lower():
             ban_user(bot, trigger)
-    for ban in bot._bans:
+    for ban in bot.memory['bans']:
         if trigger.nick.lower() in ban.names:
             ban_user(bot, trigger, ban)
         if trigger.host in ban.hosts:
@@ -90,7 +73,7 @@ def ban_user(bot, trigger, ban=None):
         bot.write(['MODE', channel, '-b', hostmask])
         time.sleep(890)
         bot.write(['MODE', channel, '-b', nick])
-        bot.say('OP Alert: ' + random.choice(OPALERTNICK))
+        bot.say('OP Alert: ' + vocab.profane_username(nick))
     else:
         msg = (
             "Your nick/ip was found in the bot's banlist. "
@@ -100,8 +83,7 @@ def ban_user(bot, trigger, ban=None):
         bot.write(['KICK', channel, nick], msg)
         time.sleep(900)
         bot.write(['MODE', channel, '-b', hostmask])
-        bot.say('OP Alert: ' +
-                random.choice(OPALERTBAN).format(nick, ban.names[0]))
+        bot.say('OP Alert: ' + vocab.user_in_banlist(nick, ban.names[0]))
 
 
 def get_ban_list():
