@@ -69,11 +69,11 @@ def ban_user(bot, trigger, ban=None):
         bot.write(['MODE', channel, '+b', hostmask])
         bot.write(['MODE', channel, '+b', nick])
         bot.write(['KICK', channel, nick], msg)
+        bot.say('OP Alert: ' + vocab.profane_username(nick))
         time.sleep(10)
         bot.write(['MODE', channel, '-b', hostmask])
         time.sleep(890)
         bot.write(['MODE', channel, '-b', nick])
-        bot.say('OP Alert: ' + vocab.profane_username(nick))
     else:
         msg = (
             "Your nick/ip was found in the bot's banlist. "
@@ -81,9 +81,9 @@ def ban_user(bot, trigger, ban=None):
         msg = msg.format(ban.reason)
         bot.write(['MODE', channel, '+b', hostmask])
         bot.write(['KICK', channel, nick], msg)
+        bot.say('OP Alert: ' + vocab.user_in_banlist(nick, ban.names[0]))
         time.sleep(900)
         bot.write(['MODE', channel, '-b', hostmask])
-        bot.say('OP Alert: ' + vocab.user_in_banlist(nick, ban.names[0]))
 
 
 def get_ban_list():
