@@ -108,17 +108,14 @@ def skip(bot, trigger):
 def search(bot, trigger):
     partname = trigger.group(2).lower()
     pages = [p for p in bot._pages if partname in p.title.lower()]
-    if not pages:
-        _say(bot, trigger, NOPAGE)
-        return
-    if len(pages) == 1:
-        bot.say(_page_info(pages[0]))
-        return
-    msg = ' || '.join([p.title for p in pages][:3])
-    if len(pages) > 3:
-        msg += ' plus {} more.'.format(len(pages) - 3)
-    bot._found = pages
-    bot.say(msg)
+    _display_pages(bot, trigger, pages)
+
+
+@sopel.module.commands('tag', 'tags')
+def tags(bot, trigger):
+    tags = set(trigger.group(2).lower().split())
+    pages = [p for p in bot._pages if p.tags.issuperset(tags)]
+    _display_pages(bot, trigger, pages)
 
 
 @sopel.module.commands('sm', 'showmore')
@@ -140,7 +137,7 @@ def lastcreated(bot, trigger):
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
     bot._pages = list(
-        bot._wiki.list_pages(body='title created_by rating tags', limit=10))
+        bot._wiki.list_pages(body='title created_by rating tags'))
 
 ###############################################################################
 
@@ -150,6 +147,20 @@ def _page_info(page):
     return msg.format(
         page.title, page.author, page.rating,
         page.url.replace('scp-wiki.wikidot.com', 'scp-wiki.net'))
+
+
+def _display_pages(bot, trigger, pages):
+    if not pages:
+        _say(bot, trigger, NOPAGE)
+        return
+    if len(pages) == 1:
+        bot.say(_page_info(pages[0]))
+        return
+    msg = ' || '.join([p.title for p in pages][:3])
+    if len(pages) > 3:
+        msg += ' plus {} more.'.format(len(pages) - 3)
+    bot._found = pages
+    bot.say(msg)
 
 
 def _say(bot, trigger, messages):
