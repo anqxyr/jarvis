@@ -73,11 +73,10 @@ def chat_activity(bot, trigger):
 
 
 def log_and_say(bot, text, recipient, max_messages=1):
-    if recipient == 'NickServ':
-        return
-    time = arrow.utcnow().timestamp
-    Message.create(
-        user=bot.config.core.nick, channel=recipient, time=time, text=text)
+    if recipient != 'NickServ':
+        time = arrow.utcnow().timestamp
+        Message.create(
+            user=bot.config.core.nick, channel=recipient, time=time, text=text)
     bot._say(text, recipient, max_messages)
 
 
