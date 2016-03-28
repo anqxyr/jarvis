@@ -13,7 +13,7 @@ import pyscp_bot.jarvis as vocab
 
 ###############################################################################
 
-db = peewee.SqliteDatabase('notes.db')
+db = peewee.SqliteDatabase('jarvis.db')
 
 
 class BaseModel(peewee.Model):

@@ -18,7 +18,7 @@ def setup(bot):
     bot._wiki = pyscp.wikidot.Wiki('scp-wiki')
     bot._wiki.auth('pyscp_bot', bot.config.scp.wikipass)
     refresh_page_cache(bot)
-    bot.memory['search'] = []
+    bot.memory['search'] = {}
 
 
 class SCPSection(sopel.config.types.StaticSection):
@@ -45,10 +45,12 @@ def author(bot, trigger):
         bot.say(vocab.author_not_found(trigger.nick))
         return
     if len(authors) > 1:
+        authors = authors[:min(5, len(authors))]
         bot.say('{}: did you mean {} or {}?'.format(
             trigger.nick.lstrip('~'),
             ', '.join(authors[:-1]),
             authors[-1]))
+        return
     author = authors[0]
     pages = [
         p for p in bot.memory['pages']
@@ -105,6 +107,7 @@ def user(bot, trigger):
 def search(bot, trigger):
     partname = trigger.group(2).lower()
     pages = [p for p in bot.memory['pages'] if partname in p.title.lower()]
+    bot.memory['search'][trigger.nick.lower()] = pages
     show_search_results(bot, trigger, pages)
 
 
@@ -114,6 +117,7 @@ def tale(bot, trigger):
     pages = [
         p for p in bot.memory['pages'] if partname in p.title.lower() and
         'tale' in p.tags]
+    bot.memory['search'][trigger.nick.lower()] = pages
     show_search_results(bot, trigger, pages)
 
 
@@ -126,10 +130,14 @@ def tags(bot, trigger):
 
 @sopel.module.commands('showmore', 'sm')
 def showmore(bot, trigger):
-    index = int(trigger.group(2)) - 1
+    if not trigger.group(2):
+        index = 0
+    else:
+        index = int(trigger.group(2)) - 1
     if index >= len(bot.memory['search']):
         bot.say(vocab.out_of_range(trigger.nick))
-    bot.say(page_summary(bot.memory['search'][index]))
+    else:
+        bot.say(page_summary(bot.memory['search'][index]))
 
 
 @sopel.module.commands('lastcreated', 'lc')
@@ -143,7 +151,7 @@ def lastcreated(bot, trigger):
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
     bot.memory['pages'] = list(
-        bot._wiki.list_pages(body='title created_by rating tags', limit=10))
+        bot._wiki.list_pages(body='title created_by rating tags'))
 
 ###############################################################################
 
@@ -165,5 +173,4 @@ def show_search_results(bot, trigger, pages):
     msg = ' || '.join([p.title for p in pages][:3])
     if len(pages) > 3:
         msg += ' plus {} more.'.format(len(pages) - 3)
-    bot.memory['search'] = pages
     bot.say(msg)
