@@ -61,14 +61,16 @@ def tell(bot, trigger):
     bot.say(vocab.tell_stored(trigger.nick))
 
 
+@sopel.module.thread(False)
 @sopel.module.rule('.*')
+@sopel.module.priority('low')
 def chat_activity(bot, trigger):
     user = trigger.nick.strip()
     channel = trigger.sender
     time = arrow.utcnow().timestamp
     message = trigger.group(0)
     Message.create(user=user, channel=channel, time=time, text=message)
-    if re.match(r'[!\.](st|showt|showtells)$', trigger.group(0)):
+    if not re.match(r'[!\.](st|showt|showtells)$', trigger.group(0)):
         deliver_tells(bot, trigger.nick)
 
 
