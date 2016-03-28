@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='pyscp_bot',
-    version='0.0.1',
+    version='0.0.3',
     description='Snarky bot for scp-wiki irc channels.',
     long_description='',
     url='https://github.com/anqxyr/pyscp_bot/',
