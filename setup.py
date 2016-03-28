@@ -15,8 +15,7 @@ setuptools.setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3.4'],
-    packages=['pyscp_bot'],
-    package_data={'pyscp_bot': ['pyscp_bot/modules/*']},
+    packages=['pyscp_bot', 'pyscp_bot/modules'],
     install_requires=[
         'pyscp',
         'sopel'],
