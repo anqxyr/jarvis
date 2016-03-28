@@ -73,14 +73,16 @@ def scp_lookup(bot, trigger):
     """Display SCP article details."""
     name = trigger.group(1).lower()
     pages = [p for p in bot.memory['pages'] if p._body.name == name]
-    display_pages(bot, trigger, pages)
+    show_search_results(bot, trigger, pages)
 
 
 @sopel.module.rule(r'(?i).*(http://www\.scp-wiki\.net/[^ ]+)')
 def url_lookup(bot, trigger):
     url = trigger.group(1)
+    if '/forum/' in url:
+        return
     name = url.split('/')[-1]
-    display_pages(
+    show_search_results(
         bot, trigger, [p for p in bot.memory['pages'] if p._body.name == name])
 
 
@@ -103,7 +105,7 @@ def user(bot, trigger):
 def search(bot, trigger):
     partname = trigger.group(2).lower()
     pages = [p for p in bot.memory['pages'] if partname in p.title.lower()]
-    display_pages(bot, trigger, pages)
+    show_search_results(bot, trigger, pages)
 
 
 @sopel.module.commands('tale')
@@ -112,14 +114,14 @@ def tale(bot, trigger):
     pages = [
         p for p in bot.memory['pages'] if partname in p.title.lower() and
         'tale' in p.tags]
-    display_pages(bot, trigger, pages)
+    show_search_results(bot, trigger, pages)
 
 
 @sopel.module.commands('tags', 'tag')
 def tags(bot, trigger):
     tags = set(trigger.group(2).lower().split())
     pages = [p for p in bot.memory['pages'] if p.tags.issuperset(tags)]
-    display_pages(bot, trigger, pages)
+    show_search_results(bot, trigger, pages)
 
 
 @sopel.module.commands('showmore', 'sm')
@@ -127,7 +129,7 @@ def showmore(bot, trigger):
     index = int(trigger.group(2)) - 1
     if index >= len(bot.memory['search']):
         bot.say(vocab.out_of_range(trigger.nick))
-    bot.say(page_details(bot.memory['search'][index]))
+    bot.say(page_summary(bot.memory['search'][index]))
 
 
 @sopel.module.commands('lastcreated', 'lc')
@@ -135,30 +137,30 @@ def lastcreated(bot, trigger):
     """Display recently created pages."""
     pages = list(bot._wiki.list_pages(
         order='created_at desc', limit=3, body='rating'))
-    display_pages(bot, trigger, pages)
+    bot.say(' || '.join(map(page_summary, pages)))
 
 
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
     bot.memory['pages'] = list(
-        bot._wiki.list_pages(body='title created_by rating tags'))
+        bot._wiki.list_pages(body='title created_by rating tags', limit=10))
 
 ###############################################################################
 
 
-def page_details(page):
-    msg = '{} (written by {}; rating: {:+d}) - {}'
+def page_summary(page):
+    msg = '\x02{}\x02 (written by {}; rating: {:+d}) - \x1F{}\x1F'
     return msg.format(
         page.title, page.author, page.rating,
         page.url.replace('scp-wiki.wikidot.com', 'www.scp-wiki.net'))
 
 
-def display_pages(bot, trigger, pages):
+def show_search_results(bot, trigger, pages):
     if not pages:
         bot.say(vocab.page_not_found(trigger.nick))
         return
     if len(pages) == 1:
-        bot.say(page_details(pages[0]))
+        bot.say(page_summary(pages[0]))
         return
     msg = ' || '.join([p.title for p in pages][:3])
     if len(pages) > 3:
