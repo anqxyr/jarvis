@@ -157,7 +157,7 @@ def refresh_page_cache(bot):
 
 
 def page_summary(page):
-    msg = '\x02{}\x02 (written by {}; rating: {:+d}) - \x1F{}\x1F'
+    msg = '\x02{}\x02 (written by {}; rating: {:+d}) - {}'
     return msg.format(
         page.title, page.author, page.rating,
         page.url.replace('scp-wiki.wikidot.com', 'www.scp-wiki.net'))
