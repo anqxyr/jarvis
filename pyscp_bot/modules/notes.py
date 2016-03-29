@@ -47,7 +47,6 @@ def setup(bot):
 
 
 @sopel.module.commands('tell')
-@sopel.module.example('!tell anqxyr there is a bug in the bot.')
 def tell(bot, trigger):
     """
     Send a message to the user.
