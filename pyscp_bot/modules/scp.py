@@ -32,9 +32,20 @@ def configure(config):
 ###############################################################################
 
 
-@sopel.module.commands('author',)
+@sopel.module.commands('author')
+@sopel.module.example('!au')
+@sopel.module.example('!au username')
 def author(bot, trigger):
-    """Display basic author statistics."""
+    """
+    Output basic information about the author.
+
+    Only pages tagged with any of {'scp', 'tale', 'goi-format'} are counted.
+    Ratings are calculated as displayed on the page, and may include votes
+    from deleted accounts.
+
+    Calling the command without arguments will use the username
+    of the caller as the name of the author.
+    """
     partname = trigger.group(2)
     if not partname:
         partname = trigger.nick
@@ -72,7 +83,7 @@ def author(bot, trigger):
 @sopel.module.rule(r'(?i)^(scp-[0-9]+)$')
 @sopel.module.rule(r'(?i).*!(scp-[0-9]+)')
 def scp_lookup(bot, trigger):
-    """Display SCP article details."""
+    """Display page summary for the matching scp article."""
     name = trigger.group(1).lower()
     pages = [p for p in bot.memory['pages'] if p._body.name == name]
     show_search_results(bot, trigger, pages)
@@ -80,6 +91,7 @@ def scp_lookup(bot, trigger):
 
 @sopel.module.rule(r'(?i).*(http://www\.scp-wiki\.net/[^ ]+)')
 def url_lookup(bot, trigger):
+    """Display page summary for the matching wiki page."""
     url = trigger.group(1)
     if '/forum/' in url:
         return
@@ -90,6 +102,7 @@ def url_lookup(bot, trigger):
 
 @sopel.module.commands('unused')
 def unused(bot, trigger):
+    """Link to the first empty scp slot."""
     skips = ['scp-{:03}'.format(i) for i in range(2, 3000)]
     names = {p._body.name for p in bot.memory['pages']}
     unused = next(i for i in skips if i not in names)
@@ -98,6 +111,7 @@ def unused(bot, trigger):
 
 @sopel.module.commands('user')
 def user(bot, trigger):
+    """Link to the user's profile page."""
     name = trigger.group(2).lower()
     bot.say(
         '{}: http://www.wikidot.com/user:info/{}'.format(trigger.nick, name))
@@ -105,14 +119,36 @@ def user(bot, trigger):
 
 @sopel.module.commands('search')
 def search(bot, trigger):
-    partname = trigger.group(2).lower()
-    pages = [p for p in bot.memory['pages'] if partname in p.title.lower()]
+    """
+    Search for a wiki page.
+
+    Attempts to match the search terms to one or more of the existing wiki
+    pages. Search by the series titles of SCP articles is supported. When
+    searching for multiple words, the order of the search terms is unimportant.
+
+    Also searches among hubs, guides, and system pages.
+
+    When multiple results are found, the extended information about each result
+    can be accessed via the !showmore command.
+    """
+    words = trigger.group(2).lower().split()
+    pages = [
+        p for p in bot.memory['pages']
+        if all(w in p.title.lower() for w in words)]
     bot.memory['search'][trigger.sender] = pages
     show_search_results(bot, trigger, pages)
 
 
 @sopel.module.commands('tale')
 def tale(bot, trigger):
+    """
+    Search for a tale.
+
+    Identical to the !search command, but returns only tales.
+
+    When multiple results are found, the extended information about each result
+    can be accessed via the !showmore command.
+    """
     partname = trigger.group(2).lower()
     pages = [
         p for p in bot.memory['pages'] if partname in p.title.lower() and
@@ -121,8 +157,17 @@ def tale(bot, trigger):
     show_search_results(bot, trigger, pages)
 
 
-@sopel.module.commands('tags',)
+@sopel.module.commands('tags')
+@sopel.module.example('!tags euclid artifact')
 def tags(bot, trigger):
+    """
+    Find pages by tag.
+
+    Returns all pages that have **all** of the specified tags.
+
+    When multiple results are found, the extended information about each result
+    can be accessed via the !showmore command.
+    """
     tags = set(trigger.group(2).lower().split())
     pages = [p for p in bot.memory['pages'] if p.tags.issuperset(tags)]
     bot.memory['search'][trigger.sender] = pages
@@ -130,7 +175,15 @@ def tags(bot, trigger):
 
 
 @sopel.module.commands('showmore', 'sm')
+@sopel.module.example('!sm 2')
 def showmore(bot, trigger):
+    """
+    Access additional results.
+
+    Must be used after a !search, !tale, or !tags command. Displays sumary of
+    the specified result. Must be issued in the same channel as the search
+    command.
+    """
     if not trigger.group(2):
         index = 0
     else:
@@ -152,7 +205,10 @@ def lastcreated(bot, trigger):
 
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
-    pages = bot._wiki.list_pages(body='title created_by rating tags', limit=10)
+    pages = bot._wiki.list_pages(
+        body='title created_by rating tags',
+        limit=10,
+        order='created_at desc')
     bot.memory['pages'] = list(pages)
 
 ###############################################################################
