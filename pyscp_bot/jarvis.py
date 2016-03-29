@@ -60,6 +60,28 @@ def page_not_found(user):
     return random.choice(messages).format(user.lstrip('~'))
 
 
+def few_pages_found(user, pages):
+    titles = ['\x02{}\x02'.format(p.title) for p in pages]
+    messages = [
+        '{user}: {pages}',
+        '{user}: these are the only ones I could find: {pages}',
+        "{user}: {pages}. That's all I have"]
+    return random.choice(messages).format(
+        user=user,
+        pages=', '.join(titles))
+
+
+def many_pages_found(user, pages):
+    titles = ['\x02{}\x02'.format(p.title) for p in pages[:3]]
+    messages = [
+        'Here you go, {user}: {pages} and another {count}.',
+        '{user}: {pages}. You can use !showmore to see the other {count}.']
+    return random.choice(messages).format(
+        user=user,
+        pages=', '.join(titles),
+        count=len(pages))
+
+
 def banlist_updated(user):
     messages = [
         '{}: Banlist updated, boss.']
