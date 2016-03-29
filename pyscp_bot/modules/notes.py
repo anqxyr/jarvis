@@ -29,10 +29,6 @@ class Tell(BaseModel):
     time = peewee.DateTimeField()
 
 
-class Seen(BaseModel):
-    pass
-
-
 class Message(BaseModel):
     user = peewee.CharField()
     channel = peewee.CharField()
@@ -45,7 +41,6 @@ class Message(BaseModel):
 def setup(bot):
     db.connect()
     Tell.create_table(True)
-    Seen.drop_table(True)
     Message.create_table(True)
     sopel.bot.Sopel._say = sopel.bot.Sopel.say
     sopel.bot.Sopel.say = log_and_say
