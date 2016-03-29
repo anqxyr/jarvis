@@ -52,7 +52,14 @@ def setup(bot):
 
 
 @sopel.module.commands('tell')
+@sopel.module.example('!tell anqxyr there is a bug in the bot.')
 def tell(bot, trigger):
+    """
+    Send a message to the user.
+
+    The message will be delivered the next time the user is active in any
+    of the channels where the bot is present.
+    """
     name, text = trigger.group(2).split(maxsplit=1)
     name = name.strip().lower()
     now = arrow.utcnow().timestamp
@@ -75,7 +82,7 @@ def chat_activity(bot, trigger):
 
 
 def log_and_say(bot, text, recipient, max_messages=1):
-    if recipient != 'NickServ':
+    if recipient in bot.config.core.channels:
         time = arrow.utcnow().timestamp
         Message.create(
             user=bot.config.core.nick, channel=recipient, time=time, text=text)
@@ -84,6 +91,14 @@ def log_and_say(bot, text, recipient, max_messages=1):
 
 @sopel.module.commands('showtells', 'showt', 'st')
 def showtells(bot, trigger):
+    """
+    Show messages sent to you by other users.
+
+    IRC notice is issued in the channel stating the number of queued messages.
+    This notice is visible only to the recipient of the messages.
+
+    The tells themselves are delivered via irc private messages.
+    """
     if Tell.select().where(Tell.recipient == trigger.nick.lower()).exists():
         deliver_tells(bot, trigger.nick)
     else:
@@ -92,6 +107,12 @@ def showtells(bot, trigger):
 
 @sopel.module.commands('seen')
 def seen(bot, trigger):
+    """
+    Check when the user was last seen.
+
+    Results are channel specific. You must issue the command in the same
+    channel where you want to check for the user.
+    """
     name = trigger.group(2).strip().lower()
     channel = trigger.sender
     try:
