@@ -28,6 +28,8 @@ def autocomplete(bot, trigger):
         funcs = [f[0] for regexp, f in items]
         funcs = [
             f for f in funcs if f.__module__ == module and f.__name__ == name]
+        if not funcs:
+            return
         wrapper = bot.SopelWrapper(bot, trigger)
         bot.call(funcs[0], wrapper, trigger)
         return
