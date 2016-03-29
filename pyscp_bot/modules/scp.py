@@ -32,7 +32,7 @@ def configure(config):
 ###############################################################################
 
 
-@sopel.module.commands('author', 'au')
+@sopel.module.commands('author',)
 def author(bot, trigger):
     """Display basic author statistics."""
     partname = trigger.group(2)
@@ -103,11 +103,11 @@ def user(bot, trigger):
         '{}: http://www.wikidot.com/user:info/{}'.format(trigger.nick, name))
 
 
-@sopel.module.commands('search', 'sea', 's')
+@sopel.module.commands('search')
 def search(bot, trigger):
     partname = trigger.group(2).lower()
     pages = [p for p in bot.memory['pages'] if partname in p.title.lower()]
-    bot.memory['search'][trigger.nick.lower()] = pages
+    bot.memory['search'][trigger.sender] = pages
     show_search_results(bot, trigger, pages)
 
 
@@ -117,14 +117,15 @@ def tale(bot, trigger):
     pages = [
         p for p in bot.memory['pages'] if partname in p.title.lower() and
         'tale' in p.tags]
-    bot.memory['search'][trigger.nick.lower()] = pages
+    bot.memory['search'][trigger.sender] = pages
     show_search_results(bot, trigger, pages)
 
 
-@sopel.module.commands('tags', 'tag')
+@sopel.module.commands('tags',)
 def tags(bot, trigger):
     tags = set(trigger.group(2).lower().split())
     pages = [p for p in bot.memory['pages'] if p.tags.issuperset(tags)]
+    bot.memory['search'][trigger.sender] = pages
     show_search_results(bot, trigger, pages)
 
 
@@ -134,10 +135,11 @@ def showmore(bot, trigger):
         index = 0
     else:
         index = int(trigger.group(2)) - 1
-    if index >= len(bot.memory['search']):
+
+    if index >= len(bot.memory['search'][trigger.sender]):
         bot.say(vocab.out_of_range(trigger.nick))
     else:
-        bot.say(page_summary(bot.memory['search'][index]))
+        bot.say(page_summary(bot.memory['search'][trigger.sender][index]))
 
 
 @sopel.module.commands('lastcreated', 'lc')
@@ -150,8 +152,8 @@ def lastcreated(bot, trigger):
 
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
-    bot.memory['pages'] = list(
-        bot._wiki.list_pages(body='title created_by rating tags'))
+    pages = bot._wiki.list_pages(body='title created_by rating tags', limit=10)
+    bot.memory['pages'] = list(pages)
 
 ###############################################################################
 
@@ -165,12 +167,11 @@ def page_summary(page):
 
 def show_search_results(bot, trigger, pages):
     if not pages:
-        bot.say(vocab.page_not_found(trigger.nick))
-        return
-    if len(pages) == 1:
-        bot.say(page_summary(pages[0]))
-        return
-    msg = ' || '.join([p.title for p in pages][:3])
-    if len(pages) > 3:
-        msg += ' plus {} more.'.format(len(pages) - 3)
+        msg = vocab.page_not_found(trigger.nick)
+    elif len(pages) == 1:
+        msg = page_summary(pages[0])
+    elif len(pages) <= 3:
+        msg = vocab.few_pages_found(trigger.nick, pages)
+    else:
+        msg = vocab.many_pages_found(trigger.nick, pages)
     bot.say(msg)
