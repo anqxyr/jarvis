@@ -7,6 +7,7 @@
 ###############################################################################
 
 import pyscp
+import re
 import sopel
 import pyscp_bot.jarvis as vocab
 
@@ -33,8 +34,6 @@ def configure(config):
 
 
 @sopel.module.commands('author')
-@sopel.module.example('!au')
-@sopel.module.example('!au username')
 def author(bot, trigger):
     """
     Output basic information about the author.
@@ -158,7 +157,6 @@ def tale(bot, trigger):
 
 
 @sopel.module.commands('tags')
-@sopel.module.example('!tags euclid artifact')
 def tags(bot, trigger):
     """
     Find pages by tag.
@@ -175,7 +173,6 @@ def tags(bot, trigger):
 
 
 @sopel.module.commands('showmore', 'sm')
-@sopel.module.example('!sm 2')
 def showmore(bot, trigger):
     """
     Access additional results.
@@ -203,11 +200,32 @@ def lastcreated(bot, trigger):
     bot.say(' || '.join(map(page_summary, pages)))
 
 
+@sopel.module.commands('errors')
+def errors(bot, trigger):
+    """Display pages with errors."""
+    msg = ''
+    no_tags = [p.title for p in bot.memory['pages'] if not p.tags]
+    no_tags = ['\x02{}\x02'.format(t) for t in no_tags]
+    if no_tags:
+        msg += 'Pages with no tags: {}. '.format(', '.join(no_tags))
+    no_title = [
+        p.title for p in bot.memory['pages']
+        if re.match(r'scp-[0-9]+$', p.url) and
+        p._raw_title == p.title]
+    no_title = ['\x02{}\x02'.format(t) for t in no_title]
+    if no_title:
+        msg += 'Pages without titles: {}.'.format(', '.join(no_title))
+    if msg:
+        bot.say('{}: {}'.format(trigger.nick, msg))
+    else:
+        bot.say('{}: no errors.'.format(trigger.nick))
+
+
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
     pages = bot._wiki.list_pages(
         body='title created_by rating tags',
-        limit=10,
+        #limit=10,
         order='created_at desc')
     bot.memory['pages'] = list(pages)
 
