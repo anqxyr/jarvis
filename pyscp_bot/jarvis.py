@@ -49,7 +49,7 @@ def author_not_found(user):
 def page_not_found(user):
     messages = [
         "{}: I couldn't find anything like that. Sorry.",
-        '{}: Page Not Found.'
+        '{}: Page Not Found.',
         "{}: The future author of that page haven't wrote it yet. Try later.",
         "{}: You're better off reading something else.",
         "{}: Yesterday, in wiki cache, I saw a page that wasn't there. "
