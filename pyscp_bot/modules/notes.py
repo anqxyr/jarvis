@@ -16,8 +16,8 @@ import pyscp_bot.db as db
 
 def setup(bot):
     db.db.connect()
-    db.Tell.create_table()
-    db.Message.create_table()
+    db.Tell.create_table(True)
+    db.Message.create_table(True)
     sopel.bot.Sopel._say = sopel.bot.Sopel.say
     sopel.bot.Sopel.say = log_and_say
 
