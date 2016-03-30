@@ -38,7 +38,6 @@ def tell(bot, trigger):
     bot.say(vocab.tell_stored(trigger.nick))
 
 
-@sopel.module.thread(False)
 @sopel.module.rule('.*')
 @sopel.module.priority('low')
 def chat_activity(bot, trigger):
