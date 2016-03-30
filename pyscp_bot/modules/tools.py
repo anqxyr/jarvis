@@ -11,7 +11,7 @@ import pyscp_bot.jarvis as vocab
 ###############################################################################
 
 
-@sopel.module.commands('[^ ]*')
+@sopel.module.commands('[^ ]+')
 def autocomplete(bot, trigger):
     commands = {command: module
                 for module, group in bot._command_groups.items()
