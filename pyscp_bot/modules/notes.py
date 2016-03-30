@@ -110,4 +110,4 @@ def deliver_tells(bot, name):
         time_passed = arrow.get(tell.time).humanize()
         msg = '{} said {}: {}'.format(tell.sender, time_passed, tell.message)
         bot.say(msg, name)
-    db.Tell.delete_records(db.Tell.recipient == name.lower())
+    db.Tell.delete().where(db.Tell.recipient == name.lower()).execute()
