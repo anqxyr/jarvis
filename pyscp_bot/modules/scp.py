@@ -220,7 +220,7 @@ def errors(bot, trigger):
 def refresh_page_cache(bot):
     pages = bot._wiki.list_pages(
         body='title created_by rating tags',
-        limit=10,
+        #limit=10,
         order='created_at desc')
     bot.memory['pages'] = list(pages)
 
