@@ -39,7 +39,7 @@ def update_bans(bot, trigger):
 def join_event(bot, trigger):
     bad_words = [
         'bitch', 'fuck', 'asshole', 'penis', 'vagina', 'nigger', 'retard',
-        'faggot', 'chink', 'shit', 'hitler', 'douche', 'test']
+        'faggot', 'chink', 'shit', 'hitler', 'douche']
     for word in bad_words:
         if word in trigger.nick.lower():
             ban_user(bot, trigger)
