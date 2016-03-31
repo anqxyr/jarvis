@@ -74,8 +74,8 @@ def author(bot, trigger):
     bot.say(msg)
 
 
-@sopel.module.rule(r'(?i)^(scp-[0-9]+)$')
-@sopel.module.rule(r'(?i).*!(scp-[0-9]+)')
+@sopel.module.rule(r'(?i)^(scp-[^ ]+)$')
+@sopel.module.rule(r'(?i).*!(scp-[^ ]+)')
 def scp_lookup(bot, trigger):
     """Display page summary for the matching scp article."""
     name = trigger.group(1).lower()
@@ -106,7 +106,7 @@ def unused(bot, trigger):
 @sopel.module.commands('user')
 def user(bot, trigger):
     """Link to the user's profile page."""
-    name = trigger.group(2).lower()
+    name = trigger.group(2).lower().replace(' ', '-')
     bot.say(
         '{}: http://www.wikidot.com/user:info/{}'.format(trigger.nick, name))
 
@@ -220,7 +220,7 @@ def errors(bot, trigger):
 def refresh_page_cache(bot):
     pages = bot._wiki.list_pages(
         body='title created_by rating tags',
-        #limit=10,
+        limit=10,
         order='created_at desc')
     bot.memory['pages'] = list(pages)
 
