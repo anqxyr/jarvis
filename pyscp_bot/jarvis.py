@@ -114,3 +114,9 @@ def user_never_seen(user):
     messages = [
         '{user}: I never saw anyone by that name here.']
     return random.choice(messages).format(user=user.lstrip('~'))
+
+
+def die_count_too_high():
+    messages = [
+        'How about you do it yourself if you want it that much.']
+    return random.choice(messages)
