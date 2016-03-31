@@ -205,7 +205,7 @@ def errors(bot, trigger):
         msg += 'Pages with no tags: {}. '.format(', '.join(no_tags))
     no_title = [
         p.title for p in bot.memory['pages']
-        if re.search(r'scp-[0-9]+$', p.url) and
+        if re.search(r'/scp-[0-9]+$', p.url) and
         p._raw_title == p.title]
     no_title = ['\x02{}\x02'.format(t) for t in no_title]
     if no_title:
@@ -220,7 +220,7 @@ def errors(bot, trigger):
 def refresh_page_cache(bot):
     pages = bot._wiki.list_pages(
         body='title created_by rating tags',
-        limit=10,
+        #limit=10,
         order='created_at desc')
     bot.memory['pages'] = list(pages)
 
