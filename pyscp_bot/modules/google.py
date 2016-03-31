@@ -29,7 +29,7 @@ def google(bot, trigger):
     query = trigger.group(2)
     results = bot.memory['google'].list(
         q=query, cx=bot.config.google.cseid, num=1).execute()
-    if 'items' not in results:
+    if not results.get('items', None):
         bot.say('{}: nothing found.'.format(trigger.nick))
         return
     title = results['items'][0]['title']
@@ -45,7 +45,7 @@ def image_search(bot, trigger):
     results = bot.memory['google'].list(
         q=query, cx=bot.config.google.cseid,
         searchType='image', num=1, safe='high').execute()
-    if 'items' not in results:
+    if not results.get('items', None):
         bot.say('{}: nothing found.'.format(trigger.nick))
         return
     url = results['items'][0]['link']
@@ -56,9 +56,9 @@ def image_search(bot, trigger):
 def youtube(bot, trigger):
     query = trigger.group(2)
     results = bot.memory['youtube'].search().list(
-        q=query, maxResults=1, part='id', order='viewCount',
+        q=query, maxResults=1, part='id',
         safeSearch='strict', type='video').execute()
-    if 'items' not in results:
+    if not results.get('items', None):
         bot.say('{}: nothing found.'.format(trigger.nick))
         return
     video_id = results['items'][0]['id']['videoId']
