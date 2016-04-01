@@ -76,7 +76,7 @@ def showtells(bot, tr):
             db.Tell.recipient == tr.nick.lower()).exists():
         deliver_tells(bot, tr.nick)
     else:
-        bot.notice(lexicon.no_tells(tr.nick), tr.nick)
+        bot.notice(lexicon.no_tells(), tr.nick)
 
 
 @sopel.module.commands('seen')
