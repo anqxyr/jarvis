@@ -8,7 +8,7 @@ import arrow
 import sopel
 import re
 
-import pyscp_bot.jarvis as vocab
+import pyscp_bot.jarvis as lexicon
 import pyscp_bot.db as db
 
 ###############################################################################
@@ -18,48 +18,52 @@ def setup(bot):
     db.db.connect()
     db.Tell.create_table(True)
     db.Message.create_table(True)
-    sopel.bot.Sopel._say = sopel.bot.Sopel.say
-    sopel.bot.Sopel.say = log_and_say
+    sopel.bot.Sopel.SopelWrapper.send = send
+
+
+def send(bot, text, private=False):
+    tr = bot._trigger
+    if tr.sender in bot.config.core.channels:
+        text = '{}: {}'.format(tr.nick, text)
+        time = arrow.utcnow().timestamp
+        db.Message.create(
+            user=bot.config.core.nick, channel=tr.sender, time=time, text=text)
+    bot.say(text, tr.nick if private else tr.sender)
+
+
+###############################################################################
 
 
 @sopel.module.commands('tell')
-def tell(bot, trigger):
+def tell(bot, tr):
     """
     Send a message to the user.
 
     The message will be delivered the next time the user is active in any
     of the channels where the bot is present.
     """
-    name, text = trigger.group(2).split(maxsplit=1)
+    name, text = tr.group(2).split(maxsplit=1)
     name = name.strip().lower()
     now = arrow.utcnow().timestamp
     db.Tell.create(
-        sender=str(trigger.nick), recipient=name, message=text, time=now)
-    bot.say(vocab.tell_stored(trigger.nick))
+        sender=str(tr.nick), recipient=name, message=text, time=now)
+    bot.send(lexicon.tell_stored())
 
 
 @sopel.module.rule('.*')
 @sopel.module.priority('low')
-def chat_activity(bot, trigger):
-    user = trigger.nick.strip()
-    channel = trigger.sender
+def chat_activity(bot, tr):
+    user = tr.nick.strip()
+    channel = tr.sender
     time = arrow.utcnow().timestamp
-    message = trigger.group(0)
+    message = tr.group(0)
     db.Message.create(user=user, channel=channel, time=time, text=message)
-    if not re.match(r'[!\.](st|showt|showtells)$', trigger.group(0)):
-        deliver_tells(bot, trigger.nick)
-
-
-def log_and_say(bot, text, recipient, max_messages=1):
-    if recipient in bot.config.core.channels:
-        time = arrow.utcnow().timestamp
-        db.Message.create(
-            user=bot.config.core.nick, channel=recipient, time=time, text=text)
-    bot._say(text, recipient, max_messages)
+    if not re.match(r'[!\.](st|showt|showtells)$', tr.group(0)):
+        deliver_tells(bot, tr.nick)
 
 
 @sopel.module.commands('showtells', 'showt', 'st')
-def showtells(bot, trigger):
+def showtells(bot, tr):
     """
     Show messages sent to you by other users.
 
@@ -69,22 +73,22 @@ def showtells(bot, trigger):
     The tells themselves are delivered via irc private messages.
     """
     if db.Tell.select().where(
-            db.Tell.recipient == trigger.nick.lower()).exists():
-        deliver_tells(bot, trigger.nick)
+            db.Tell.recipient == tr.nick.lower()).exists():
+        deliver_tells(bot, tr.nick)
     else:
-        bot.notice(vocab.no_tells(trigger.nick), trigger.nick)
+        bot.notice(lexicon.no_tells(tr.nick), tr.nick)
 
 
 @sopel.module.commands('seen')
-def seen(bot, trigger):
+def seen(bot, tr):
     """
     Check when the user was last seen.
 
     Results are channel specific. You must issue the command in the same
     channel where you want to check for the user.
     """
-    name = trigger.group(2).strip().lower()
-    channel = trigger.sender
+    name = tr.group(2).strip().lower()
+    channel = tr.sender
     try:
         message = (
             db.Message.select()
@@ -93,10 +97,10 @@ def seen(bot, trigger):
                 db.Message.channel == channel)
             .limit(1).order_by(db.Message.time.desc()).get())
         time = arrow.get(message.time).humanize()
-        bot.say('{}: I saw {} {} saying "{}"'.format(
-            trigger.nick, message.user, time, message.text))
+        bot.send('I saw {} {} saying "{}"'.format(
+            message.user, time, message.text))
     except db.Message.DoesNotExist:
-        bot.say(vocab.user_never_seen(trigger.nick))
+        bot.send(lexicon.user_never_seen())
 
 
 def deliver_tells(bot, name):
@@ -108,5 +112,5 @@ def deliver_tells(bot, name):
     for tell in query:
         time_passed = arrow.get(tell.time).humanize()
         msg = '{} said {}: {}'.format(tell.sender, time_passed, tell.message)
-        bot.say(msg, name)
+        bot.send(msg, name, private=True)
     db.Tell.delete().where(db.Tell.recipient == name.lower()).execute()

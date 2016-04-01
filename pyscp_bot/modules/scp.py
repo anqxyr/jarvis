@@ -9,7 +9,7 @@
 import pyscp
 import re
 import sopel
-import pyscp_bot.jarvis as vocab
+import pyscp_bot.jarvis as lexicon
 
 ###############################################################################
 
@@ -29,7 +29,7 @@ def configure(config):
 
 
 @sopel.module.commands('author')
-def author(bot, trigger):
+def author(bot, tr):
     """
     Output basic information about the author.
 
@@ -40,19 +40,18 @@ def author(bot, trigger):
     Calling the command without arguments will use the username
     of the caller as the name of the author.
     """
-    partname = trigger.group(2)
+    partname = tr.group(2)
     if not partname:
-        partname = trigger.nick
+        partname = tr.nick
     authors = list({
         p.author for p in bot.memory['pages']
         if p.author and partname.lower() in p.author.lower()})
     if not authors:
-        bot.say(vocab.author_not_found(trigger.nick))
+        bot.send(lexicon.author_not_found())
         return
     if len(authors) > 1:
         authors = authors[:min(5, len(authors))]
-        bot.say('{}: did you mean {} or {}?'.format(
-            trigger.nick.lstrip('~'),
+        bot.send('Did you mean {} or {}?'.format(
             ', '.join(authors[:-1]),
             authors[-1]))
         return
@@ -71,48 +70,53 @@ def author(bot, trigger):
     ).format(
         author, len(skips), len(tales), len(goifs),
         rating, rating // len(pages))
-    bot.say(msg)
+    bot.send(msg)
 
 
 @sopel.module.rule(r'(?i)^(scp-[^ ]+)$')
 @sopel.module.rule(r'(?i).*!(scp-[^ ]+)')
-def scp_lookup(bot, trigger):
+def scp_lookup(bot, tr):
     """Display page summary for the matching scp article."""
-    name = trigger.group(1).lower()
+    name = tr.group(1).lower()
     pages = [p for p in bot.memory['pages'] if p._body.name == name]
-    show_search_results(bot, trigger, pages)
+    if not pages:
+        bot.send(lexicon.page_not_found())
+    else:
+        bot.send(page_summary(pages[0]))
 
 
 @sopel.module.rule(r'(?i).*(http://www\.scp-wiki\.net/[^ ]+)')
-def url_lookup(bot, trigger):
+def url_lookup(bot, tr):
     """Display page summary for the matching wiki page."""
-    url = trigger.group(1)
+    url = tr.group(1)
     if '/forum/' in url:
         return
     name = url.split('/')[-1]
-    show_search_results(
-        bot, trigger, [p for p in bot.memory['pages'] if p._body.name == name])
+    pages = [p for p in bot.memory['pages'] if p._body.name == name]
+    if not pages:
+        bot.send(lexicon.page_not_found())
+    else:
+        bot.send(page_summary(pages[0]))
 
 
 @sopel.module.commands('unused')
-def unused(bot, trigger):
+def unused(bot, tr):
     """Link to the first empty scp slot."""
     skips = ['scp-{:03}'.format(i) for i in range(2, 3000)]
     names = {p._body.name for p in bot.memory['pages']}
     unused = next(i for i in skips if i not in names)
-    bot.say('{}: http://www.scp-wiki.net/{}'.format(trigger.nick, unused))
+    bot.send('http://www.scp-wiki.net/{}'.format(unused))
 
 
 @sopel.module.commands('user')
-def user(bot, trigger):
+def user(bot, tr):
     """Link to the user's profile page."""
-    name = trigger.group(2).lower().replace(' ', '-')
-    bot.say(
-        '{}: http://www.wikidot.com/user:info/{}'.format(trigger.nick, name))
+    name = tr.group(2).lower().replace(' ', '-')
+    bot.send('http://www.wikidot.com/user:info/{}'.format(name))
 
 
 @sopel.module.commands('search', 's')
-def search(bot, trigger):
+def search(bot, tr):
     """
     Search for a wiki page.
 
@@ -125,16 +129,16 @@ def search(bot, trigger):
     When multiple results are found, the extended information about each result
     can be accessed via the !showmore command.
     """
-    words = trigger.group(2).lower().split()
+    words = tr.group(2).lower().split()
     pages = [
         p for p in bot.memory['pages']
         if all(w in p.title.lower() for w in words)]
-    bot.memory['search'][trigger.sender] = pages
-    show_search_results(bot, trigger, pages)
+    bot.memory['search'][tr.sender] = pages
+    show_search_results(bot, tr, pages)
 
 
 @sopel.module.commands('tale')
-def tale(bot, trigger):
+def tale(bot, tr):
     """
     Search for a tale.
 
@@ -143,16 +147,16 @@ def tale(bot, trigger):
     When multiple results are found, the extended information about each result
     can be accessed via the !showmore command.
     """
-    partname = trigger.group(2).lower()
+    partname = tr.group(2).lower()
     pages = [
         p for p in bot.memory['pages'] if partname in p.title.lower() and
         'tale' in p.tags]
-    bot.memory['search'][trigger.sender] = pages
-    show_search_results(bot, trigger, pages)
+    bot.memory['search'][tr.sender] = pages
+    show_search_results(bot, tr, pages)
 
 
 @sopel.module.commands('tags')
-def tags(bot, trigger):
+def tags(bot, tr):
     """
     Find pages by tag.
 
@@ -161,14 +165,14 @@ def tags(bot, trigger):
     When multiple results are found, the extended information about each result
     can be accessed via the !showmore command.
     """
-    tags = set(trigger.group(2).lower().split())
+    tags = set(tr.group(2).lower().split())
     pages = [p for p in bot.memory['pages'] if p.tags.issuperset(tags)]
-    bot.memory['search'][trigger.sender] = pages
-    show_search_results(bot, trigger, pages)
+    bot.memory['search'][tr.sender] = pages
+    show_search_results(bot, tr, pages)
 
 
 @sopel.module.commands('showmore', 'sm')
-def showmore(bot, trigger):
+def showmore(bot, tr):
     """
     Access additional results.
 
@@ -176,27 +180,27 @@ def showmore(bot, trigger):
     the specified result. Must be issued in the same channel as the search
     command.
     """
-    if not trigger.group(2):
+    if not tr.group(2):
         index = 0
     else:
-        index = int(trigger.group(2)) - 1
+        index = int(tr.group(2)) - 1
 
-    if index >= len(bot.memory['search'][trigger.sender]):
-        bot.say(vocab.out_of_range(trigger.nick))
+    if index >= len(bot.memory['search'][tr.sender]):
+        bot.send(lexicon.out_of_range())
     else:
-        bot.say(page_summary(bot.memory['search'][trigger.sender][index]))
+        bot.send(page_summary(bot.memory['search'][tr.sender][index]))
 
 
 @sopel.module.commands('lastcreated', 'lc')
-def lastcreated(bot, trigger):
+def lastcreated(bot, tr):
     """Display recently created pages."""
     pages = list(bot._wiki.list_pages(
         order='created_at desc', limit=3, body='rating'))
-    bot.say(' || '.join(map(page_summary, pages)))
+    bot.send(' || '.join(map(page_summary, pages)))
 
 
 @sopel.module.commands('errors')
-def errors(bot, trigger):
+def errors(bot, tr):
     """Display pages with errors."""
     msg = ''
     no_tags = [p.title for p in bot.memory['pages'] if not p.tags]
@@ -211,16 +215,16 @@ def errors(bot, trigger):
     if no_title:
         msg += 'Pages without titles: {}.'.format(', '.join(no_title))
     if msg:
-        bot.say('{}: {}'.format(trigger.nick, msg))
+        bot.send(msg)
     else:
-        bot.say('{}: no errors.'.format(trigger.nick))
+        bot.send('No Errors.')
 
 
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
     pages = bot._wiki.list_pages(
         body='title created_by rating tags',
-        #limit=10,
+        limit=10,
         order='created_at desc')
     bot.memory['pages'] = list(pages)
 
@@ -234,13 +238,15 @@ def page_summary(page):
         page.url.replace('scp-wiki.wikidot.com', 'www.scp-wiki.net'))
 
 
-def show_search_results(bot, trigger, pages):
+def show_search_results(bot, tr, pages):
     if not pages:
-        msg = vocab.page_not_found(trigger.nick)
+        msg = lexicon.page_not_found()
     elif len(pages) == 1:
         msg = page_summary(pages[0])
-    elif len(pages) <= 3:
-        msg = vocab.few_pages_found(trigger.nick, pages)
     else:
-        msg = vocab.many_pages_found(trigger.nick, pages)
-    bot.say(msg)
+        pages = [p.title for p in pages]
+        head, tail = pages[:3], pages[3:]
+        msg = ' || '.join(map('\x02{}\x02'.format, head))
+        if tail:
+            msg += ' and \x02{}\x02 more.'.format(len(tail))
+    bot.send(msg)

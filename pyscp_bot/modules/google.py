@@ -25,54 +25,52 @@ def configure(config):
 
 
 @sopel.module.commands('google', 'g')
-def google(bot, trigger):
-    query = trigger.group(2)
+def google(bot, tr):
+    query = tr.group(2)
     results = bot.memory['google'].list(
         q=query, cx=bot.config.google.cseid, num=1).execute()
     if not results.get('items', None):
-        bot.say('{}: nothing found.'.format(trigger.nick))
+        bot.send('Nothing found.')
         return
     title = results['items'][0]['title']
     url = results['items'][0]['formattedUrl']
     snippet = results['items'][0]['snippet']
-    bot.say('{}: \x02{}\x02 ({}) - {}'.format(
-        trigger.nick, title, url, snippet))
+    bot.send('\x02{}\x02 ({}) - {}'.format(title, url, snippet))
 
 
 @sopel.module.commands('gis')
-def image_search(bot, trigger):
-    query = trigger.group(2)
+def image_search(bot, tr):
+    query = tr.group(2)
     results = bot.memory['google'].list(
         q=query, cx=bot.config.google.cseid,
         searchType='image', num=1, safe='high').execute()
     if not results.get('items', None):
-        bot.say('{}: nothing found.'.format(trigger.nick))
+        bot.send('Nothing found.')
         return
     url = results['items'][0]['link']
-    bot.say('{}: {}'.format(trigger.nick, url))
+    bot.send(url)
 
 
 @sopel.module.commands('youtube')
-def youtube(bot, trigger):
-    query = trigger.group(2)
+def youtube(bot, tr):
+    query = tr.group(2)
     results = bot.memory['youtube'].search().list(
         q=query, maxResults=1, part='id',
         safeSearch='strict', type='video').execute()
     if not results.get('items', None):
-        bot.say('{}: nothing found.'.format(trigger.nick))
+        bot.send('Nothing found.')
         return
     video_id = results['items'][0]['id']['videoId']
     description = get_video_description(bot.memory['youtube'], video_id)
-    bot.say('{}: {} - http://youtube.com/watch?v={}'.format(
-        trigger.nick, description, video_id))
+    bot.send('{} - http://youtube.com/watch?v={}'.format(
+        description, video_id))
 
 
 @sopel.module.rule(r'.*youtube\.com/watch\?v=([-_a-z0-9]+)')
 @sopel.module.rule(r'.*youtu\.be/([-_a-z0-9]+)')
-def youtube_lookup(bot, trigger):
-    video_id = trigger.group(1)
-    description = get_video_description(bot.memory['youtube'], video_id)
-    bot.say('{}: {}'.format(trigger.nick, description))
+def youtube_lookup(bot, tr):
+    video_id = tr.group(1)
+    bot.send(get_video_description(bot.memory['youtube'], video_id))
 
 
 def get_video_description(youtube, video_id):

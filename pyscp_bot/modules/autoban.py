@@ -10,7 +10,7 @@ import pyscp
 import re
 import sopel
 import time
-import pyscp_bot.jarvis as vocab
+import pyscp_bot.jarvis as lexicon
 
 ###############################################################################
 
@@ -24,42 +24,42 @@ def setup(bot):
 
 
 @sopel.module.commands('updatebans')
-def update_bans(bot, trigger):
-    if trigger.sender != '#site67':
+def update_bans(bot, tr):
+    if tr.sender != '#site67':
         return
     try:
         bot.memory['bans'] = get_ban_list()
-        bot.say(vocab.banlist_updated(trigger.nick))
+        bot.send(lexicon.banlist_updated())
     except:
-        bot.say(vocab.banlist_update_failed(trigger.nick))
+        bot.send(lexicon.banlist_update_failed())
 
 
 @sopel.module.event('JOIN')
 @sopel.module.rule('.*')
-def join_event(bot, trigger):
+def join_event(bot, tr):
     bad_words = [
         'bitch', 'fuck', 'asshole', 'penis', 'vagina', 'nigger', 'retard',
         'faggot', 'chink', 'shit', 'hitler', 'douche']
     for word in bad_words:
-        if word in trigger.nick.lower():
-            ban_user(bot, trigger)
+        if word in tr.nick.lower():
+            ban_user(bot, tr)
     for ban in bot.memory['bans']:
-        if trigger.nick.lower() in ban.names:
-            ban_user(bot, trigger, ban)
-        if trigger.host in ban.hosts:
-            ban_user(bot, trigger, ban)
+        if tr.nick.lower() in ban.names:
+            ban_user(bot, tr, ban)
+        if tr.host in ban.hosts:
+            ban_user(bot, tr, ban)
 
 ###############################################################################
 
 
-def ban_user(bot, trigger, ban=None):
-    channel = trigger.sender
+def ban_user(bot, tr, ban=None):
+    channel = tr.sender
     if channel == '#site17':
         return
-    nick = trigger.nick
+    nick = tr.nick
     if nick == bot.config.core.nick:
         return
-    hostmask = trigger.hostmask
+    hostmask = tr.hostmask
     if not ban:
         msg = (
             'Your username is inappropriate. Please use '
@@ -68,7 +68,7 @@ def ban_user(bot, trigger, ban=None):
         bot.write(['MODE', channel, '+b', hostmask])
         bot.write(['MODE', channel, '+b', nick])
         bot.write(['KICK', channel, nick], msg)
-        bot.say('OP Alert: ' + vocab.profane_username(nick))
+        bot.send('OP Alert: ' + lexicon.profane_username(nick))
         time.sleep(10)
         bot.write(['MODE', channel, '-b', hostmask])
         time.sleep(890)
@@ -80,7 +80,7 @@ def ban_user(bot, trigger, ban=None):
         msg = msg.format(ban.reason)
         bot.write(['MODE', channel, '+b', hostmask])
         bot.write(['KICK', channel, nick], msg)
-        bot.say('OP Alert: ' + vocab.user_in_banlist(nick, ban.names[0]))
+        bot.send('OP Alert: ' + lexicon.user_in_banlist(nick, ban.names[0]))
         time.sleep(900)
         bot.write(['MODE', channel, '-b', hostmask])
 
