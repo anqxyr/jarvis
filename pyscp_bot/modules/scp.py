@@ -10,6 +10,7 @@ import pyscp
 import re
 import sopel
 import pyscp_bot.jarvis as lexicon
+import pyscp_bot.stats as stats
 
 ###############################################################################
 
@@ -40,36 +41,51 @@ def author(bot, tr):
     Calling the command without arguments will use the username
     of the caller as the name of the author.
     """
-    partname = tr.group(2)
-    if not partname:
-        partname = tr.nick
-    authors = list({
-        p.author for p in bot.memory['pages']
-        if p.author and partname.lower() in p.author.lower()})
+    name = tr.group(2)
+    if not name:
+        name = tr.nick
+    authors = {p.author for p in bot.memory['pages']}
+    authors = [a for a in authors if a and name.lower() in a.lower()]
     if not authors:
         bot.send(lexicon.author_not_found())
         return
     if len(authors) > 1:
-        authors = authors[:min(5, len(authors))]
-        bot.send('Did you mean {} or {}?'.format(
-            ', '.join(authors[:-1]),
-            authors[-1]))
+        *head, tail = authors[:5]
+        bot.send('Did you mean {} or {}?'.format(', '.join(head), tail))
         return
-    author = authors[0]
-    pages = [
+
+    author = stats.User(bot.memory['pages'], authors[0])
+
+    aupage = [
         p for p in bot.memory['pages']
-        if p.author == author and '_sys' not in p.tags]
-    skips = {p for p in pages if 'scp' in p.tags}
-    tales = {p for p in pages if 'tale' in p.tags}
-    goifs = {p for p in pages if 'goi-format' in p.tags}
-    pages = (skips | tales | goifs)
-    rating = sum(p.rating for p in pages)
-    msg = (
-        '{} has written {} SCPs, {} tales, and {} GOI-format pages. '
-        'They have {} net upvotes with an average of {}.'
-    ).format(
-        author, len(skips), len(tales), len(goifs),
-        rating, rating // len(pages))
+        if 'author' in p.tags and p.author == author.name]
+    name = '\x02{}\x02 ({})'.format(name, aupage[0].url) if aupage else name
+
+    counts = []
+
+    def add_count(description, tag=None, fn=None):
+        count = author.page_count(tag, fn)
+        if count:
+            counts.append('\x02{}\x02 {}'.format(count, description))
+    add_count('SCPs', 'scp')
+    add_count('tales', 'tale')
+    add_count('GOI-format pages', 'goi-format')
+    add_count(
+        'rewrites',
+        fn=lambda x: x.author_overrides.get(author.name) == 'rewrite_author')
+    *head, tail = counts
+    written = 'has written \x02{}\x02 pages ({} and {}).'.format(
+        author.page_count(), ', '.join(head), tail)
+
+    ratings = (
+        'They have \x02{}\x02 net upvotes with an average of \x02{}\x02.'
+        .format(author.rating(), author.average_rating()))
+
+    last_page = (
+        'Their latest page is \x02{p.title}\x02 at \x02{p.rating:+d}\x02.'
+        .format(p=author.pages[0]))
+
+    msg = ' '.join([name, written, ratings, last_page])
     bot.send(msg)
 
 
@@ -226,7 +242,7 @@ def refresh_page_cache(bot):
         'body': 'title created_by rating tags',
         'order': 'created_at desc'}
     if bot.config.scp.debug:
-        kwargs['limit'] = 10
+        kwargs['created_by'] = 'anqxyr'
     bot.memory['pages'] = list(bot._wiki.list_pages(**kwargs))
 
 ###############################################################################
