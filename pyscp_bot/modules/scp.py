@@ -222,11 +222,12 @@ def errors(bot, tr):
 
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
-    pages = bot._wiki.list_pages(
-        body='title created_by rating tags',
-        #limit=10,
-        order='created_at desc')
-    bot.memory['pages'] = list(pages)
+    kwargs = {
+        'body': 'title created_by rating tags',
+        'order': 'created_at desc'}
+    if bot.config.scp.debug:
+        kwargs['limit'] = 10
+    bot.memory['pages'] = list(bot._wiki.list_pages(**kwargs))
 
 ###############################################################################
 
