@@ -15,7 +15,7 @@ import re
 @sopel.module.commands('[^ ]+')
 def autocomplete(bot, trigger):
     funcs = [f for group in bot._callables.values() for f in group.values()]
-    funcs = [f for l in funcs for f in l if hasattr(f, 'commands')]
+    funcs = {f for l in funcs for f in l if hasattr(f, 'commands')}
     partial = trigger.group(1)
     if any(partial in f.commands for f in funcs):
         return
