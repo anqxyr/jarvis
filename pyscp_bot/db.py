@@ -5,13 +5,15 @@
 ###############################################################################
 
 import peewee
+from playhouse.sqlite_ext import SqliteExtDatabase
+
 
 ###############################################################################
 # Database ORM Classes
 ###############################################################################
 
 
-db = peewee.SqliteDatabase('jarvis.db')
+db = SqliteExtDatabase('jarvis.db', journal_mode='WAL')
 
 
 class BaseModel(peewee.Model):
