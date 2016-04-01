@@ -112,5 +112,5 @@ def deliver_tells(bot, name):
     for tell in query:
         time_passed = arrow.get(tell.time).humanize()
         msg = '{} said {}: {}'.format(tell.sender, time_passed, tell.message)
-        bot.send(msg, name, private=True)
+        bot.send(msg, private=True)
     db.Tell.delete().where(db.Tell.recipient == name.lower()).execute()
