@@ -10,6 +10,8 @@ import re
 
 from . import lexicon
 
+###############################################################################
+
 
 def choose(inp):
     """Return one random comma-separated option."""
