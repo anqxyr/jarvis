@@ -68,7 +68,8 @@ def no_results_found():
 def multiple_results(options):
     messages = [
         "Could be {options}. Which one did you want?",
-        "I have {options}. Pick whichever."]
+        "I have {options}. Pick whichever.",
+        "You have a choice to make. {options}. Which one will it be? Think carefully."]
     *head, tail = ['\x02{}\x02'.format(i) for i in options]
     options = '{} or {}'.format(', '.join(head), tail)
     return random.choice(messages).format(options=options)
