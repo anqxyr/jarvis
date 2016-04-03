@@ -9,8 +9,8 @@
 import pyscp
 import re
 import sopel
-import pyscp_bot.jarvis as lexicon
-import pyscp_bot.stats as stats
+
+import pyscp_bot as jarvis
 
 ###############################################################################
 
@@ -41,52 +41,16 @@ def author(bot, tr):
     Calling the command without arguments will use the username
     of the caller as the name of the author.
     """
-    name = tr.group(2)
-    if not name:
-        name = tr.nick
+    name = tr.group(2) if tr.group(2) else tr.nick
     authors = {p.author for p in bot.memory['pages']}
     authors = [a for a in authors if a and name.lower() in a.lower()]
     if not authors:
-        bot.send(lexicon.author_not_found())
-        return
-    if len(authors) > 1:
-        *head, tail = authors[:5]
-        bot.send('Did you mean {} or {}?'.format(', '.join(head), tail))
-        return
-
-    author = stats.User(bot.memory['pages'], authors[0])
-
-    aupage = [
-        p for p in bot.memory['pages']
-        if 'author' in p.tags and p.author == author.name]
-    name = '\x02{}\x02 ({})'.format(name, aupage[0].url) if aupage else name
-
-    counts = []
-
-    def add_count(description, tag=None, fn=None):
-        count = author.page_count(tag, fn)
-        if count:
-            counts.append('\x02{}\x02 {}'.format(count, description))
-    add_count('SCPs', 'scp')
-    add_count('tales', 'tale')
-    add_count('GOI-format pages', 'goi-format')
-    add_count(
-        'rewrites',
-        fn=lambda x: x.author_overrides.get(author.name) == 'rewrite_author')
-    *head, tail = counts
-    written = 'has written \x02{}\x02 pages ({} and {}).'.format(
-        author.page_count(), ', '.join(head), tail)
-
-    ratings = (
-        'They have \x02{}\x02 net upvotes with an average of \x02{}\x02.'
-        .format(author.rating(), author.average_rating()))
-
-    last_page = (
-        'Their latest page is \x02{p.title}\x02 at \x02{p.rating:+d}\x02.'
-        .format(p=author.pages[0]))
-
-    msg = ' '.join([name, written, ratings, last_page])
-    bot.send(msg)
+        bot.send(jarvis.lexicon.author_not_found())
+    elif len(authors) > 1:
+        bot.send(jarvis.lexicon.multiple_results(authors))
+    else:
+        bot.send(
+            jarvis.scp.get_author_summary(bot.memory['pages'], authors[0]))
 
 
 @sopel.module.rule(r'(?i)^(scp-[^ ]+)$')
@@ -96,7 +60,7 @@ def scp_lookup(bot, tr):
     name = tr.group(1).lower()
     pages = [p for p in bot.memory['pages'] if p._body.name == name]
     if not pages:
-        bot.send(lexicon.page_not_found())
+        bot.send(jarvis.lexicon.page_not_found())
     else:
         bot.send(page_summary(pages[0]))
 
@@ -110,7 +74,7 @@ def url_lookup(bot, tr):
     name = url.split('/')[-1]
     pages = [p for p in bot.memory['pages'] if p._body.name == name]
     if not pages:
-        bot.send(lexicon.page_not_found())
+        bot.send(jarvis.lexicon.page_not_found())
     else:
         bot.send(page_summary(pages[0]))
 
@@ -202,7 +166,7 @@ def showmore(bot, tr):
         index = int(tr.group(2)) - 1
 
     if index >= len(bot.memory['search'][tr.sender]):
-        bot.send(lexicon.out_of_range())
+        bot.send(jarvis.lexicon.out_of_range())
     else:
         bot.send(page_summary(bot.memory['search'][tr.sender][index]))
 
@@ -257,7 +221,7 @@ def page_summary(page):
 
 def show_search_results(bot, tr, pages):
     if not pages:
-        msg = lexicon.page_not_found()
+        msg = jarvis.lexicon.page_not_found()
     elif len(pages) == 1:
         msg = page_summary(pages[0])
     else:
