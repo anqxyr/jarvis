@@ -35,4 +35,5 @@ def get_author_summary(pages, name):
     output = re.sub(r'\*?(0|None)\*?[ \w-]*(?=(\)|,))', '', output)
     output = re.sub(r' \(\)|(, (?=[,\)]))|((?<=\(), )', '', output)
     output = output.replace('scp-wiki.wikidot.com', 'www.scp-wiki.net')
+    output = output.replace('*', '\x02')
     return output

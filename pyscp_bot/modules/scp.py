@@ -207,7 +207,7 @@ def refresh_page_cache(bot):
         'order': 'created_at desc'}
     if bot.config.scp.debug:
         kwargs['created_by'] = 'anqxyr'
-    bot.memory['pages'] = list(bot._wiki.list_pages(**kwargs))
+    bot.memory['pages'] = jarvis.ext.PageView(bot._wiki.list_pages(**kwargs))
 
 ###############################################################################
 
