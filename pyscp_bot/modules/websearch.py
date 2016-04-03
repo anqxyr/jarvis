@@ -42,4 +42,4 @@ def wikipedia_search(bot, tr):
 
 @sopel.module.commands('definition', 'define', 'dictionary')
 def dictionary_search(bot, tr):
-    bot.send(jarvis.search.dictionary_search(tr.group(2))
+    bot.send(jarvis.search.dictionary_search(tr.group(2)))
