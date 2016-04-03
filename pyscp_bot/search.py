@@ -7,6 +7,8 @@
 import googleapiclient.discovery as googleapi
 import wikipedia
 import warnings
+import requests
+import bs4
 
 from . import lexicon
 
@@ -79,3 +81,19 @@ def wikipedia_search(inp):
         return lexicon.no_results_found()
     except wikipedia.exceptions.DisambiguationError as e:
         return lexicon.multiple_results(e.options[:5])
+
+
+def dictionary_search(inp):
+    url = 'http://ninjawords.com/' + inp
+    soup = bs4.BeautifulSoup(requests.get(url).text, 'lxml')
+    data = soup.find(class_='word').dl('dd')
+    output = []
+    idx = 1
+    for line in data:
+        if 'article' in line['class']:
+            output.append('\x02{}\x02:'.format(line.text))
+            idx = 1
+        else:
+            output.append('{}. {}'.format(idx, line.text.strip().lstrip('°')))
+            idx += 1
+    return ' '.join(output)
