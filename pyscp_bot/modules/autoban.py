@@ -10,7 +10,8 @@ import pyscp
 import re
 import sopel
 import time
-import pyscp_bot.jarvis as lexicon
+
+from pyscp_bot import lexicon
 
 ###############################################################################
 
