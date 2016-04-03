@@ -5,6 +5,8 @@
 ###############################################################################
 
 import googleapiclient.discovery as googleapi
+import wikipedia
+import warnings
 
 from . import lexicon
 
@@ -61,3 +63,19 @@ def youtube_video_info(apikey, video_id):
 
     return template.format(
         duration=duration, likes=likes, views=views, **vdata)
+
+
+###############################################################################
+
+
+def wikipedia_search(inp):
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            url = wikipedia.page(inp).url
+            summary = wikipedia.summary(inp, sentences=1)
+            return '{} - \x02{}\x02'.format(summary, url)
+    except wikipedia.exceptions.PageError:
+        return lexicon.no_results_found()
+    except wikipedia.exceptions.DisambiguationError as e:
+        return lexicon.multiple_results(e.options[:5])
