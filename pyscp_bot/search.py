@@ -32,8 +32,7 @@ def google_image_search(apikey, cseid, inp):
 def youtube_search(apikey, inp):
     youtube = googleapi.build('youtube', 'v3', developerKey=apikey)
     results = youtube.search().list(
-        q=inp, maxResults=1, part='id',
-        safeSearch='strict', type='video').execute()
+        q=inp, maxResults=1, part='id', type='video').execute()
     if not results.get('items'):
         return lexicon.no_results_found()
     vid = results['items'][0]['id']['videoId']
@@ -46,11 +45,19 @@ def youtube_video_info(apikey, video_id):
     vdata = youtube.videos().list(
         part='contentDetails,snippet,statistics',
         id=video_id, maxResults=1).execute()['items'][0]
+
     template = ' '.join("""
     \x02{snippet[title]}\x02 - length \x02{duration}\x02 -
-    {statistics[likeCount]}↑{statistics[dislikeCount]}↓ -
-    \x02{views:,}\x02 views - \x02{snippet[channelTitle]}\x02 on
+    {likes} {views} \x02{snippet[channelTitle]}\x02 on
     \x02{snippet[publishedAt]:.10}\x02""".split())
+
     duration = vdata['contentDetails']['duration'][2:].lower()
-    views = int(vdata['statistics']['viewCount'])
-    return template.format(duration=duration, views=views, **vdata)
+    likes, views = '', ''
+    if 'likeCount' in vdata['statistics']:
+        likes = '{likeCount}↑{dislikeCount}↓ -'.format(**vdata['statistics'])
+    if 'viewCount' in vdata['statistics']:
+        views = '\x02{:,}\x02 views -'.format(
+            int(vdata['statistics']['viewCount']))
+
+    return template.format(
+        duration=duration, likes=likes, views=views, **vdata)
