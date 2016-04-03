@@ -93,7 +93,11 @@ def dictionary_search(inp):
         if 'article' in line['class']:
             output.append('\x02{}\x02:'.format(line.text))
             idx = 1
-        else:
-            output.append('{}. {}'.format(idx, line.text.strip().lstrip('°')))
+        elif 'entry' in line['class']:
+            text = line.find(class_='definition').text.strip().lstrip('°')
+            output.append('{}. {}'.format(idx, text))
             idx += 1
+        elif 'synonyms' in line['class']:
+            strings = [i for i in line.stripped_strings if i != ','][1:]
+            output.append('\x02Synonyms\x02: ' + ', '.join(strings) + '.')
     return ' '.join(output)
