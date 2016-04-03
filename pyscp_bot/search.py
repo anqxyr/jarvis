@@ -4,11 +4,11 @@
 # Module Imports
 ###############################################################################
 
-import googleapiclient.discovery as googleapi
-import wikipedia
-import warnings
-import requests
 import bs4
+import googleapiclient.discovery as googleapi
+import requests
+import warnings
+import wikipedia
 
 from . import lexicon
 
@@ -88,7 +88,6 @@ def dictionary_search(inp):
     soup = bs4.BeautifulSoup(requests.get(url).text, 'lxml')
     data = soup.find(class_='word').dl('dd')
     output = []
-    idx = 1
     for line in data:
         if 'article' in line['class']:
             output.append('\x02{}\x02:'.format(line.text))

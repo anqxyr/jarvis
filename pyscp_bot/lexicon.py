@@ -59,6 +59,21 @@ def out_of_range():
     return random.choice(messages)
 
 
+def no_results_found():
+    messages = [
+        "I couldn't find anything like that."]
+    return random.choice(messages)
+
+
+def multiple_results(options):
+    messages = [
+        "Could be {options}. Which one did you want?",
+        "I have {options}. Pick whichever."]
+    *head, tail = ['\x02{}\x02'.format(i) for i in options]
+    options = '{} or {}'.format(', '.join(head), tail)
+    return random.choice(messages).format(options=options)
+
+
 def author_not_found():
     messages = [
         "Your author is in another castle.",
