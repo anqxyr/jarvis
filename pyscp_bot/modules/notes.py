@@ -8,8 +8,7 @@ import arrow
 import sopel
 import re
 
-import pyscp_bot.jarvis as lexicon
-import pyscp_bot.db as db
+from pyscp_bot import lexicon, db
 
 ###############################################################################
 
