@@ -6,11 +6,9 @@
 # Module Imports
 ###############################################################################
 
-import pyscp
-import re
-import sopel
-
 import jarvis
+import pyscp
+import sopel
 
 ###############################################################################
 
@@ -23,11 +21,6 @@ def setup(bot):
         bot._wiki = pyscp.wikidot.Wiki('scp-wiki')
         #bot._wiki.auth('pyscp_bot', bot.config.scp.wikipass)
     refresh_page_cache(bot)
-    bot.memory['search'] = {}
-
-
-def configure(config):
-    config.define_section('scp')
 
 ###############################################################################
 # Search And Lookup Commands
@@ -35,14 +28,14 @@ def configure(config):
 
 
 @sopel.module.commands('author')
-def find_author(bot, tr):
+def author(bot, tr):
     """Output basic information about the author."""
     name = tr.group(2) if tr.group(2) else tr.nick
     bot.send(jarvis.scp.find_author(bot.memory['pages'], name, tr.sender))
 
 
 @sopel.module.commands('search', 's')
-def find_page(bot, tr):
+def search(bot, tr):
     """
     Search for a wiki page.
 
@@ -60,13 +53,13 @@ def find_page(bot, tr):
 
 @sopel.module.rule(r'(?i)^(scp-[^ ]+)$')
 @sopel.module.rule(r'(?i).*!(scp-[^ ]+)')
-def find_scp(bot, tr):
+def scp(bot, tr):
     """Display page summary for the matching scp article."""
     bot.send(jarvis.scp.find_scp(bot.memory['pages'], tr.group(2), tr.sender))
 
 
 @sopel.module.commands('tale')
-def find_tale(bot, tr):
+def tale(bot, tr):
     """
     Search for a tale.
 
@@ -78,19 +71,59 @@ def find_tale(bot, tr):
     bot.send(jarvis.scp.find_tale(bot.memory['pages'], tr.group(2), tr.sender))
 
 
-@sopel.module.rule(r'(?i).*(http://www\.scp-wiki\.net/[^ ]+)')
-def url_lookup(bot, tr):
-    """Display page summary for the matching wiki page."""
-    url = tr.group(1)
-    if '/forum/' in url:
-        return
-    name = url.split('/')[-1]
-    pages = [p for p in bot.memory['pages'] if p._body.name == name]
-    if not pages:
-        bot.send(jarvis.lexicon.page_not_found())
-    else:
-        bot.send(page_summary(pages[0]))
+@sopel.module.commands('tags')
+def tags(bot, tr):
+    """
+    Find pages by tag.
 
+    Returns all pages that have **all** of the specified tags.
+
+    When multiple results are found, the extended information about each result
+    can be accessed via the !showmore command.
+    """
+    bot.send(jarvis.scp.find_tags(bot.memory['pages'], tr.group(2), tr.sender))
+
+
+@sopel.module.commands('showmore', 'sm')
+def showmore(bot, tr):
+    """
+    Access additional results.
+
+    Must be used after a !search, !tale, or !tags command. Displays sumary of
+    the specified result. Must be issued in the same channel as the search
+    command.
+    """
+    bot.send(jarvis.tools.recall(tr.group(2), tr.sender))
+
+
+@sopel.module.rule(r'(?i).*(http://www\.scp-wiki\.net/[^ ]+)')
+def url(bot, tr):
+    """Display page summary for the matching wiki page."""
+    output = jarvis.scp.lookup_url(bot.memory['pages'], tr.group(1))
+    if output:
+        bot.send(output)
+
+
+@sopel.module.commands('lastcreated', 'lc')
+def lastcreated(bot, tr):
+    """Display recently created pages."""
+    pages = list(bot._wiki.list_pages(
+        order='created_at desc', limit=3, body='created_by rating'))
+    bot.send(' || '.join(map(jarvis.scp.get_page_summary, pages)))
+
+###############################################################################
+# Extended Stats
+###############################################################################
+
+
+@sopel.module.commands('authordetails', 'ad')
+def authordetails(bot, tr):
+    bot.send(jarvis.scp.find_author_detials(
+        bot.memory['pages'], tr.group(2), tr.sender))
+
+
+###############################################################################
+# Misc Tools
 ###############################################################################
 
 
@@ -110,61 +143,10 @@ def user(bot, tr):
     bot.send('http://www.wikidot.com/user:info/{}'.format(name))
 
 
-@sopel.module.commands('tags')
-def tags(bot, tr):
-    """
-    Find pages by tag.
-
-    Returns all pages that have **all** of the specified tags.
-
-    When multiple results are found, the extended information about each result
-    can be accessed via the !showmore command.
-    """
-    tags = set(tr.group(2).lower().split())
-    pages = [p for p in bot.memory['pages'] if p.tags.issuperset(tags)]
-    bot.memory['search'][tr.sender] = pages
-    show_search_results(bot, tr, pages)
-
-
-@sopel.module.commands('showmore', 'sm')
-def showmore(bot, tr):
-    """
-    Access additional results.
-
-    Must be used after a !search, !tale, or !tags command. Displays sumary of
-    the specified result. Must be issued in the same channel as the search
-    command.
-    """
-    bot.send(jarvis.tools.showmore(tr.group(2), tr.sender))
-
-
-@sopel.module.commands('lastcreated', 'lc')
-def lastcreated(bot, tr):
-    """Display recently created pages."""
-    pages = list(bot._wiki.list_pages(
-        order='created_at desc', limit=3, body='rating'))
-    bot.send(' || '.join(map(page_summary, pages)))
-
-
 @sopel.module.commands('errors')
 def errors(bot, tr):
     """Display pages with errors."""
-    msg = ''
-    no_tags = [p.title for p in bot.memory['pages'] if not p.tags]
-    no_tags = ['\x02{}\x02'.format(t) for t in no_tags]
-    if no_tags:
-        msg += 'Pages with no tags: {}. '.format(', '.join(no_tags))
-    no_title = [
-        p.title for p in bot.memory['pages']
-        if re.search(r'/scp-[0-9]+$', p.url) and
-        p._raw_title == p.title]
-    no_title = ['\x02{}\x02'.format(t) for t in no_title]
-    if no_title:
-        msg += 'Pages without titles: {}.'.format(', '.join(no_title))
-    if msg:
-        bot.send(msg)
-    else:
-        bot.send('No Errors.')
+    bot.send(jarvis.scp.get_error_report(bot.memory['pages']))
 
 
 @sopel.module.interval(3600)
@@ -175,24 +157,3 @@ def refresh_page_cache(bot):
             category='*'))
 
 ###############################################################################
-
-
-def page_summary(page):
-    msg = '\x02{}\x02 (written by {}; rating: {:+d}) - {}'
-    return msg.format(
-        page.title, page.author, page.rating,
-        page.url.replace('scp-wiki.wikidot.com', 'www.scp-wiki.net'))
-
-
-def show_search_results(bot, tr, pages):
-    if not pages:
-        msg = jarvis.lexicon.page_not_found()
-    elif len(pages) == 1:
-        msg = page_summary(pages[0])
-    else:
-        pages = [p.title for p in pages]
-        head, tail = pages[:3], pages[3:]
-        msg = ' || '.join(map('\x02{}\x02'.format, head))
-        if tail:
-            msg += ' and \x02{}\x02 more.'.format(len(tail))
-    bot.send(msg)
