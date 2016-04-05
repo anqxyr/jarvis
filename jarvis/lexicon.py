@@ -52,20 +52,20 @@ def no_tells():
     return random.choice(messages)
 
 
-def out_of_range():
+def bad_index():
     messages = [
         "That index is sooo big. It will never fit.", ]
     messages += REJECT
     return random.choice(messages)
 
 
-def no_results_found():
+def not_found():
     messages = [
         "I couldn't find anything like that."]
     return random.choice(messages)
 
 
-def multiple_results(options):
+def multiple_found(options):
     messages = [
         "Could be {options}. Which one did you want?",
         "I have {options}. Pick whichever.",

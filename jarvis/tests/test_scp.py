@@ -59,3 +59,9 @@ def test_get_author_summary():
     assert ',)' not in out
     assert '(,' not in out
     assert '()' not in out
+
+    out = pbot.scp.get_author_summary(pages, 'Crayne')
+    assert 'artwork' not in out
+
+    out = pbot.scp.get_author_summary(pages, 'Roget')
+    assert 'rewrites' in out

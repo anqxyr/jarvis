@@ -10,15 +10,18 @@ import pyscp
 import re
 import sopel
 
-import pyscp_bot as jarvis
+import jarvis
 
 ###############################################################################
 
 
 def setup(bot):
     #pyscp.utils.default_logging(True)
-    bot._wiki = pyscp.wikidot.Wiki('scp-wiki')
-    bot._wiki.auth('pyscp_bot', bot.config.scp.wikipass)
+    if bot.config.scp.debug:
+        bot._wiki = pyscp.snapshot.Wiki('www.scp-wiki.net', 'test.db')
+    else:
+        bot._wiki = pyscp.wikidot.Wiki('scp-wiki')
+        #bot._wiki.auth('pyscp_bot', bot.config.scp.wikipass)
     refresh_page_cache(bot)
     bot.memory['search'] = {}
 
@@ -27,42 +30,52 @@ def configure(config):
     config.define_section('scp')
 
 ###############################################################################
+# Search And Lookup Commands
+###############################################################################
 
 
 @sopel.module.commands('author')
-def author(bot, tr):
-    """
-    Output basic information about the author.
-
-    Only pages tagged with any of {'scp', 'tale', 'goi-format'} are counted.
-    Ratings are calculated as displayed on the page, and may include votes
-    from deleted accounts.
-
-    Calling the command without arguments will use the username
-    of the caller as the name of the author.
-    """
+def find_author(bot, tr):
+    """Output basic information about the author."""
     name = tr.group(2) if tr.group(2) else tr.nick
-    authors = {p.author for p in bot.memory['pages']}
-    authors = [a for a in authors if a and name.lower() in a.lower()]
-    if not authors:
-        bot.send(jarvis.lexicon.author_not_found())
-    elif len(authors) > 1:
-        bot.send(jarvis.lexicon.multiple_results(authors))
-    else:
-        bot.send(
-            jarvis.scp.get_author_summary(bot.memory['pages'], authors[0]))
+    bot.send(jarvis.scp.find_author(bot.memory['pages'], name, tr.sender))
+
+
+@sopel.module.commands('search', 's')
+def find_page(bot, tr):
+    """
+    Search for a wiki page.
+
+    Attempts to match the search terms to one or more of the existing wiki
+    pages. Search by the series titles of SCP articles is supported. When
+    searching for multiple words, the order of the search terms is unimportant.
+
+    Also searches among hubs, guides, and system pages.
+
+    When multiple results are found, the extended information about each result
+    can be accessed via the !showmore command.
+    """
+    bot.send(jarvis.scp.find_page(bot.memory['pages'], tr.group(2), tr.sender))
 
 
 @sopel.module.rule(r'(?i)^(scp-[^ ]+)$')
 @sopel.module.rule(r'(?i).*!(scp-[^ ]+)')
-def scp_lookup(bot, tr):
+def find_scp(bot, tr):
     """Display page summary for the matching scp article."""
-    name = tr.group(1).lower()
-    pages = [p for p in bot.memory['pages'] if p._body.name == name]
-    if not pages:
-        bot.send(jarvis.lexicon.page_not_found())
-    else:
-        bot.send(page_summary(pages[0]))
+    bot.send(jarvis.scp.find_scp(bot.memory['pages'], tr.group(2), tr.sender))
+
+
+@sopel.module.commands('tale')
+def find_tale(bot, tr):
+    """
+    Search for a tale.
+
+    Identical to the !search command, but returns only tales.
+
+    When multiple results are found, the extended information about each result
+    can be accessed via the !showmore command.
+    """
+    bot.send(jarvis.scp.find_tale(bot.memory['pages'], tr.group(2), tr.sender))
 
 
 @sopel.module.rule(r'(?i).*(http://www\.scp-wiki\.net/[^ ]+)')
@@ -77,6 +90,8 @@ def url_lookup(bot, tr):
         bot.send(jarvis.lexicon.page_not_found())
     else:
         bot.send(page_summary(pages[0]))
+
+###############################################################################
 
 
 @sopel.module.commands('unused')
@@ -93,46 +108,6 @@ def user(bot, tr):
     """Link to the user's profile page."""
     name = tr.group(2).lower().replace(' ', '-')
     bot.send('http://www.wikidot.com/user:info/{}'.format(name))
-
-
-@sopel.module.commands('search', 's')
-def search(bot, tr):
-    """
-    Search for a wiki page.
-
-    Attempts to match the search terms to one or more of the existing wiki
-    pages. Search by the series titles of SCP articles is supported. When
-    searching for multiple words, the order of the search terms is unimportant.
-
-    Also searches among hubs, guides, and system pages.
-
-    When multiple results are found, the extended information about each result
-    can be accessed via the !showmore command.
-    """
-    words = tr.group(2).lower().split()
-    pages = [
-        p for p in bot.memory['pages']
-        if all(w in p.title.lower() for w in words)]
-    bot.memory['search'][tr.sender] = pages
-    show_search_results(bot, tr, pages)
-
-
-@sopel.module.commands('tale')
-def tale(bot, tr):
-    """
-    Search for a tale.
-
-    Identical to the !search command, but returns only tales.
-
-    When multiple results are found, the extended information about each result
-    can be accessed via the !showmore command.
-    """
-    partname = tr.group(2).lower()
-    pages = [
-        p for p in bot.memory['pages'] if partname in p.title.lower() and
-        'tale' in p.tags]
-    bot.memory['search'][tr.sender] = pages
-    show_search_results(bot, tr, pages)
 
 
 @sopel.module.commands('tags')
@@ -160,15 +135,7 @@ def showmore(bot, tr):
     the specified result. Must be issued in the same channel as the search
     command.
     """
-    if not tr.group(2):
-        index = 0
-    else:
-        index = int(tr.group(2)) - 1
-
-    if index >= len(bot.memory['search'][tr.sender]):
-        bot.send(jarvis.lexicon.out_of_range())
-    else:
-        bot.send(page_summary(bot.memory['search'][tr.sender][index]))
+    bot.send(jarvis.tools.showmore(tr.group(2), tr.sender))
 
 
 @sopel.module.commands('lastcreated', 'lc')
@@ -202,12 +169,10 @@ def errors(bot, tr):
 
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
-    kwargs = {
-        'body': 'title created_by rating tags',
-        'order': 'created_at desc'}
-    if bot.config.scp.debug:
-        kwargs['created_by'] = 'anqxyr'
-    bot.memory['pages'] = jarvis.ext.PageView(bot._wiki.list_pages(**kwargs))
+    bot.memory['pages'] = jarvis.ext.PageView(
+        bot._wiki.list_pages(
+            body='title created_by created_at rating tags',
+            category='*'))
 
 ###############################################################################
 

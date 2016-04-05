@@ -61,7 +61,7 @@ class PageView:
         return sum(p.rating for p in self.pages)
 
     @property
-    def average_rating(self):
+    def average(self):
         if not self.pages:
             return 0
         return self.rating // self.count
@@ -74,7 +74,7 @@ class User:
         """Create user."""
         good_tags = {'scp', 'tale', 'goi-format', 'artwork'}
         self.pages = PageView(
-            p for p in pages if name in p.authors and p.tags & good_tags)
+            p for p in pages if name == p.author and p.tags & good_tags)
         self.name = name
 
     def __getitem__(self, key):

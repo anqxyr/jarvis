@@ -11,6 +11,29 @@ import re
 from . import lexicon
 
 ###############################################################################
+# Tools for functions
+###############################################################################
+
+SEARCH = {}
+
+
+def save_search(func, items, key):
+    SEARCH[key] = func, items
+
+
+def get_from_cache(index, key):
+    if key not in SEARCH:
+        return lexicon.not_found()
+    func, items = SEARCH[key]
+    try:
+        item = items[int(str(index).strip()) - 1]
+    except (IndexError, ValueError):
+        return lexicon.bad_index()
+    return func(item)
+
+###############################################################################
+# Tools for users
+###############################################################################
 
 
 def choose(inp):
@@ -57,3 +80,5 @@ def roll_dice(inp):
         total += int(bonus.group(0))
 
     return '{} ({}={})'.format(total, inp, results)
+
+###############################################################################
