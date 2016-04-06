@@ -16,7 +16,9 @@ from . import lexicon
 ###############################################################################
 
 
-def find_author(pages, partial, key):
+def find_author(pages, partial, key='global'):
+    if not partial:
+        return lexicon.missing_arguments()
     authors = {p.author for p in pages}
     matches = sorted(a for a in authors if partial.lower() in a.lower())
     if not matches:
@@ -28,7 +30,28 @@ def find_author(pages, partial, key):
         return lexicon.unclear_input(matches)
 
 
-def find_page(pages, partial, key):
+def update_author_details(pages, partial, stwiki, key='global'):
+    if not partial:
+        return lexicon.missing_arguments()
+    authors = {p.author for p in pages}
+    matches = sorted(a for a in authors if partial.lower() in a.lower())
+    if not matches:
+        return lexicon.author_not_found()
+    elif len(matches) == 1:
+        data = get_author_details(pages, matches[0])
+        p = stwiki('user:' + matches[0])
+        p.create(data, matches[0], 'automated update')
+        return p.url
+    else:
+        tools.remember(
+            matches, key,
+            lambda x: update_author_details(pages, x, key, stwiki))
+        return lexicon.unclear_input(matches)
+
+
+def find_page(pages, partial, key='global'):
+    if not partial:
+        return lexicon.missing_arguments()
     words = partial.lower().split()
     matches = [p for p in pages if all(w in p.title.lower() for w in words)]
     if not matches:
@@ -40,15 +63,17 @@ def find_page(pages, partial, key):
         return display_search_results([i.title for i in matches])
 
 
-def find_scp(pages, partial, key):
+def find_scp(pages, partial, key='global'):
     return find_page([p for p in pages if 'scp' in p.tags], partial, key)
 
 
-def find_tale(pages, partial, key):
+def find_tale(pages, partial, key='global'):
     return find_page([p for p in pages if 'scp' in p.tags], partial, key)
 
 
-def find_tags(pages, tags, key):
+def find_tags(pages, tags, key='global'):
+    if not tags:
+        return lexicon.missing_arguments()
     matches = [p for p in pages if p.tags >= set(tags)]
     if not matches:
         return lexicon.page_not_found()
@@ -115,9 +140,9 @@ def get_page_summary(page):
         inv[v].append(k)
 
     authors = []
-    if 'author' in inv and len(inv['auhtor']) == 1:
+    if 'author' in inv and len(inv['author']) == 1:
         authors.append('written by {}'.format(inv['author'][0]))
-    if 'author' in inv and len(inv['auhtor']) > 1:
+    if 'author' in inv and len(inv['author']) > 1:
         authors.append('co-written by {}'.format(' and '.join(inv['author'])))
     if 'rewrite' in inv:
         authors.append('rewritten by {}'.format(inv['rewrite'][0]))
