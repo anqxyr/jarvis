@@ -19,8 +19,11 @@ def setup(bot):
         bot._wiki = pyscp.snapshot.Wiki('www.scp-wiki.net', 'test.db')
     else:
         bot._wiki = pyscp.wikidot.Wiki('scp-wiki')
-        #bot._wiki.auth('pyscp_bot', bot.config.scp.wikipass)
+    bot._stwiki = pyscp.wikidot.Wiki('scp-stats')
+    bot._stwiki.auth(bot.config.scp.wikiname, bot.config.scp.wikipass)
+
     refresh_page_cache(bot)
+
 
 ###############################################################################
 # Search And Lookup Commands
@@ -55,7 +58,7 @@ def search(bot, tr):
 @sopel.module.rule(r'(?i).*!(scp-[^ ]+)')
 def scp(bot, tr):
     """Display page summary for the matching scp article."""
-    bot.send(jarvis.scp.find_scp(bot.memory['pages'], tr.group(2), tr.sender))
+    bot.send(jarvis.scp.find_scp(bot.memory['pages'], tr.group(1), tr.sender))
 
 
 @sopel.module.commands('tale')
@@ -116,10 +119,11 @@ def lastcreated(bot, tr):
 ###############################################################################
 
 
-@sopel.module.commands('authordetails', 'ad')
+@sopel.module.commands('ad')
 def authordetails(bot, tr):
-    bot.send(jarvis.scp.find_author_detials(
-        bot.memory['pages'], tr.group(2), tr.sender))
+    name = tr.group(2) if tr.group(2) else tr.nick
+    bot.send(jarvis.scp.update_author_details(
+        bot.memory['pages'], name, bot._stwiki, tr.sender))
 
 
 ###############################################################################

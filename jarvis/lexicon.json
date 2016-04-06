@@ -1,0 +1,57 @@
+{
+"accept": [
+    "I'm on it, boss.",
+    "I will do it.",
+    "Sure, that's exactly what I'll do, meatbag.",
+    "I shall follow your orders, товарищ.",
+    "Consider it done.",
+    "Yeah, yeah, okay, I'll do it."],
+
+"reject": [
+    "I'm sorry Dave, I'm afraid I can't do that.",
+    "No dice.",
+    "No such luck.",
+    "Are you sure this is what you want me to do? (Hint: it isn't)",
+    "Maybe another time.",
+    "How about you do it yourself if you want it that much.",
+    "Nope. Nope nope nope nope nope. Nope."],
+
+"not_found": [
+    "I couldn't find anything like that.",
+    "I have nothing for you.",
+    "There is nothing here. Null. Void. Nada."],
+
+"author_not_found": [
+    "Your author is in another castle.",
+    "There is nobody here by that name. Now go away.",
+    "That person has been retconned from existence.",
+    "E72 - Author Not Found. That's a made-up error. I made it up."],
+
+"page_not_found": [
+    "E74 - Page Not Found. That's a real error. It's in the book. Look it up.",
+    "The future author of that page haven't wrote it yet.",
+    "You're better off reading something else.",
+    "Yesterday, upon the wiki, I saw a page that wasn't there. It didn't rhyme again today.",
+    "Your search query does not match any existing pages."],
+
+"options_few": [
+    "Did you mean {head} or {tail}?"],
+
+"options_many": [
+    "Did you mean {head} or one of the other {tail}?"],
+
+"missing_arguments": [
+    "You'll need to tell what it is you want, before I can go and do it, okay?"],
+
+"bad_index": [
+    "That's way outside the box, and I'm not going there to look for it in this weather.",
+    "A more reasonable index value would be nice."],
+
+"too_many_dice": [
+    "That's a hella a lot of dice, mister.",
+    "No dice. Get it? You get it. Heh."],
+
+"bad_die": [
+    "That's a mutant monster killer die! Die! DIE! Why won't you die?! *kills the die*"]
+
+}

@@ -84,15 +84,15 @@ def wikipedia_search(inp, key='global'):
             warnings.simplefilter("ignore")
             url = wikipedia.page(inp).url
             summary = wikipedia.summary(inp, sentences=1)
-            return '{} - \x02{}\x02'.format(summary, url)
+            return '{} - {}'.format(summary, url)
     except wikipedia.exceptions.PageError:
         return lexicon.not_found()
     except wikipedia.exceptions.DisambiguationError as e:
-        tools.remember(e.options, key)
+        tools.remember(e.options, key, lambda x:wikipedia_search(x, key))
         return lexicon.unclear_input(e.options)
 
 
-def dictionary_search(inp):
+def dictionary_search(inp, key):
     if not inp:
         return lexicon.missing_arguments()
     url = 'http://ninjawords.com/' + inp
@@ -100,7 +100,7 @@ def dictionary_search(inp):
     word = soup.find(class_='word')
     if not word or not word.dl:
         return lexicon.not_found()
-    output = []
+    output = ['\x02{}\x02 - '.format(word.dt.text)]
     for line in word.dl('dd'):
         if 'article' in line['class']:
             output.append('\x02{}\x02:'.format(line.text))

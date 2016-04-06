@@ -4,7 +4,6 @@
 # Module Imports
 ###############################################################################
 
-import pytest
 import jarvis
 
 ###############################################################################
@@ -47,8 +46,8 @@ def test_wikipedia_search():
 
 
 def test_dictionary_search():
-    jarvis.websearch.dictionary_search('door')
-    jarvis.websearch.dictionary_search('find')
-    jarvis.websearch.dictionary_search('BuggyMcBugword')
-    jarvis.websearch.dictionary_search('')
-    jarvis.websearch.dictionary_search(None)
+    jarvis.websearch.dictionary_search('door', 'test')
+    jarvis.websearch.dictionary_search('find', 'test')
+    jarvis.websearch.dictionary_search('BuggyMcBugword', 'test')
+    jarvis.websearch.dictionary_search('', 'test')
+    jarvis.websearch.dictionary_search(None, 'test')

@@ -14,22 +14,22 @@ from . import lexicon
 # Tools for functions
 ###############################################################################
 
-SEARCH = {}
+MEMORY = {}
 
 
-def save_search(func, items, key):
-    SEARCH[key] = func, items
+def remember(items, key, func=None):
+    MEMORY[key] = items, func
 
 
-def get_from_cache(index, key):
-    if key not in SEARCH:
+def recall(index, key):
+    if key not in MEMORY:
         return lexicon.not_found()
-    func, items = SEARCH[key]
+    items, func = MEMORY[key]
     try:
         item = items[int(str(index).strip()) - 1]
     except (IndexError, ValueError):
         return lexicon.bad_index()
-    return func(item)
+    return func(item) if func else item
 
 ###############################################################################
 # Tools for users
@@ -38,12 +38,16 @@ def get_from_cache(index, key):
 
 def choose(inp):
     """Return one random comma-separated option."""
+    if not inp:
+        return lexicon.missing_arguments()
     options = [i.strip() for i in inp.split(',')]
     return random.choice(options)
 
 
 def roll_dice(inp):
     """Return the result of rolling multiple dice."""
+    if not inp:
+        return lexicon.missing_arguments()
     rolls = re.findall(r'([+-]?)([0-9]*)d([0-9]+|f)', inp)
     total = 0
 

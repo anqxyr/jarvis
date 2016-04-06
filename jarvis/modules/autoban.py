@@ -11,7 +11,7 @@ import re
 import sopel
 import time
 
-from pyscp_bot import lexicon
+import jarvis
 
 ###############################################################################
 
@@ -30,9 +30,9 @@ def update_bans(bot, tr):
         return
     try:
         bot.memory['bans'] = get_ban_list()
-        bot.send(lexicon.banlist_updated())
+        bot.send(jarvis.lexicon.banlist_updated())
     except:
-        bot.send(lexicon.banlist_update_failed())
+        bot.send(jarvis.lexicon.banlist_update_failed())
 
 
 @sopel.module.event('JOIN')
@@ -69,7 +69,7 @@ def ban_user(bot, tr, ban=None):
         bot.write(['MODE', channel, '+b', hostmask])
         bot.write(['MODE', channel, '+b', nick])
         bot.write(['KICK', channel, nick], msg)
-        bot.send('OP Alert: ' + lexicon.profane_username(nick))
+        bot.send('OP Alert: ' + jarvis.lexicon.profane_username(nick))
         time.sleep(10)
         bot.write(['MODE', channel, '-b', hostmask])
         time.sleep(890)
@@ -81,7 +81,8 @@ def ban_user(bot, tr, ban=None):
         msg = msg.format(ban.reason)
         bot.write(['MODE', channel, '+b', hostmask])
         bot.write(['KICK', channel, nick], msg)
-        bot.send('OP Alert: ' + lexicon.user_in_banlist(nick, ban.names[0]))
+        bot.send(
+            'OP Alert: ' + jarvis.lexicon.user_in_banlist(nick, ban.names[0]))
         time.sleep(900)
         bot.write(['MODE', channel, '-b', hostmask])
 

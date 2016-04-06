@@ -127,8 +127,9 @@ def get_author_summary(pages, name):
     rating = (
         'They have \x02{}\x02 net upvotes with an average of \x02{}\x02.'
         .format(au.pages.rating, au.pages.average))
-    last = 'Their latest page is \x02{}\x02 at \x02{:+d}\x02.'.format(
-        au.pages[0].title, au.pages[0].rating)
+    last = (
+        'Their latest page is \x02{0.title}\x02 at \x02{0.rating:+d}\x02.'
+        .format(sorted(au.pages, key=lambda x: x.created, reverse=True)[0]))
 
     return ' '.join([pages, rating, last])
 

@@ -8,15 +8,15 @@ import arrow
 import sopel
 import re
 
-from pyscp_bot import lexicon, db
+import jarvis
 
 ###############################################################################
 
 
 def setup(bot):
-    db.db.connect()
-    db.Tell.create_table(True)
-    db.Message.create_table(True)
+    jarvis.db.db.connect()
+    jarvis.db.Tell.create_table(True)
+    jarvis.db.Message.create_table(True)
     sopel.bot.Sopel.SopelWrapper.send = send
 
 
@@ -25,7 +25,7 @@ def send(bot, text, private=False):
     if tr.sender in bot.config.core.channels:
         text = '{}: {}'.format(tr.nick, text)
         time = arrow.utcnow().timestamp
-        db.Message.create(
+        jarvis.db.Message.create(
             user=bot.config.core.nick, channel=tr.sender, time=time, text=text)
     bot.say(text, tr.nick if private else tr.sender)
 
@@ -44,9 +44,9 @@ def tell(bot, tr):
     name, text = tr.group(2).split(maxsplit=1)
     name = name.strip().lower()
     now = arrow.utcnow().timestamp
-    db.Tell.create(
+    jarvis.db.Tell.create(
         sender=str(tr.nick), recipient=name, message=text, time=now)
-    bot.send(lexicon.tell_stored())
+    bot.send(jarvis.lexicon.tell_stored())
 
 
 @sopel.module.rule('.*')
@@ -56,7 +56,8 @@ def chat_activity(bot, tr):
     channel = tr.sender
     time = arrow.utcnow().timestamp
     message = tr.group(0)
-    db.Message.create(user=user, channel=channel, time=time, text=message)
+    jarvis.db.Message.create(
+        user=user, channel=channel, time=time, text=message)
     if not re.match(r'[!\.](st|showt|showtells)$', tr.group(0)):
         deliver_tells(bot, tr.nick)
 
@@ -71,11 +72,11 @@ def showtells(bot, tr):
 
     The tells themselves are delivered via irc private messages.
     """
-    if db.Tell.select().where(
-            db.Tell.recipient == tr.nick.lower()).exists():
+    if jarvis.db.Tell.select().where(
+            jarvis.db.Tell.recipient == tr.nick.lower()).exists():
         deliver_tells(bot, tr.nick)
     else:
-        bot.notice(lexicon.no_tells(), tr.nick)
+        bot.notice(jarvis.lexicon.no_tells(), tr.nick)
 
 
 @sopel.module.commands('seen')
@@ -90,20 +91,21 @@ def seen(bot, tr):
     channel = tr.sender
     try:
         message = (
-            db.Message.select()
+            jarvis.db.Message.select()
             .where(
-                db.peewee.fn.Lower(db.Message.user) == name,
-                db.Message.channel == channel)
-            .limit(1).order_by(db.Message.time.desc()).get())
+                jarvis.db.peewee.fn.Lower(jarvis.db.Message.user) == name,
+                jarvis.db.Message.channel == channel)
+            .limit(1).order_by(jarvis.db.Message.time.desc()).get())
         time = arrow.get(message.time).humanize()
         bot.send('I saw {} {} saying "{}"'.format(
             message.user, time, message.text))
-    except db.Message.DoesNotExist:
-        bot.send(lexicon.user_never_seen())
+    except jarvis.db.Message.DoesNotExist:
+        bot.send(jarvis.lexicon.user_never_seen())
 
 
 def deliver_tells(bot, name):
-    query = db.Tell.select().where(db.Tell.recipient == name.lower())
+    query = jarvis.db.Tell.select().where(
+        jarvis.db.Tell.recipient == name.lower())
     if not query.exists():
         return
     bot.notice(
@@ -112,4 +114,5 @@ def deliver_tells(bot, name):
         time_passed = arrow.get(tell.time).humanize()
         msg = '{} said {}: {}'.format(tell.sender, time_passed, tell.message)
         bot.send(msg, private=True)
-    db.Tell.delete().where(db.Tell.recipient == name.lower()).execute()
+    jarvis.db.Tell.delete().where(
+        jarvis.db.Tell.recipient == name.lower()).execute()

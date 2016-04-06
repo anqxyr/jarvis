@@ -4,9 +4,8 @@
 # Module Imports
 ###############################################################################
 
-import random
 import sopel
-import pyscp_bot as jarvis
+import jarvis
 
 ###############################################################################
 
@@ -23,9 +22,7 @@ def autocomplete(bot, tr):
     if not funcs:
         return
     if len(funcs) > 1:
-        names = [f.commands[0] for f in funcs]
-        bot.send('Did you mean {} or {}?'.format(
-            ', '.join(names[:-1]), names[-1]))
+        bot.send(jarvis.lexicon.unclear_input([f.commands[0] for f in funcs]))
     else:
         wrapper = bot.SopelWrapper(bot, tr)
         bot.call(funcs[0], wrapper, tr)
@@ -38,8 +35,7 @@ def choose(bot, tr):
 
     The options must be comma-separated.
     """
-    options = [i.strip() for i in tr.group(2).split(',')]
-    bot.send(random.choice(options))
+    bot.send(jarvis.tools.choose(tr.group(2)))
 
 
 @sopel.module.rule(r'(?i)(^(?:[+-]?[0-9]*d(?:[0-9]+|f))+(?:[+-][0-9]+)?$)')
