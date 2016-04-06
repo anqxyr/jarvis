@@ -10,35 +10,41 @@ import requests
 import warnings
 import wikipedia
 
-from . import lexicon
+from . import lexicon, tools
 
 ###############################################################################
 
 
 def google_search(apikey, cseid, inp):
+    if not inp:
+        return lexicon.missing_arguments()
     google = googleapi.build('customsearch', 'v1', developerKey=apikey).cse()
     results = google.list(q=inp, cx=cseid, num=1).execute()
     if not results.get('items'):
-        return lexicon.no_results_found()
+        return lexicon.not_found()
     return '\x02{title}\x02 ({formattedUrl}) - {snippet}'.format(
         **results['items'][0])
 
 
 def google_image_search(apikey, cseid, inp):
+    if not inp:
+        return lexicon.missing_arguments()
     google = googleapi.build('customsearch', 'v1', developerKey=apikey).cse()
     results = google.list(
         q=inp, cx=cseid, searchType='image', num=1, safe='high').execute()
     if not results.get('items'):
-        return lexicon.no_results_found()
+        return lexicon.not_found()
     return results['items'][0]['link']
 
 
 def youtube_search(apikey, inp):
+    if not inp:
+        return lexicon.missing_arguments()
     youtube = googleapi.build('youtube', 'v3', developerKey=apikey)
     results = youtube.search().list(
         q=inp, maxResults=1, part='id', type='video').execute()
     if not results.get('items'):
-        return lexicon.no_results_found()
+        return lexicon.not_found()
     vid = results['items'][0]['id']['videoId']
     info = youtube_video_info(apikey, vid)
     return '{} - http://youtube.com/watch?v={}'.format(info, vid)
@@ -70,7 +76,9 @@ def youtube_video_info(apikey, video_id):
 ###############################################################################
 
 
-def wikipedia_search(inp):
+def wikipedia_search(inp, key='global'):
+    if not inp:
+        return lexicon.missing_arguments()
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -78,17 +86,22 @@ def wikipedia_search(inp):
             summary = wikipedia.summary(inp, sentences=1)
             return '{} - \x02{}\x02'.format(summary, url)
     except wikipedia.exceptions.PageError:
-        return lexicon.no_results_found()
+        return lexicon.not_found()
     except wikipedia.exceptions.DisambiguationError as e:
-        return lexicon.multiple_results(e.options[:5])
+        tools.remember(e.options, key)
+        return lexicon.unclear_input(e.options)
 
 
 def dictionary_search(inp):
+    if not inp:
+        return lexicon.missing_arguments()
     url = 'http://ninjawords.com/' + inp
     soup = bs4.BeautifulSoup(requests.get(url).text, 'lxml')
-    data = soup.find(class_='word').dl('dd')
+    word = soup.find(class_='word')
+    if not word or not word.dl:
+        return lexicon.not_found()
     output = []
-    for line in data:
+    for line in word.dl('dd'):
         if 'article' in line['class']:
             output.append('\x02{}\x02:'.format(line.text))
             idx = 1
