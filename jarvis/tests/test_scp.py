@@ -4,64 +4,68 @@
 # Module Imports
 ###############################################################################
 
-import pytest
 import pyscp
-import pyscp_bot as pbot
+import jarvis
 
 ###############################################################################
 
 
-wiki = pyscp.snapshot.Wiki(
-    'www.scp-wiki.net',
-    '/home/anqxyr/heap/_scp/scp-wiki.2016-04-01.db')
+#wiki = pyscp.snapshot.Wiki(
+#    'www.scp-wiki.net',
+#    '/home/anqxyr/heap/_scp/scp-wiki.2016-04-01.db')
+wiki = pyscp.wikidot.Wiki('scp-wiki')
 
-pages = pbot.ext.PageView(list(wiki.list_pages()))
+pages = jarvis.ext.PageView(list(wiki.list_pages(
+    body='title created_by created_at rating tags')))
 
 
-def test_get_author_summary():
-    out = pbot.scp.get_author_summary(pages, 'anqxyr')
-    assert 'http://www.scp-wiki.net/anqxyr' in out
-    assert 'SCPs' in out
-    assert 'tales' in out
-    assert 'GOI-format' not in out
-    assert 'rewrites' not in out
+def test_find_author():
+    # trying to validate the output is too hard, it's better done by hand
+    # so this and other tests here will just call the functions with various
+    # arguments and make sure they don't throw exceptions anywhere
+    jarvis.scp.find_author(pages, 'anqxyr')
+    jarvis.scp.find_author(pages, 'voct')
+    jarvis.scp.find_author(pages, 'roget')
+    jarvis.scp.find_author(pages, 'gears')  # ambiguous
+    jarvis.scp.find_author(pages, 'dr')
+    jarvis.scp.find_author(pages, 'author does not exist')
+    jarvis.scp.find_author(pages, '')
+    jarvis.scp.find_author(pages, None)
 
-    assert ', )' not in out
-    assert '( ,' not in out
-    assert ',)' not in out
-    assert '(,' not in out
-    assert '()' not in out
 
-    out = pbot.scp.get_author_summary(pages, 'Voct')
-    assert 'rewrites' in out
-    assert 'artwork galleries' not in out
+def test_update_author_details():
+    #stwiki = pyscp.wikidot.Wiki('scp-stats')
+    pass
 
-    assert ', )' not in out
-    assert '( ,' not in out
-    assert ',)' not in out
-    assert '(,' not in out
-    assert '()' not in out
 
-    out = pbot.scp.get_author_summary(pages, 'SunnyClockwork')
-    assert 'SCPs' not in out
-    assert 'artwork galleries' in out
+def test_find_page():
+    jarvis.scp.find_page(pages, 'routine')
+    jarvis.scp.find_page(pages, 'scp-')
+    jarvis.scp.find_page(pages, 'белки')
+    jarvis.scp.find_page(pages, 'paradise mobile')
+    jarvis.scp.find_page(pages, '')
+    jarvis.scp.find_page(pages, None)
 
-    assert ', )' not in out
-    assert '( ,' not in out
-    assert ',)' not in out
-    assert '(,' not in out
-    assert '()' not in out
 
-    out = pbot.scp.get_author_summary(pages, 'Moto42')
+def test_find_scp():
+    jarvis.scp.find_scp(pages, 'clown')
+    jarvis.scp.find_scp(pages, 'quiet days')
+    jarvis.scp.find_scp(pages, '0')
 
-    assert ', )' not in out
-    assert '( ,' not in out
-    assert ',)' not in out
-    assert '(,' not in out
-    assert '()' not in out
 
-    out = pbot.scp.get_author_summary(pages, 'Crayne')
-    assert 'artwork' not in out
+def test_find_tale():
+    jarvis.scp.find_tale(pages, '173')
+    jarvis.scp.find_tale(pages, 'scp-')
+    jarvis.scp.find_tale(pages, 'Kitten Flu')
 
-    out = pbot.scp.get_author_summary(pages, 'Roget')
-    assert 'rewrites' in out
+
+def test_find_tags():
+    jarvis.scp.find_tags(pages, 'keter temporal')
+    jarvis.scp.find_tags(pages, 'safe keter')
+    jarvis.scp.find_tags(pages, 'blahblahblah')
+    jarvis.scp.find_tags(pages, '')
+    jarvis.scp.find_tags(pages, None)
+
+
+def test_error_report():
+    jarvis.scp.get_error_report(pages)
