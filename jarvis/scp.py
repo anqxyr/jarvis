@@ -68,7 +68,7 @@ def find_scp(pages, partial, key='global'):
 
 
 def find_tale(pages, partial, key='global'):
-    return find_page([p for p in pages if 'scp' in p.tags], partial, key)
+    return find_page([p for p in pages if 'tale' in p.tags], partial, key)
 
 
 def find_tags(pages, tags, key='global'):
