@@ -1,11 +1,11 @@
 import setuptools
 
 setuptools.setup(
-    name='pyscp_bot',
-    version='0.0.8',
+    name='jarvis',
+    version='0.1',
     description='Snarky bot for scp-wiki irc channels.',
     long_description='',
-    url='https://github.com/anqxyr/pyscp_bot/',
+    url='https://github.com/anqxyr/jarvis/',
     author='anqxyr',
     author_email='anqxyr@gmail.com',
     license='MIT',
