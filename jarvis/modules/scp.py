@@ -18,7 +18,7 @@ def setup(bot):
     if bot.config.scp.debug:
         bot._wiki = pyscp.snapshot.Wiki('www.scp-wiki.net', 'test.db')
     else:
-        bot._wiki = pyscp.wikidot.Wiki('scp-wiki')
+        bot._wiki = pyscp.wikidot.Wiki('www.scp-wiki.net')
     bot._stwiki = pyscp.wikidot.Wiki('scp-stats')
     bot._stwiki.auth(bot.config.scp.wikiname, bot.config.scp.wikipass)
 
@@ -58,7 +58,8 @@ def search(bot, tr):
 @sopel.module.rule(r'(?i).*!(scp-[^ ]+)')
 def scp(bot, tr):
     """Display page summary for the matching scp article."""
-    bot.send(jarvis.scp.find_scp(bot.memory['pages'], tr.group(1), tr.sender))
+    url = 'http://www.scp-wiki.net/' + tr.group(1)
+    bot.send(jarvis.scp.lookup_url(bot.memory['pages'], url, tr.sender))
 
 
 @sopel.module.commands('tale')
@@ -112,7 +113,8 @@ def lastcreated(bot, tr):
     """Display recently created pages."""
     pages = list(bot._wiki.list_pages(
         order='created_at desc', limit=3, body='created_by rating'))
-    bot.send(' || '.join(map(jarvis.scp.get_page_summary, pages)))
+    for p in pages:
+        bot.send(jarvis.scp.get_page_summary(p), force=True)
 
 ###############################################################################
 # Extended Stats
@@ -135,7 +137,7 @@ def authordetails(bot, tr):
 def unused(bot, tr):
     """Link to the first empty scp slot."""
     skips = ['scp-{:03}'.format(i) for i in range(2, 3000)]
-    names = {p._body.name for p in bot.memory['pages']}
+    names = {p._body.fullname for p in bot.memory['pages']}
     unused = next(i for i in skips if i not in names)
     bot.send('http://www.scp-wiki.net/{}'.format(unused))
 
@@ -155,9 +157,11 @@ def errors(bot, tr):
 
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
-    bot.memory['pages'] = jarvis.ext.PageView(
-        bot._wiki.list_pages(
-            body='title created_by created_at rating tags',
-            category='*'))
+    bot.memory['pages'] = jarvis.ext.PageView(bot._wiki.list_pages(
+        body='title created_by created_at rating tags', category='*'))
+    bot._wiki.titles.cache_clear()
+    bot._wiki.titles.cache_clear()
+    bot._wiki.list_overrides.cache_clear()
+
 
 ###############################################################################

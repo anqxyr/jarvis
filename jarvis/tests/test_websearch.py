@@ -40,6 +40,7 @@ def test_youtube_video_info():
 def test_wikipedia_search():
     jarvis.websearch.wikipedia_search('Ants')
     jarvis.websearch.wikipedia_search('Mercury')
+    jarvis.tools.recall(1, 'global')
     jarvis.websearch.wikipedia_search('glabberbock')
     jarvis.websearch.wikipedia_search('')
     jarvis.websearch.wikipedia_search(None)

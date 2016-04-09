@@ -4,30 +4,33 @@
 # Module Imports
 ###############################################################################
 
-import arrow
 import sopel
-import re
-
 import jarvis
 
 ###############################################################################
 
 
 def setup(bot):
-    jarvis.db.db.connect()
-    jarvis.db.Tell.create_table(True)
-    jarvis.db.Message.create_table(True)
+    jarvis.notes.init()
     sopel.bot.Sopel.SopelWrapper.send = send
 
 
-def send(bot, text, private=False):
+def send(bot, text, private=False, force=True):
     tr = bot._trigger
     if tr.sender in bot.config.core.channels:
         text = '{}: {}'.format(tr.nick, text)
-        time = arrow.utcnow().timestamp
-        jarvis.db.Message.create(
-            user=bot.config.core.nick, channel=tr.sender, time=time, text=text)
-    bot.say(text, tr.nick if private else tr.sender)
+        jarvis.notes.log_message(bot.config.core.nick, tr.sender, text)
+
+    def say(text, recipient):
+        lines = [text[i:i + 400] for i in range(0, len(text), 400)]
+        try:
+            bot.sending.acquire()
+            for line in lines:
+                bot.write(('PRIVMSG', recipient), line)
+        finally:
+            bot.sending.release()
+
+    (say if force else bot.say)(text, tr.nick if private else tr.sender)
 
 
 ###############################################################################
@@ -41,25 +44,15 @@ def tell(bot, tr):
     The message will be delivered the next time the user is active in any
     of the channels where the bot is present.
     """
-    name, text = tr.group(2).split(maxsplit=1)
-    name = name.strip().lower()
-    now = arrow.utcnow().timestamp
-    jarvis.db.Tell.create(
-        sender=str(tr.nick), recipient=name, message=text, time=now)
-    bot.send(jarvis.lexicon.tell_stored())
+    bot.send(jarvis.notes.store_tell(tr.nick, *tr.group(2).split(maxsplit=1)))
 
 
 @sopel.module.rule('.*')
 @sopel.module.priority('low')
 def chat_activity(bot, tr):
-    user = tr.nick.strip()
-    channel = tr.sender
-    time = arrow.utcnow().timestamp
-    message = tr.group(0)
-    jarvis.db.Message.create(
-        user=user, channel=channel, time=time, text=message)
-    if not re.match(r'[!\.](st|showt|showtells)$', tr.group(0)):
-        deliver_tells(bot, tr.nick)
+    jarvis.notes.log_message(tr.nick, tr.sender, tr.group(0))
+    for t in jarvis.notes.get_tells(tr.nick):
+        bot.send(t, private=True, force=True)
 
 
 @sopel.module.commands('showtells', 'showt', 'st')
@@ -72,11 +65,11 @@ def showtells(bot, tr):
 
     The tells themselves are delivered via irc private messages.
     """
-    if jarvis.db.Tell.select().where(
-            jarvis.db.Tell.recipient == tr.nick.lower()).exists():
-        deliver_tells(bot, tr.nick)
-    else:
+    tells = list(jarvis.notes.get_tells(tr.nick))
+    if not tells:
         bot.notice(jarvis.lexicon.no_tells(), tr.nick)
+    for t in tells:
+        bot.send(t, private=True, force=True)
 
 
 @sopel.module.commands('seen')
@@ -87,32 +80,28 @@ def seen(bot, tr):
     Results are channel specific. You must issue the command in the same
     channel where you want to check for the user.
     """
-    name = tr.group(2).strip().lower()
-    channel = tr.sender
-    try:
-        message = (
-            jarvis.db.Message.select()
-            .where(
-                jarvis.db.peewee.fn.Lower(jarvis.db.Message.user) == name,
-                jarvis.db.Message.channel == channel)
-            .limit(1).order_by(jarvis.db.Message.time.desc()).get())
-        time = arrow.get(message.time).humanize()
-        bot.send('I saw {} {} saying "{}"'.format(
-            message.user, time, message.text))
-    except jarvis.db.Message.DoesNotExist:
-        bot.send(jarvis.lexicon.user_never_seen())
+    bot.send(jarvis.notes.user_last_seen(tr.group(2), tr.sender))
 
 
-def deliver_tells(bot, name):
-    query = jarvis.db.Tell.select().where(
-        jarvis.db.Tell.recipient == name.lower())
-    if not query.exists():
+@sopel.module.commands('quote', 'q')
+def quote(bot, tr):
+    channels = bot.config.scp.quotes.split(',')
+    if tr.sender not in [i.strip() for i in channels]:
         return
-    bot.notice(
-        '{}: you have {} new messages.'.format(name, query.count()), name)
-    for tell in query:
-        time_passed = arrow.get(tell.time).humanize()
-        msg = '{} said {}: {}'.format(tell.sender, time_passed, tell.message)
-        bot.send(msg, private=True)
-    jarvis.db.Tell.delete().where(
-        jarvis.db.Tell.recipient == name.lower()).execute()
+    bot.send(jarvis.notes.quote(tr.group(2), tr.sender))
+
+
+@sopel.module.commands('rem')
+def rem(bot, tr):
+    channels = bot.config.scp.quotes.split(',')
+    if tr.sender not in [i.strip() for i in channels]:
+        return
+    bot.send(jarvis.notes.add_rem(tr.group(2), tr.sender))
+
+
+@sopel.module.rule(r'^\?([\w\d-]+)$')
+def get_rem(bot, tr):
+    channels = bot.config.scp.quotes.split(',')
+    if tr.sender not in [i.strip() for i in channels]:
+        return
+    bot.send(jarvis.notes.get_rem(tr.group(1), tr.sender))

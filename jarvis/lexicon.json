@@ -52,6 +52,31 @@
     "No dice. Get it? You get it. Heh."],
 
 "bad_die": [
-    "That's a mutant monster killer die! Die! DIE! Why won't you die?! *kills the die*"]
+    "That's a mutant monster killer die! Die! DIE! Why won't you die?! *kills the die*"],
 
+"tell_stored": [
+    "I will deliver it.",
+    "What am I, a postman? Oh well, alright, I'll pass it on.",
+    "I'll tell them when I see them."],
+
+"no_tells": [
+    "You have no pending tells."],
+
+"user_never_seen": [
+    "I've never seen anyone by that name here."],
+
+"quote_exists": [
+    "Thanks, but I already have one of those."],
+
+"quote_added": [
+    "I will remember it untils the stars themselves turn cold and die, consumed by the merciless of all monsters - time."],
+
+"no_quotes": [
+    "It looks like they haven't said anything worth remembering yet."],
+
+"quote_not_found": [
+    "I can't delete something I don't have."],
+
+"quote_deleted": [
+    "I have a feeling I forgot something important, but I can't remember what."]
 }

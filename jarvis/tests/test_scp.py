@@ -10,13 +10,18 @@ import jarvis
 ###############################################################################
 
 
-#wiki = pyscp.snapshot.Wiki(
-#    'www.scp-wiki.net',
-#    '/home/anqxyr/heap/_scp/scp-wiki.2016-04-01.db')
 wiki = pyscp.wikidot.Wiki('scp-wiki')
 
 pages = jarvis.ext.PageView(list(wiki.list_pages(
     body='title created_by created_at rating tags')))
+
+config = {}
+with open('/home/anqxyr/.sopel/default.cfg') as file:
+    for line in file:
+        if '=' not in line:
+            continue
+        key, value = apikey = line.split('=')
+        config[key.strip()] = value.strip()
 
 
 def test_find_author():
@@ -27,6 +32,7 @@ def test_find_author():
     jarvis.scp.find_author(pages, 'voct')
     jarvis.scp.find_author(pages, 'roget')
     jarvis.scp.find_author(pages, 'gears')  # ambiguous
+    jarvis.tools.recall(1, 'global')
     jarvis.scp.find_author(pages, 'dr')
     jarvis.scp.find_author(pages, 'author does not exist')
     jarvis.scp.find_author(pages, '')
@@ -34,8 +40,14 @@ def test_find_author():
 
 
 def test_update_author_details():
-    #stwiki = pyscp.wikidot.Wiki('scp-stats')
-    pass
+    stwiki = pyscp.wikidot.Wiki('scp-stats')
+    stwiki.auth(config['wikiname'], config['wikipass'])
+    jarvis.scp.update_author_details(pages, 'anqxyr', stwiki)
+    jarvis.scp.update_author_details(pages, 'voct', stwiki)
+    jarvis.scp.update_author_details(pages, 'gears', stwiki)
+    jarvis.tools.recall(1, 'global')
+    jarvis.scp.update_author_details(pages, 'author does not exist', stwiki)
+    jarvis.scp.update_author_details(pages, None, stwiki)
 
 
 def test_find_page():

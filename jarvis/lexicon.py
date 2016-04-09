@@ -68,18 +68,46 @@ def bad_die():
 
 
 def tell_stored():
-    messages = [
-        "I will deliver it.",
-        "What am I, a postman? Oh well, alright, I'll pass it on.",
-        "I'll tell them when I see them.", ]
-    messages += lexicon['accept']
+    messages = lexicon['tell_stored'] + lexicon['accept']
     return random.choice(messages)
 
 
 def no_tells():
-    messages = [
-        "You have no pending tells.", ]
+    messages = lexicon['no_tells']
     return random.choice(messages)
+
+
+def user_never_seen():
+    messages = lexicon['user_never_seen']
+    return random.choice(messages)
+
+###############################################################################
+
+
+def quote_exists():
+    messages = lexicon['quote_exists']
+    return random.choice(messages)
+
+
+def quote_added():
+    messages = lexicon['quote_added'] + lexicon['accept']
+    return random.choice(messages)
+
+
+def no_quotes():
+    messages = lexicon['no_quotes'] + lexicon['not_found']
+    return random.choice(messages)
+
+
+def quote_not_found():
+    messages = lexicon['quote_not_found']
+    return random.choice(messages)
+
+
+def quote_deleted():
+    messages = lexicon['quote_deleted']
+    return random.choice(messages)
+###############################################################################
 
 
 def banlist_updated():
@@ -108,10 +136,3 @@ def user_in_banlist(user, banned):
         "{user} (better known as {banned}) was exiled from this fine and pure kingdom.",
         "{user} was kicked and banned because they look like {banned} and their face smells."]
     return random.choice(messages).format(user=user, banned=banned)
-
-
-def user_never_seen():
-    messages = [
-        "I never saw anyone by that name here."]
-    messages += lexicon['reject']
-    return random.choice(messages)

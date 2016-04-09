@@ -20,7 +20,8 @@ def find_author(pages, partial, key='global'):
     if not partial:
         return lexicon.missing_arguments()
     authors = {p.author for p in pages}
-    matches = sorted(a for a in authors if partial.lower() in a.lower())
+    matches = sorted(
+        a for a in authors if partial.strip().lower() in a.lower())
     if not matches:
         return lexicon.author_not_found()
     elif len(matches) == 1:
@@ -45,7 +46,7 @@ def update_author_details(pages, partial, stwiki, key='global'):
     else:
         tools.remember(
             matches, key,
-            lambda x: update_author_details(pages, x, key, stwiki))
+            lambda x: update_author_details(pages, x, stwiki, key))
         return lexicon.unclear_input(matches)
 
 
@@ -74,6 +75,7 @@ def find_tale(pages, partial, key='global'):
 def find_tags(pages, tags, key='global'):
     if not tags:
         return lexicon.missing_arguments()
+    tags = set(tags.strip().split())
     matches = [p for p in pages if p.tags >= set(tags)]
     if not matches:
         return lexicon.page_not_found()
@@ -112,7 +114,6 @@ def get_author_summary(pages, name):
 
     au_pages = pages(tags='author', author=name)
     url = '({0[0].url}) '.format(au_pages) if au_pages else ''
-    url = url.replace('scp-wiki.wikidot.com', 'www.scp-wiki.net')
     wrote = [
         '\x02{0[scp].count}\x02 SCPs',
         '\x02{0[tale].count}\x02 tales',
@@ -148,10 +149,8 @@ def get_page_summary(page):
     if 'rewrite' in inv:
         authors.append('rewritten by {}'.format(inv['rewrite'][0]))
     authors = ', '.join(authors)
-
-    output = '\x02{0.title}\x02 ({1}; rating: {0.rating:+d}) - {0.url}'.format(
+    return '\x02{0.title}\x02 ({1}; rating: {0.rating:+d}) - {0.url}'.format(
         page, authors)
-    return output.replace('scp-wiki.wikidot.com', 'www.scp-wiki.net')
 
 
 def get_author_details(pages, name):
@@ -159,22 +158,18 @@ def get_author_details(pages, name):
 
     counts = [
         '||Pages:||{0.pages.count}||',
-        '||● SCPs:||{0[scp].count}||',
-        '||● Tales:||{0[tale].count}||',
-        '||● GOI-format:||{0[goi-format].count}||',
-        '||● Artwork:||{0[artwork].count}||',
-        '||● Rewrites:||{0.rewrites.count}||']
-    counts = [i.format(au) for i in counts if '||0||' not in i.format(au)]
-
+        '||-- SCPs:||{0[scp].count}||',
+        '||-- Tales:||{0[tale].count}||',
+        '||-- GOI-format:||{0[goi-format].count}||',
+        '||-- Artwork:||{0[artwork].count}||',
+        '||-- Rewrites:||{0.rewrites.count}||']
     ratings = [
         '||Rating:||{0.pages.rating} ({0.pages.average})||',
-        '||● SCPs:||{0[scp].rating} ({0[scp].average})||',
-        '||● Tales:||{0[tale].rating} ({0[tale].average})||',
-        '||● GOI-format:||{0[goi-format].rating} ({0[goi-format].average})||',
-        '||● Artwork:||{0[artwork].rating} ({0[artwork].average})||',
-        '||● Rewrites:||{0.rewrites.rating} ({0.rewrites.average})||']
-    ratings = [
-        i.format(au) for i in ratings if '||0 (0)||' not in i.format(au)]
+        '||-- SCPs:||{0[scp].rating} ({0[scp].average})||',
+        '||-- Tales:||{0[tale].rating} ({0[tale].average})||',
+        '||-- GOI-format:||{0[goi-format].rating} ({0[goi-format].average})||',
+        '||-- Artwork:||{0[artwork].rating} ({0[artwork].average})||',
+        '||-- Rewrites:||{0.rewrites.rating} ({0.rewrites.average})||']
 
     intro = ['[[div class="author-summary"]]']
     intro.extend(counts)
@@ -203,6 +198,7 @@ def get_author_details(pages, name):
 
 
 def get_error_report(pages):
+    pages = [p for p in pages if ':' not in p.url]
     output = ''
     no_tags = ['\x02{}\x02'.format(p.title) for p in pages if not p.tags]
     if no_tags:

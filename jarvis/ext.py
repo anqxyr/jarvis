@@ -85,4 +85,4 @@ class User:
     @property
     def rewrites(self):
         return PageView(
-            p for p in self.pages if p.authors[self.name] == 'rewrite_author')
+            p for p in self.pages if p.authors[self.name] == 'rewrite')

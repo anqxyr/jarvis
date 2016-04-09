@@ -24,13 +24,26 @@ class BaseModel(peewee.Model):
 
 class Tell(BaseModel):
     sender = peewee.CharField()
-    recipient = peewee.CharField()
+    recipient = peewee.CharField(index=True)
     message = peewee.TextField()
     time = peewee.DateTimeField()
 
 
 class Message(BaseModel):
-    user = peewee.CharField()
+    user = peewee.CharField(index=True)
     channel = peewee.CharField()
     time = peewee.CharField()
+    text = peewee.TextField()
+
+
+class Quote(BaseModel):
+    user = peewee.CharField(index=True)
+    channel = peewee.CharField()
+    time = peewee.CharField()
+    text = peewee.TextField()
+
+
+class Rem(BaseModel):
+    user = peewee.CharField(index=True)
+    channel = peewee.CharField()
     text = peewee.TextField()
