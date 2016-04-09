@@ -88,7 +88,7 @@ def wikipedia_search(inp, key='global'):
     except wikipedia.exceptions.PageError:
         return lexicon.not_found()
     except wikipedia.exceptions.DisambiguationError as e:
-        tools.remember(e.options, key, lambda x:wikipedia_search(x, key))
+        tools.remember(e.options, key, lambda x: wikipedia_search(x, key))
         return lexicon.unclear_input(e.options)
 
 
@@ -113,3 +113,14 @@ def dictionary_search(inp, key):
             strings = [i for i in line.stripped_strings if i != ','][1:]
             output.append('\x02Synonyms\x02: ' + ', '.join(strings) + '.')
     return ' '.join(output)
+
+
+def urbandictionary_search(inp, key):
+    if not inp:
+        return lexicon.missing_arguments()
+    url = 'http://api.urbandictionary.com/v0/define?term=' + inp.strip()
+    data = requests.get(url).json()
+    if not data['list']:
+        return lexicon.not_found()
+    result = data['list'][0]
+    return '{word}: {definition}'.format(**result)
