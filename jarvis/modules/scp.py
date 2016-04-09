@@ -59,7 +59,7 @@ def search(bot, tr):
 def scp(bot, tr):
     """Display page summary for the matching scp article."""
     url = 'http://www.scp-wiki.net/' + tr.group(1)
-    bot.send(jarvis.scp.lookup_url(bot.memory['pages'], url, tr.sender))
+    bot.send(jarvis.scp.lookup_url(bot.memory['pages'], url))
 
 
 @sopel.module.commands('tale')

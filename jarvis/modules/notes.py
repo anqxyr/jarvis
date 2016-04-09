@@ -15,7 +15,7 @@ def setup(bot):
     sopel.bot.Sopel.SopelWrapper.send = send
 
 
-def send(bot, text, private=False, force=True):
+def send(bot, text, private=False, force=False):
     tr = bot._trigger
     if tr.sender in bot.config.core.channels:
         text = '{}: {}'.format(tr.nick, text)

@@ -19,9 +19,9 @@ from . import lexicon
 def find_author(pages, partial, key='global'):
     if not partial:
         return lexicon.missing_arguments()
+    partial = partial.strip().lower()
     authors = {p.author for p in pages}
-    matches = sorted(
-        a for a in authors if partial.strip().lower() in a.lower())
+    matches = sorted(a for a in authors if partial in a.lower())
     if not matches:
         return lexicon.author_not_found()
     elif len(matches) == 1:
@@ -34,8 +34,9 @@ def find_author(pages, partial, key='global'):
 def update_author_details(pages, partial, stwiki, key='global'):
     if not partial:
         return lexicon.missing_arguments()
+    partial = partial.strip().lower()
     authors = {p.author for p in pages}
-    matches = sorted(a for a in authors if partial.lower() in a.lower())
+    matches = sorted(a for a in authors if partial in a.lower())
     if not matches:
         return lexicon.author_not_found()
     elif len(matches) == 1:
@@ -89,7 +90,6 @@ def find_tags(pages, tags, key='global'):
 def lookup_url(pages, url):
     if '/forum/' in url:
         return
-    url = url.replace('www.scp-wiki.net', 'scp-wiki.wikidot.com')
     pages = [p for p in pages if p.url == url]
     if not pages:
         return lexicon.page_not_found()
@@ -163,13 +163,15 @@ def get_author_details(pages, name):
         '||-- GOI-format:||{0[goi-format].count}||',
         '||-- Artwork:||{0[artwork].count}||',
         '||-- Rewrites:||{0.rewrites.count}||']
+    counts = [i.format(au) for i in counts]
     ratings = [
-        '||Rating:||{0.pages.rating} ({0.pages.average})||',
-        '||-- SCPs:||{0[scp].rating} ({0[scp].average})||',
-        '||-- Tales:||{0[tale].rating} ({0[tale].average})||',
-        '||-- GOI-format:||{0[goi-format].rating} ({0[goi-format].average})||',
-        '||-- Artwork:||{0[artwork].rating} ({0[artwork].average})||',
-        '||-- Rewrites:||{0.rewrites.rating} ({0.rewrites.average})||']
+        '||Rating:||{0.pages.rating} / {0.pages.average}||',
+        '||-- SCPs:||{0[scp].rating} / {0[scp].average}||',
+        '||-- Tales:||{0[tale].rating} / {0[tale].average}||',
+        '||-- GOI-format:||{0[goi-format].rating} / {0[goi-format].average}||',
+        '||-- Artwork:||{0[artwork].rating} / {0[artwork].average}||',
+        '||-- Rewrites:||{0.rewrites.rating} / {0.rewrites.average}||']
+    ratings = [i.format(au) for i in ratings]
 
     intro = ['[[div class="author-summary"]]']
     intro.extend(counts)
