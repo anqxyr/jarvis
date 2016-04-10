@@ -59,7 +59,9 @@ def user_last_seen(user, channel):
 
 def quote(inp, channel):
     inp = re.match(
-        r'^(add|del)? ?(\d{4}-\d{2}-\d{2})? ?([\w\d<>^{}[\]\\-]+)(.*)$', inp)
+        r'^(add|del)? ?(\d{4}-\d{2}-\d{2})? ?(#?[\w\d<>^{}[\]\\-]+)(.*)$', inp)
+    if not inp:
+        return lexicon.not_found()
     cmd, time, name, text = inp.groups()
     text = text.strip()
     channel = str(channel)
