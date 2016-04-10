@@ -59,7 +59,7 @@ def user_last_seen(user, channel):
 
 def quote(inp, channel):
     inp = re.match(
-        r'^(add|del)? ?(\d{4}-\d{2}-\d{2})? ?([\w\d<>^{}[\]\\-]+)(.*)$', inp)
+        r'^(add|del)? ?(\d{4}-\d{2}-\d{2})? ?([\w\d<>^{}[\]\\-]+)?(.*)$', inp)
     cmd, time, name, text = inp.groups()
     text = text.strip()
     channel = str(channel)
@@ -84,8 +84,9 @@ def add_quote(user, channel, text, time=None):
 
 def get_quote(user, channel, index=None):
     user = user.strip().lower()
-    query = db.Quote.select().where(
-        db.Quote.user == user, db.Quote.channel == channel)
+    query = db.Quote.select().where(db.Quote.channel == channel)
+    if user:
+        query = query.where(db.Quote.user == user)
     if not query.exists():
         return lexicon.no_quotes()
     if not index:

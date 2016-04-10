@@ -90,7 +90,7 @@ def find_tags(pages, tags, key='global'):
 def lookup_url(pages, url):
     if '/forum/' in url:
         return
-    pages = [p for p in pages if p.url == url]
+    pages = [p for p in pages if p.url == url.lower()]
     if not pages:
         return lexicon.page_not_found()
     else:

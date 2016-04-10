@@ -54,8 +54,8 @@ def search(bot, tr):
     bot.send(jarvis.scp.find_page(bot.memory['pages'], tr.group(2), tr.sender))
 
 
-@sopel.module.rule(r'(?i)^(scp-[^ ]+)$')
-@sopel.module.rule(r'(?i).*!(scp-[^ ]+)')
+@sopel.module.rule(r'(?i)^(scp-[\d]+(?:-[\w]+)?)$')
+@sopel.module.rule(r'(?i).*!(scp-[\d]+(?:-[\w]+)?)')
 def scp(bot, tr):
     """Display page summary for the matching scp article."""
     url = 'http://www.scp-wiki.net/' + tr.group(1)
