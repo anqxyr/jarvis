@@ -29,7 +29,7 @@
 
 "page_not_found": [
     "E74 - Page Not Found. That's a real error. It's in the book. Look it up.",
-    "The future author of that page haven't wrote it yet.",
+    "The future author of that page haven't written it yet.",
     "You're better off reading something else.",
     "Yesterday, upon the wiki, I saw a page that wasn't there. It didn't rhyme again today.",
     "Your search query does not match any existing pages."],
@@ -61,6 +61,15 @@
 
 "no_tells": [
     "You have no pending tells."],
+
+"all_tells_delivered": [
+    "You don't have any undelivered tells.",
+    "Everything you've sent, has been delivered",
+    "Guess what? They're all gone. I gave away every one of them. They aren't my problem anymore."],
+
+"undelivered_tells": [
+    "You have {total} undelivered tells, including - {users}.",
+    "These people are yet to recieve your tells - {users}. {total} tells in total."],
 
 "user_never_seen": [
     "I've never seen anyone by that name here."],

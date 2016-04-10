@@ -77,6 +77,16 @@ def no_tells():
     return random.choice(messages)
 
 
+def all_tells_delivered():
+    messages = lexicon['all_tells_delivered']
+    return random.choice(messages)
+
+
+def undelivered_tells(total, users):
+    messages = lexicon['undelivered_tells']
+    return random.choice(messages).format(total=total, users=', '.join(users))
+
+
 def user_never_seen():
     messages = lexicon['user_never_seen']
     return random.choice(messages)
@@ -107,6 +117,7 @@ def quote_not_found():
 def quote_deleted():
     messages = lexicon['quote_deleted']
     return random.choice(messages)
+
 ###############################################################################
 
 

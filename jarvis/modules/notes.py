@@ -36,6 +36,17 @@ def send(bot, text, private=False, force=False):
 ###############################################################################
 
 
+@sopel.module.rule('.*')
+@sopel.module.priority('low')
+def chat_activity(bot, tr):
+    jarvis.notes.log_message(tr.nick, tr.sender, tr.group(0))
+    tells = list(jarvis.notes.get_tells(tr.nick))
+    if tells:
+        bot.notice('You have {} new messages'.format(len(tells)), tr.nick)
+    for t in tells:
+        bot.send(t, private=True, force=True)
+
+
 @sopel.module.commands('tell')
 def tell(bot, tr):
     """
@@ -45,14 +56,6 @@ def tell(bot, tr):
     of the channels where the bot is present.
     """
     bot.send(jarvis.notes.store_tell(tr.nick, *tr.group(2).split(maxsplit=1)))
-
-
-@sopel.module.rule('.*')
-@sopel.module.priority('low')
-def chat_activity(bot, tr):
-    jarvis.notes.log_message(tr.nick, tr.sender, tr.group(0))
-    for t in jarvis.notes.get_tells(tr.nick):
-        bot.send(t, private=True, force=True)
 
 
 @sopel.module.commands('showtells', 'showt', 'st')
@@ -68,8 +71,15 @@ def showtells(bot, tr):
     tells = list(jarvis.notes.get_tells(tr.nick))
     if not tells:
         bot.notice(jarvis.lexicon.no_tells(), tr.nick)
-    for t in tells:
-        bot.send(t, private=True, force=True)
+    else:
+        bot.notice('You have {} new messages'.format(len(tells)), tr.nick)
+        for t in tells:
+            bot.send(t, private=True, force=True)
+
+
+@sopel.module.commands('notdelivered', 'nd')
+def notdelivered(bot, tr):
+    bot.notice(jarvis.notes.get_notdelivered_count(tr.nick), tr.nick)
 
 
 @sopel.module.commands('seen')

@@ -44,6 +44,15 @@ def get_tells(user):
         tell.delete_instance()
 
 
+def get_notdelivered_count(user):
+    user = user.strip().lower()
+    query = db.Tell.select().where(db.peewee.fn.Lower(db.Tell.sender) == user)
+    if not query.exists():
+        return lexicon.all_tells_delivered()
+    users = sorted({i.recipient for i in query})
+    return lexicon.undelivered_tells(query.count(), users)
+
+
 def user_last_seen(user, channel):
     user = user.strip().lower()
     query = db.Message.select().where(
@@ -58,11 +67,15 @@ def user_last_seen(user, channel):
 
 
 def quote(inp, channel):
-    inp = re.match(
-        r'^(add|del)? ?(\d{4}-\d{2}-\d{2})? ?(#?[\w\d<>^{}[\]\\-]+)(.*)$', inp)
-    if not inp:
+    inp = inp.strip() if inp else ''
+    parsed = re.match(r'^ *[0-9]* *$', inp)
+    if parsed:
+        return get_quote(None, channel, parsed.group(0).strip())
+    parsed = re.match(
+        r'^(add|del)? ?(\d{4}-\d{2}-\d{2})? ?([\w\d<>^{}[\]\\-]+)(.*)$', inp)
+    if not parsed:
         return lexicon.not_found()
-    cmd, time, name, text = inp.groups()
+    cmd, time, name, text = parsed.groups()
     text = text.strip()
     channel = str(channel)
     if cmd == 'add':
@@ -87,9 +100,9 @@ def add_quote(user, channel, text, time=None):
 
 
 def get_quote(user, channel, index=None):
-    user = user.strip().lower()
     query = db.Quote.select().where(db.Quote.channel == channel)
     if user:
+        user = user.strip().lower()
         query = query.where(db.Quote.user == user)
     if not query.exists():
         return lexicon.no_quotes()
