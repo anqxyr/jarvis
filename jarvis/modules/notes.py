@@ -83,25 +83,32 @@ def seen(bot, tr):
     bot.send(jarvis.notes.user_last_seen(tr.group(2), tr.sender))
 
 
+def channel_quotes_enabled(bot, tr):
+    sssc = bot.channels.get(bot.config.scp.sssc)
+    if tr.sender in bot.config.scp.quotes:
+        return tr.sender
+    elif sssc and tr.sender in sssc.users:
+        return sssc.name
+    else:
+        return
+
+
 @sopel.module.commands('quote', 'q')
 def quote(bot, tr):
-    channels = bot.config.scp.quotes.split(',')
-    if tr.sender not in [i.strip() for i in channels]:
-        return
-    bot.send(jarvis.notes.quote(tr.group(2), tr.sender))
+    channel = channel_quotes_enabled(bot, tr)
+    if channel:
+        bot.send(jarvis.notes.quote(tr.group(2), channel))
 
 
 @sopel.module.commands('rem')
 def rem(bot, tr):
-    channels = bot.config.scp.quotes.split(',')
-    if tr.sender not in [i.strip() for i in channels]:
-        return
-    bot.send(jarvis.notes.add_rem(tr.group(2), tr.sender))
+    channel = channel_quotes_enabled(bot, tr)
+    if channel:
+        bot.send(jarvis.notes.add_rem(tr.group(2), channel))
 
 
 @sopel.module.rule(r'^\?([\w\d-]+)$')
 def get_rem(bot, tr):
-    channels = bot.config.scp.quotes.split(',')
-    if tr.sender not in [i.strip() for i in channels]:
-        return
-    bot.send(jarvis.notes.get_rem(tr.group(1), tr.sender))
+    channel = channel_quotes_enabled(bot, tr)
+    if channel:
+        bot.send(jarvis.notes.get_rem(tr.group(1), channel))
