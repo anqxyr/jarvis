@@ -59,7 +59,7 @@ def user_last_seen(user, channel):
 
 def quote(inp, channel):
     inp = re.match(
-        r'^(add|del)? ?(\d{4}-\d{2}-\d{2})? ?([\w\d<>^{}[\]\\-]+)?(.*)$', inp)
+        r'^(add|del)? ?(\d{4}-\d{2}-\d{2})? ?([\w\d<>^{}[\]\\-]+)(.*)$', inp)
     cmd, time, name, text = inp.groups()
     text = text.strip()
     channel = str(channel)
@@ -67,6 +67,8 @@ def quote(inp, channel):
         return add_quote(name, channel, text, time)
     if cmd == 'del':
         return delete_quote(name, channel, text)
+    if name == channel:
+        name = None
     return get_quote(name, channel, text)
 
 
