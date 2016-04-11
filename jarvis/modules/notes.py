@@ -103,6 +103,16 @@ def channel_quotes_enabled(bot, tr):
         return
 
 
+@sopel.module.require_admin(message='Nope')
+@sopel.module.commands('qw')
+def qw(bot, tr):
+    with open('quotes.txt') as file:
+        quotes = [i for i in file]
+    for q in quotes:
+        jarvis.notes.quote(q, bot.config.scp.sssc)
+    bot.send('FINISHED ADDING {}'.format(len(quotes)))
+
+
 @sopel.module.commands('quote', 'q')
 def quote(bot, tr):
     channel = channel_quotes_enabled(bot, tr)
