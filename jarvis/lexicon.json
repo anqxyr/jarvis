@@ -1,11 +1,21 @@
 {
-"accept": [
-    "I'm on it, boss.",
-    "I will do it.",
-    "Sure, that's exactly what I'll do, meatbag.",
-    "I shall follow your orders, товарищ.",
-    "Consider it done.",
-    "Yeah, yeah, okay, I'll do it."],
+"not_found": [
+    "I couldn't find anything like that.",
+    "I have nothing for you.",
+    "There is nothing here. Null. Void. Nada."],
+"not_found_author": [
+    "Your author is in another castle.",
+    "There is nobody here by that name. Now go away.",
+    "That person has been retconned from existence.",
+    "E72 - Author Not Found. That's a made-up error. I made it up."],
+"not_found_page": [
+    "E74 - Page Not Found. That's a real error. It's in the book. Look it up.",
+    "The future author of that page haven't written it yet.",
+    "You're better off reading something else.",
+    "Yesterday, upon the wiki, I saw a page that wasn't there. It didn't rhyme again today.",
+    "Your search query does not match any existing pages."],
+
+
 
 "reject": [
     "I'm sorry Dave, I'm afraid I can't do that.",
@@ -15,77 +25,77 @@
     "Maybe another time.",
     "How about you do it yourself if you want it that much.",
     "Nope. Nope nope nope nope nope. Nope."],
-
-"not_found": [
-    "I couldn't find anything like that.",
-    "I have nothing for you.",
-    "There is nothing here. Null. Void. Nada."],
-
-"author_not_found": [
-    "Your author is in another castle.",
-    "There is nobody here by that name. Now go away.",
-    "That person has been retconned from existence.",
-    "E72 - Author Not Found. That's a made-up error. I made it up."],
-
-"page_not_found": [
-    "E74 - Page Not Found. That's a real error. It's in the book. Look it up.",
-    "The future author of that page haven't written it yet.",
-    "You're better off reading something else.",
-    "Yesterday, upon the wiki, I saw a page that wasn't there. It didn't rhyme again today.",
-    "Your search query does not match any existing pages."],
-
-"options_few": [
-    "Did you mean {head} or {tail}?"],
-
-"options_many": [
-    "Did you mean {head} or one of the other {tail}?"],
-
-"missing_arguments": [
+"reject_input": [
+    "Repeat that again. Carefully this time."],
+"reject_input_missing": [
     "You'll need to tell what it is you want, before I can go and do it, okay?"],
-
-"bad_index": [
+"reject_input_index": [
     "That's way outside the box, and I'm not going there to look for it in this weather.",
     "A more reasonable index value would be nice."],
-
-"too_many_dice": [
+"reject_dice_incorrect": [
+    "That's a mutant monster killer die! Die! DIE! Why won't you die?! *kills the die*"],
+"reject_dice_too_many": [
     "That's a hella a lot of dice, mister.",
     "No dice. Get it? You get it. Heh."],
 
-"bad_die": [
-    "That's a mutant monster killer die! Die! DIE! Why won't you die?! *kills the die*"],
 
-"tell_stored": [
+
+"accept": [
+    "I'm on it, boss.",
+    "I will do it.",
+    "Sure, that's exactly what I'll do, meatbag.",
+    "I shall follow your orders, товарищ.",
+    "Consider it done.",
+    "Yeah, yeah, okay, I'll do it."],
+"accept_tell_stored": [
     "I will deliver it.",
     "What am I, a postman? Oh well, alright, I'll pass it on.",
     "I'll tell them when I see them."],
 
-"no_tells": [
-    "You have no pending tells."],
 
-"all_tells_delivered": [
+
+"tells_zero_pending": [
+    "You have no pending tells."],
+"tells_zero_stored": [
     "You don't have any undelivered tells.",
     "Everything you've sent, has been delivered",
     "Guess what? They're all gone. I gave away every one of them. They aren't my problem anymore."],
-
-"undelivered_tells": [
+"tells_undelivered": [
     "You have {total} undelivered tells, including - {users}.",
     "These people are yet to recieve your tells - {users}. {total} tells in total."],
+"tells_purged": [
+    "You had {count} tells, and now you have none."],
+
+
 
 "user_never_seen": [
     "I've never seen anyone by that name here."],
 
-"quote_exists": [
-    "Thanks, but I already have one of those."],
+
 
 "quote_added": [
     "I will remember it untils the stars themselves turn cold and die, consumed by the merciless of all monsters - time."],
-
-"no_quotes": [
-    "It looks like they haven't said anything worth remembering yet."],
-
+"quote_exists": [
+    "Thanks, but I already have one of those."],
 "quote_not_found": [
+    "It looks like they haven't said anything worth remembering yet."],
+"quote_delete_failed": [
     "I can't delete something I don't have."],
-
 "quote_deleted": [
-    "I have a feeling I forgot something important, but I can't remember what."]
+    "I have a feeling I forgot something important, but I can't remember what."],
+
+
+"banlist_updated": [
+    "Banlist updated, boss."],
+"banlist_update_failed": [
+    "Your banlist is broken, mate. You should into fixing it."],
+"ban_user_profane_username": [
+    "Kicking {user}: they have a filty mouth that could use some soap.",
+    "{user} is just untasteful, and I don't want their ilk here.",
+    "Was {user} a troll? It was probably a troll."],
+"ban_user_banlist_match": [
+    "{user} was kicked - they're {name}. See, I can kick ass too!",
+    "{user} (better known as {name}) was exiled from this fine and pure kingdom.",
+    "{user} was kicked and banned because they look like {name} and their face smells."]
+
 }

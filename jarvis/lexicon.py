@@ -5,145 +5,25 @@
 ###############################################################################
 
 import json
-import random
 import pathlib
+import random
+import sys
 
 ###############################################################################
 
-with open(str(pathlib.Path(__file__).parent / 'lexicon.json')) as file:
-    lexicon = json.load(file)
+class Lexicon:
 
-###############################################################################
-# Not Found Messages
-###############################################################################
+    def __init__(self):
+        path = pathlib.Path(__file__).parent / 'lexicon.json')
+        with open(str(path)) as file:
+            self.data = json.load(file)
 
-
-def not_found():
-    messages = lexicon['not_found']
-    return random.choice(messages)
-
-
-def author_not_found():
-    messages = lexicon['author_not_found'] + lexicon['not_found']
-    return random.choice(messages)
+    def __getattr__(self, value):
+        keys = [k for k in self.data if value.startswith(k)]
+        if not key:
+            return 'ERROR: missing lexicon entry.'
+        return random.choice(sum([self.data[k] for k in keys], []))
 
 
-def page_not_found():
-    messages = lexicon['page_not_found'] + lexicon['not_found']
-    return random.choice(messages)
+sys.modules[__name__] = Lexicon()
 
-###############################################################################
-
-
-def unclear_input(options):
-    if len(options) <= 5:
-        head, tail = options[:-1], options[-1]
-        messages = lexicon['options_few']
-    else:
-        head, tail = options[:5], len(options[5:])
-        messages = lexicon['options_many']
-    return random.choice(messages).format(head=', '.join(head), tail=tail)
-
-
-def missing_arguments():
-    messages = lexicon['missing_arguments'] + lexicon['reject']
-    return random.choice(messages)
-
-
-def bad_index():
-    messages = lexicon['bad_index'] + lexicon['reject']
-    return random.choice(messages)
-
-
-def too_many_dice():
-    messages = lexicon['too_many_dice'] + lexicon['reject']
-    return random.choice(messages)
-
-
-def bad_die():
-    messages = lexicon['bad_die'] + lexicon['reject']
-    return random.choice(messages)
-
-###############################################################################
-
-
-def tell_stored():
-    messages = lexicon['tell_stored'] + lexicon['accept']
-    return random.choice(messages)
-
-
-def no_tells():
-    messages = lexicon['no_tells']
-    return random.choice(messages)
-
-
-def all_tells_delivered():
-    messages = lexicon['all_tells_delivered']
-    return random.choice(messages)
-
-
-def undelivered_tells(total, users):
-    messages = lexicon['undelivered_tells']
-    return random.choice(messages).format(total=total, users=', '.join(users))
-
-
-def user_never_seen():
-    messages = lexicon['user_never_seen']
-    return random.choice(messages)
-
-###############################################################################
-
-
-def quote_exists():
-    messages = lexicon['quote_exists']
-    return random.choice(messages)
-
-
-def quote_added():
-    messages = lexicon['quote_added'] + lexicon['accept']
-    return random.choice(messages)
-
-
-def no_quotes():
-    messages = lexicon['no_quotes'] + lexicon['not_found']
-    return random.choice(messages)
-
-
-def quote_not_found():
-    messages = lexicon['quote_not_found']
-    return random.choice(messages)
-
-
-def quote_deleted():
-    messages = lexicon['quote_deleted']
-    return random.choice(messages)
-
-###############################################################################
-
-
-def banlist_updated():
-    messages = [
-        "Banlist updated, boss.", ]
-    return random.choice(messages)
-
-
-def banlist_update_failed():
-    messages = [
-        "Your banlist is broken, mate. You should into fixing it.", ]
-    return random.choice(messages)
-
-
-def profane_username(user):
-    messages = [
-        "Kicking {user}: they have a filty mouth that could use some soap.",
-        "{user} is just untasteful, and I don't want their ilk here.",
-        "Was {user} a troll? It was probably a troll.", ]
-    return random.choice(messages).format(user=user.lstrip('~'))
-
-
-def user_in_banlist(user, banned):
-    messages = [
-        "{user} was kicked - they're {banned}. See, I can kick ass too!",
-        "{user} (better known as {banned}) was exiled from this fine and pure kingdom.",
-        "{user} was kicked and banned because they look like {banned} and their face smells."]
-    return random.choice(messages).format(user=user, banned=banned)
