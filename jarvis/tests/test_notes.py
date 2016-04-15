@@ -11,13 +11,38 @@ import jarvis
 jarvis.notes.init()
 
 
+def inlex(res, *args, **kwargs):
+    data = jarvis.lexicon.data
+    for i in args:
+        data = data[i]
+    if kwargs:
+        data = [i.format(**kwargs) for i in data]
+    return res in data
+
+
 def test_tells():
+    jarvis.notes.purge_outbound_tells('sender')
     for i in range(200):
-        jarvis.notes.store_tell('test', 'test', i)
-    #for i in jarvis.notes.get_tells('test'):
-    #    jarvis.notes.store_tell('test', 'test', i)
-    assert list(jarvis.notes.get_tells('test'))
-    assert not list(jarvis.notes.get_tells('test'))
+        r = jarvis.notes.send_tell('sender', 'recipient', 'text')
+        assert inlex(r, 'tell', 'send')
+    r = jarvis.notes.get_outbound_tells_count('sender')
+    assert inlex(r, 'tell', 'outbound_count', total=200, users='recipient')
+    r = jarvis.notes.get_tells('RECIPIENT')
+    assert len(r) == 200
+    for i in range(50):
+        jarvis.notes.send_tell('sender', 'recipient', 'text')
+    r = jarvis.notes.purge_outbound_tells('sender')
+    assert inlex(r, 'tell', 'outbound_purged', count=50)
+    r = jarvis.notes.purge_outbound_tells('sender')
+    assert inlex(r, 'tell', 'outbound_empty')
+
+    r = jarvis.notes.send_tell('sender', '!!!', 'text')
+    assert inlex(r, 'bad_input')
+    r = jarvis.notes.send_tell('sender', 'recipient', '')
+    assert inlex(r, 'bad_input')
+    r = jarvis.notes.send_tell('sender', None, None)
+    assert inlex(r, 'bad_input')
+    assert not jarvis.notes.get_tells('recipient')
 
 
 def test_seen():
