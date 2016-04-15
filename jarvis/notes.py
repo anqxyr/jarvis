@@ -39,11 +39,13 @@ def log_message(user, channel, text):
 
 
 def send_tell(sender, recipient, text):
+    if not recipient:
+        return lexicon.bad_input
     recipient = recipient.strip().lower()
+    if not re.match(r'^@?[\w\[\]{}^]+$', recipient) or not text:
+        return lexicon.bad_input
     sender = str(sender)
     time = arrow.utcnow().timestamp
-    if not re.match(r'^@?[\w\[\]{}^]+$', recipient):
-        return lexicon.bad_input
     if not recipient.startswith('@'):
         db.Tell.create(
             sender=sender, recipient=recipient,
@@ -62,39 +64,43 @@ def send_tell(sender, recipient, text):
 
 def get_tells(user):
     user = user.strip().lower()
-    query = db.Tell.select().where(db.Tell.recipient == user)
-    for tell in query.execute():
+    query = db.Tell.select().where(db.Tell.recipient == user).execute()
+    tells = []
+    for tell in query:
         time = arrow.get(tell.time).humanize()
         if not tell.topic:
-            yield '{} said {}: {}'.format(tell.sender, time, tell.text)
+            tells.append('{} said {}: {}'.format(tell.sender, time, tell.text))
         else:
-            yield '{} said {} via {}: {}'.format(
-                tell.sender, time, tell.topic, tell.text)
-        tell.delete_instance()
+            tells.append('{} said {} via {}: {}'.format(
+                tell.sender, time, tell.topic, tell.text))
+    db.Tell.delete().where(db.Tell.id in [i.id for i in query]).execute()
+    return tells
 
 
-def get_stored_tells_count(user):
+def get_outbound_tells_count(user):
     user = user.strip().lower()
     query = db.Tell.select().where(
         fn.Lower(db.Tell.sender) == user, db.Tell.topic.is_null())
     if not query.exists():
-        return lexicon.tell.storage_empty
+        return lexicon.tell.outbound_empty
     users = ', '.join(sorted({i.recipient for i in query}))
-    return lexicon.tell.storage_count.format(total=query.count(), users=users)
+    return lexicon.tell.outbound_count.format(total=query.count(), users=users)
 
 
-def purge_stored_tells(user):
+def purge_outbound_tells(user):
     user = user.strip().lower()
     query = db.Tell.select().where(
         fn.Lower(db.Tell.sender) == user, db.Tell.topic.is_null())
     if not query.exists():
-        return lexicon.tell.storage_empty
+        return lexicon.tell.outbound_empty
     count = query.count()
     db.Tell.delete().where(fn.Lower(db.Tell.sender) == user).execute()
-    return lexicon.tell.storage_purged.format(count=count)
+    return lexicon.tell.outbound_purged.format(count=count)
 
 
 def get_user_seen(user, channel):
+    if not user:
+        return lexicon.bad_input
     user = user.strip().lower()
     query = db.Message.select().where(
         fn.Lower(db.Message.user) == user,
