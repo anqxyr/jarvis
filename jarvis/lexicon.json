@@ -1,4 +1,109 @@
 {
+
+"bad_input": [
+    "Repeat that again. Carefully this time."],
+
+
+"tell": {
+
+    "send": [
+        "Anything for you, you funny human.",
+        "I'm on it, boss.",
+        "I will do it.",
+        "I'll do it, meatbag.",
+        "Just because I have to do this, doesn't mean I enjoy it.",
+        "I shall follow your orders, товарищ.",
+        "Consider it done.",
+        "Yeah, yeah, okay, I'll do it.",
+        "Hahahahaha yeah alright I'll do it.",
+
+        "I will deliver it.",
+        "What am I, a postman? Oh well, alright, I'll pass it on.",
+        "I'll tell them when I see them.",
+        "I'll send it with an owl. Way more hilarious that way."
+        ],
+
+    "no_new": [
+        "You have no pending tells."
+        ],
+
+    "storage_empty": [
+        "You don't have any undelivered tells.",
+        "Everything you've sent, has been delivered",
+        "Guess what? They're all gone. I gave away every one of them. They aren't my problem anymore."
+        ],
+
+    "storage_count": [
+        "You have {total} undelivered tells, including - {users}.",
+        "These people are yet to recieve your tells - {users}. {total} tells in total."
+        ],
+
+    "storage_purged": [
+        "You had {count} tells, and now you have none.",
+        "{count} little tells, lost in the wind."
+        ]
+    },
+
+
+"topic": {
+
+    "send": [
+        "I will pass it on to {count} users who are inerested in that kind of stuff.",
+        "Did you know there are {count} meatbags here who are into this? I'll be sending it to all of them."
+        ],
+
+    "no_subscribers": [
+        "No one wants to hear about this, so there's really no point in me doing anything."
+        ]
+    },
+
+
+"seen": {
+
+    "last": [
+        "I last saw {user} {time} saying: {text}"
+        ],
+
+    "never": [
+        "I've never seen anyone by that name here."
+        ]
+    },
+
+
+"quote": {
+
+    "saved": [
+        "Anything for you, you funny human.",
+        "I'm on it, boss.",
+        "I will do it.",
+        "I'll do it, meatbag.",
+        "Just because I have to do this, doesn't mean I enjoy it.",
+        "I shall follow your orders, товарищ.",
+        "Consider it done.",
+        "Yeah, yeah, okay, I'll do it.",
+        "Hahahahaha yeah alright I'll do it.",
+
+        "I will remember it untils the stars themselves turn cold and die"
+        ],
+
+    "already_exists": [
+        "Thanks, but I already have one of those."
+        ],
+
+    "none_saved": [
+        "It looks like they haven't said anything worth remembering yet."
+        ],
+
+    "not_found": [
+        "I can't delete something I don't have."
+        ],
+
+    "deleted": [
+        "I have a feeling I forgot something important, but I can't remember what."
+        ]
+    },
+
+
 "not_found": [
     "I couldn't find anything like that.",
     "I have nothing for you.",
@@ -25,8 +130,6 @@
     "Maybe another time.",
     "How about you do it yourself if you want it that much.",
     "Nope. Nope nope nope nope nope. Nope."],
-"reject_input": [
-    "Repeat that again. Carefully this time."],
 "reject_input_missing": [
     "You'll need to tell what it is you want, before I can go and do it, okay?"],
 "reject_input_index": [
@@ -37,52 +140,6 @@
 "reject_dice_too_many": [
     "That's a hella a lot of dice, mister.",
     "No dice. Get it? You get it. Heh."],
-
-
-
-"accept": [
-    "I'm on it, boss.",
-    "I will do it.",
-    "Sure, that's exactly what I'll do, meatbag.",
-    "I shall follow your orders, товарищ.",
-    "Consider it done.",
-    "Yeah, yeah, okay, I'll do it."],
-"accept_tell_stored": [
-    "I will deliver it.",
-    "What am I, a postman? Oh well, alright, I'll pass it on.",
-    "I'll tell them when I see them."],
-
-
-
-"tells_zero_pending": [
-    "You have no pending tells."],
-"tells_zero_stored": [
-    "You don't have any undelivered tells.",
-    "Everything you've sent, has been delivered",
-    "Guess what? They're all gone. I gave away every one of them. They aren't my problem anymore."],
-"tells_undelivered": [
-    "You have {total} undelivered tells, including - {users}.",
-    "These people are yet to recieve your tells - {users}. {total} tells in total."],
-"tells_purged": [
-    "You had {count} tells, and now you have none."],
-
-
-
-"user_never_seen": [
-    "I've never seen anyone by that name here."],
-
-
-
-"quote_added": [
-    "I will remember it untils the stars themselves turn cold and die, consumed by the merciless of all monsters - time."],
-"quote_exists": [
-    "Thanks, but I already have one of those."],
-"quote_not_found": [
-    "It looks like they haven't said anything worth remembering yet."],
-"quote_delete_failed": [
-    "I can't delete something I don't have."],
-"quote_deleted": [
-    "I have a feeling I forgot something important, but I can't remember what."],
 
 
 "banlist_updated": [
