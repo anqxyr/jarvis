@@ -4,7 +4,9 @@
 # Module Imports
 ###############################################################################
 
+import arrow
 import jarvis
+import uuid
 
 ###############################################################################
 
@@ -46,18 +48,35 @@ def test_tells():
 
 
 def test_seen():
-    jarvis.notes.user_last_seen('test', 'test')
-    jarvis.notes.log_message('test', 'test', 'test-message')
-    jarvis.notes.user_last_seen('test', 'test')
+    name = str(uuid.uuid4())
+    r = jarvis.notes.get_user_seen(name, 'test-key')
+    assert inlex(r, 'seen', 'never')
+    time = arrow.utcnow().humanize()
+    jarvis.notes.log_message(name, 'test-key', 'test-message')
+    r = jarvis.notes.get_user_seen(name, 'test-key')
+    assert inlex(r, 'seen', 'last', user=name, time=time, text='test-message')
+    r = jarvis.notes.get_user_seen('', 'test-key')
+    assert inlex(r, 'bad_input')
 
 
 def test_quotes():
-    jarvis.notes.quote('test', 'test')
-    jarvis.notes.quote('test 2', 'test')
-    jarvis.notes.quote('test blah', 'test')
-    jarvis.notes.quote('del test blah', 'test')
-    for i in range(200):
-        jarvis.notes.quote('add test ' + str(i), 'test')
-    jarvis.notes.quote('del test 35', 'test')
-    jarvis.notes.quote('test', 'test')
-    jarvis.notes.quote('test 80', 'test')
+    name = str(uuid.uuid4())
+    r = jarvis.notes.dispatch_quote(name, 'test-key')
+    assert inlex(r, 'quote', 'none_saved')
+    r = jarvis.notes.dispatch_quote(
+        'add {}      this is a test message   '.format(name), 'test-key')
+    assert inlex(r, 'quote', 'saved')
+    r = jarvis.notes.dispatch_quote('add {} test #2'.format(name), 'test-key')
+    assert inlex(r, 'quote', 'saved')
+    r = jarvis.notes.dispatch_quote('add {} test #2'.format(name), 'test-key')
+    assert inlex(r, 'quote', 'already_exists')
+    r = jarvis.notes.dispatch_quote('{}   2'.format(name), 'test-key')
+    assert r == '[2/2] {:YYYY-MM-DD} {}: test #2'.format(arrow.now(), name)
+    r = jarvis.notes.dispatch_quote('{} -1'.format(name), 'test-key')
+    assert inlex(r, 'bad_index')
+    r = jarvis.notes.dispatch_quote('{} gibberish'.format(name), 'test-key')
+    assert inlex(r, 'bad_index')
+    r = jarvis.notes.dispatch_quote('del {} test #2'.format(name), 'test-key')
+    assert inlex(r, 'quote', 'deleted')
+    r = jarvis.notes.dispatch_quote('del {} test #2'.format(name), 'test-key')
+    assert inlex(r, 'quote', 'not_found')
