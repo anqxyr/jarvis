@@ -25,7 +25,8 @@ class BaseModel(peewee.Model):
 class Tell(BaseModel):
     sender = peewee.CharField()
     recipient = peewee.CharField(index=True)
-    message = peewee.TextField()
+    topic = peewee.CharField(null=True)
+    text = peewee.TextField()
     time = peewee.DateTimeField()
 
 
@@ -47,3 +48,12 @@ class Rem(BaseModel):
     user = peewee.CharField(index=True)
     channel = peewee.CharField()
     text = peewee.TextField()
+
+
+class Subscriber(BaseModel):
+    user = peewee.CharField()
+    topic = peewee.CharField(index=True)
+
+
+class Restricted(BaseModel):
+    topic = peewee.CharField(index=True)

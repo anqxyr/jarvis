@@ -40,10 +40,10 @@ def log_message(user, channel, text):
 
 def send_tell(sender, recipient, text):
     if not recipient:
-        return lexicon.bad_input
+        return lexicon.input.incorrect
     recipient = recipient.strip().lower()
-    if not re.match(r'^@?[\w\[\]{}^]+$', recipient) or not text:
-        return lexicon.bad_input
+    if not re.match(r'^@?[\w\[\]{}^|]+$', recipient) or not text:
+        return lexicon.input.incorrect
     sender = str(sender)
     time = arrow.utcnow().timestamp
     if not recipient.startswith('@'):
@@ -100,7 +100,7 @@ def purge_outbound_tells(user):
 
 def get_user_seen(user, channel):
     if not user:
-        return lexicon.bad_input
+        return lexicon.input.incorrect
     user = user.strip().lower()
     query = db.Message.select().where(
         fn.Lower(db.Message.user) == user,
@@ -121,7 +121,7 @@ def dispatch_quote(inp, channel):
     parsed = re.match(
         r'^(add|del)? ?(\d{4}-\d{2}-\d{2})? ?([\w\d<>^{}[\]\\-]+)(.*)$', inp)
     if not parsed:
-        return lexicon.bad_input
+        return lexicon.input.incorrect
     cmd, time, name, text = parsed.groups()
     text = text.strip()
     channel = str(channel).strip()
@@ -159,9 +159,9 @@ def get_quote(user, channel, index=None):
         try:
             index = int(index)
         except ValueError:
-            return lexicon.bad_index
+            return lexicon.input.bad_index
         if index not in range(1, query.count() + 1):
-            return lexicon.bad_index
+            return lexicon.input.bad_index
     quote = list(query.order_by(db.Quote.id))[int(index) - 1]
     return '[{}/{}] {} {}: {}'.format(
         index, query.count(), quote.time, quote.user, quote.text)
@@ -195,5 +195,5 @@ def recall_user(user, channel):
         rem = db.Rem.select().where(
             db.Rem.user == user, db.Rem.channel == channel).get()
     except db.Rem.DoesNotExist:
-        return lexicon.not_found
+        return lexicon.not_found.generic
     return rem.text

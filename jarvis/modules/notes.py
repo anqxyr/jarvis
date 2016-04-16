@@ -55,11 +55,11 @@ def tell(bot, tr):
     The message will be delivered the next time the user is active in any
     of the channels where the bot is present.
     """
-    bot.send(jarvis.notes.store_tell(tr.nick, *tr.group(2).split(maxsplit=1)))
+    bot.send(jarvis.notes.send_tell(tr.nick, *tr.group(2).split(maxsplit=1)))
 
 
 @sopel.module.commands('showtells', 'showt', 'st')
-def showtells(bot, tr):
+def get_tells(bot, tr):
     """
     Show messages sent to you by other users.
 
@@ -70,7 +70,7 @@ def showtells(bot, tr):
     """
     tells = list(jarvis.notes.get_tells(tr.nick))
     if not tells:
-        bot.notice(jarvis.lexicon.no_tells(), tr.nick)
+        bot.notice(jarvis.lexicon.tell.no_new, tr.nick)
     else:
         bot.notice('You have {} new messages'.format(len(tells)), tr.nick)
         for t in tells:
@@ -78,19 +78,24 @@ def showtells(bot, tr):
 
 
 @sopel.module.commands('notdelivered', 'nd')
-def notdelivered(bot, tr):
-    bot.notice(jarvis.notes.get_notdelivered_count(tr.nick), tr.nick)
+def get_stored_tells_count(bot, tr):
+    bot.notice(jarvis.notes.get_stored_tells_count(tr.nick), tr.nick)
+
+
+@sopel.module.commands('purgetells')
+def purge_stored_tells(bot, tr):
+    bot.notice(jarvis.notes.purge_stored_tells(tr.nick), tr.nick)
 
 
 @sopel.module.commands('seen')
-def seen(bot, tr):
+def get_user_seen(bot, tr):
     """
     Check when the user was last seen.
 
     Results are channel specific. You must issue the command in the same
     channel where you want to check for the user.
     """
-    bot.send(jarvis.notes.user_last_seen(tr.group(2), tr.sender))
+    bot.send(jarvis.notes.get_user_seen(tr.group(2), tr.sender))
 
 
 def channel_quotes_enabled(bot, tr):
@@ -117,18 +122,18 @@ def qw(bot, tr):
 def quote(bot, tr):
     channel = channel_quotes_enabled(bot, tr)
     if channel:
-        bot.send(jarvis.notes.quote(tr.group(2), channel))
+        bot.send(jarvis.notes.dispatch_quote(tr.group(2), channel))
 
 
 @sopel.module.commands('rem')
 def rem(bot, tr):
     channel = channel_quotes_enabled(bot, tr)
     if channel:
-        bot.send(jarvis.notes.add_rem(tr.group(2), channel))
+        bot.send(jarvis.notes.remember_user(tr.group(2), channel))
 
 
 @sopel.module.rule(r'^\?([\w\d-]+)$')
 def get_rem(bot, tr):
     channel = channel_quotes_enabled(bot, tr)
     if channel:
-        bot.send(jarvis.notes.get_rem(tr.group(1), channel))
+        bot.send(jarvis.notes.recall_user(tr.group(1), channel))

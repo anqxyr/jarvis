@@ -1,7 +1,38 @@
 {
 
-"bad_input": [
-    "Repeat that again. Carefully this time."],
+
+"input": {
+
+    "incorrect": [
+        "Repeat that again. Carefully this time.",
+        "You're talking nonsense.",
+        "I'm sorry Dave, I'm afraid I can't do that.",
+        "No dice.",
+        "No such luck.",
+        "Are you sure this is what you want me to do? (Hint: it isn't)",
+        "Maybe another time.",
+        "How about you do it yourself if you want it that much.",
+        "Nope. Nope nope nope nope nope. Nope."
+        ],
+
+    "bad_index": [
+        "That's way outside the box, and I'm not going there to look for it in this weather.",
+        "A more reasonable index value would be nice."
+        ],
+
+    "options": [
+        "Did you mean {head} or {tail}?",
+        "{head} or {tail}. Pick one."
+        ],
+
+    "cropped_options": [
+        "I have so many choices for you: {head} and another {tail}! Isn't it wonderful?"
+        ],
+
+    "missing": [
+        "You'll need to tell what it is you want, before I can go and do it, okay?"
+        ]
+    },
 
 
 "tell": {
@@ -27,18 +58,18 @@
         "You have no pending tells."
         ],
 
-    "storage_empty": [
+    "outbound_empty": [
         "You don't have any undelivered tells.",
         "Everything you've sent, has been delivered",
         "Guess what? They're all gone. I gave away every one of them. They aren't my problem anymore."
         ],
 
-    "storage_count": [
+    "outbound_count": [
         "You have {total} undelivered tells, including - {users}.",
         "These people are yet to recieve your tells - {users}. {total} tells in total."
         ],
 
-    "storage_purged": [
+    "outbound_purged": [
         "You had {count} tells, and now you have none.",
         "{count} little tells, lost in the wind."
         ]
@@ -104,42 +135,40 @@
     },
 
 
-"not_found": [
-    "I couldn't find anything like that.",
-    "I have nothing for you.",
-    "There is nothing here. Null. Void. Nada."],
-"not_found_author": [
-    "Your author is in another castle.",
-    "There is nobody here by that name. Now go away.",
-    "That person has been retconned from existence.",
-    "E72 - Author Not Found. That's a made-up error. I made it up."],
-"not_found_page": [
-    "E74 - Page Not Found. That's a real error. It's in the book. Look it up.",
-    "The future author of that page haven't written it yet.",
-    "You're better off reading something else.",
-    "Yesterday, upon the wiki, I saw a page that wasn't there. It didn't rhyme again today.",
-    "Your search query does not match any existing pages."],
+"not_found": {
+    
+    "generic": [
+        "I couldn't find anything like that.",
+        "I have nothing for you.",
+        "There is nothing here. Null. Void. Nada."],
+
+    "author": [
+        "Your author is in another castle.",
+        "There is nobody here by that name. Now go away.",
+        "That person has been retconned from existence.",
+        "E72 - Author Not Found. That's a made-up error. I made it up."],
+    
+    "page": [
+        "E74 - Page Not Found. That's a real error. It's in the book. Look it up.",
+        "The future author of that page haven't written it yet.",
+        "You're better off reading something else.",
+        "Yesterday, upon the wiki, I saw a page that wasn't there. It didn't rhyme again today.",
+        "Your search query does not match any existing pages."]
+    },
 
 
+"dice": {
 
-"reject": [
-    "I'm sorry Dave, I'm afraid I can't do that.",
-    "No dice.",
-    "No such luck.",
-    "Are you sure this is what you want me to do? (Hint: it isn't)",
-    "Maybe another time.",
-    "How about you do it yourself if you want it that much.",
-    "Nope. Nope nope nope nope nope. Nope."],
-"reject_input_missing": [
-    "You'll need to tell what it is you want, before I can go and do it, okay?"],
-"reject_input_index": [
-    "That's way outside the box, and I'm not going there to look for it in this weather.",
-    "A more reasonable index value would be nice."],
-"reject_dice_incorrect": [
-    "That's a mutant monster killer die! Die! DIE! Why won't you die?! *kills the die*"],
-"reject_dice_too_many": [
-    "That's a hella a lot of dice, mister.",
-    "No dice. Get it? You get it. Heh."],
+    "incorrect": [
+        "That's a mutant monster killer die! Die! DIE! Why won't you die?! *kills the die*",
+        "No dice. Get it? You get it. Heh."
+        ],
+
+    "too_many": [
+        "That's a hella a lot of dice, mister.",
+        "No dice. Get it? You get it. Heh."
+        ]
+    },
 
 
 "banlist_updated": [

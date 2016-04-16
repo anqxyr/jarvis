@@ -4,30 +4,47 @@
 # Module Imports
 ###############################################################################
 
-import pytest
 import jarvis
 
 ###############################################################################
 
 
+def inlex(res, *args, **kwargs):
+    data = jarvis.lexicon.data
+    for i in args:
+        data = data[i]
+    if kwargs:
+        data = [i.format(**kwargs) for i in data]
+    return res in data
+
+
 def test_remember_and_recall():
-    jarvis.tools.recall(1, 'test')
-    jarvis.tools.remember([1, 2, 3], 'test')
-    jarvis.tools.recall(1, 'test')
-    jarvis.tools.recall(' 2  ', 'test')
-    jarvis.tools.recall(0, 'test')
-    jarvis.tools.recall(20, 'test')
-    jarvis.tools.recall(None, 'test')
-    jarvis.tools.recall(1, 'test')
-    jarvis.tools.recall(1, 'blah')
-    jarvis.tools.recall('buggy_string_index', 'test')
+    r = jarvis.tools.recall(1, 'test-key')
+    assert inlex(r, 'not_found', 'generic')
+    jarvis.tools.remember([1, 2, 3], 'test-key')
+    r = jarvis.tools.recall(1, 'test-key')
+    assert r == 1
+    r = jarvis.tools.recall(' 2  ', 'test-key')
+    assert r == 2
+    r = jarvis.tools.recall(0, 'test-key')
+    assert inlex(r, 'input', 'bad_index')
+    r = jarvis.tools.recall(20, 'test-key')
+    assert inlex(r, 'input', 'bad_index')
+    r = jarvis.tools.recall(None, 'test-key')
+    assert inlex(r, 'input', 'bad_index')
+    r = jarvis.tools.recall('buggy_string_index', 'test-key')
+    assert inlex(r, 'input', 'bad_index')
 
 
 def test_choose():
-    jarvis.tools.choose('yellow, green, red')
-    jarvis.tools.choose('yellow')
-    jarvis.tools.choose('yellow, ,red')
-    jarvis.tools.choose(None)
+    r = jarvis.tools.choose('yellow, green, red')
+    assert r in {'yellow', 'green', 'red'}
+    r = jarvis.tools.choose('yellow')
+    assert r == 'yellow'
+    r = jarvis.tools.choose('yellow, ,red')
+    assert r in {'yellow', 'red'}
+    r = jarvis.tools.choose(None)
+    assert inlex(r, 'input', 'missing')
 
 
 def test_roll_dice():
