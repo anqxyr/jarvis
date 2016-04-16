@@ -32,7 +32,7 @@ def test_tells():
     r = jarvis.notes.get_tells('RECIPIENT')
     assert len(r) == 200
     for i in range(50):
-        jarvis.notes.send_tell('sender', 'recipient', 'text')
+        jarvis.notes.send_tell('sender', 'recipi|ent', 'text')
     r = jarvis.notes.purge_outbound_tells('sender')
     assert inlex(r, 'tell', 'outbound_purged', count=50)
     r = jarvis.notes.purge_outbound_tells('sender')
