@@ -171,17 +171,26 @@
     },
 
 
-"banlist_updated": [
-    "Banlist updated, boss."],
-"banlist_update_failed": [
-    "Your banlist is broken, mate. You should into fixing it."],
-"ban_user_profane_username": [
-    "Kicking {user}: they have a filty mouth that could use some soap.",
-    "{user} is just untasteful, and I don't want their ilk here.",
-    "Was {user} a troll? It was probably a troll."],
-"ban_user_banlist_match": [
-    "{user} was kicked - they're {name}. See, I can kick ass too!",
-    "{user} (better known as {name}) was exiled from this fine and pure kingdom.",
-    "{user} was kicked and banned because they look like {name} and their face smells."]
+"bans": {
 
+    "updated": [
+        "Banlist updated, boss."
+        ],
+
+    "failed": [
+        "Your banlist is broken, mate. You should into fixing it."
+        ],
+
+    "profanity": [
+        "Kicking {user}: they have a filty mouth that could use some soap.",
+        "{user} is just untasteful, and I don't want their ilk here.",
+        "Was {user} a troll? It was probably a troll."
+        ],
+
+    "evasion": [
+        "{user} was kicked - they're {name}. See, I can kick ass too!",
+        "{user} (better known as {name}) was exiled from this fine and pure kingdom.",
+        "{user} was kicked and banned because they look like {name} and their face smells."
+        ]
+    }
 }
