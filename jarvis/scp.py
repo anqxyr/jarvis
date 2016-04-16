@@ -7,9 +7,7 @@
 
 import re
 
-from . import ext
-from . import tools
-from . import lexicon
+from . import ext, tools, lexicon
 
 ###############################################################################
 # Find And Lookup Functions
@@ -18,27 +16,27 @@ from . import lexicon
 
 def find_author(pages, partial, key='global'):
     if not partial:
-        return lexicon.missing_arguments()
+        return lexicon.input.incorrect
     partial = partial.strip().lower()
     authors = {p.author for p in pages}
     matches = sorted(a for a in authors if partial in a.lower())
     if not matches:
-        return lexicon.author_not_found()
+        return lexicon.not_found.author
     elif len(matches) == 1:
         return get_author_summary(pages, matches[0])
     else:
         tools.remember(matches, key, lambda x: get_author_summary(pages, x))
-        return lexicon.unclear_input(matches)
+        return tools.choose_input(matches)
 
 
 def update_author_details(pages, partial, stwiki, key='global'):
     if not partial:
-        return lexicon.missing_arguments()
+        return lexicon.input.incorrect
     partial = partial.strip().lower()
     authors = {p.author for p in pages}
     matches = sorted(a for a in authors if partial in a.lower())
     if not matches:
-        return lexicon.author_not_found()
+        return lexicon.not_found.author
     elif len(matches) == 1:
         data = get_author_details(pages, matches[0])
         p = stwiki('user:' + matches[0])
@@ -48,16 +46,16 @@ def update_author_details(pages, partial, stwiki, key='global'):
         tools.remember(
             matches, key,
             lambda x: update_author_details(pages, x, stwiki, key))
-        return lexicon.unclear_input(matches)
+        return tools.choose_input(matches)
 
 
 def find_page(pages, partial, key='global'):
     if not partial:
-        return lexicon.missing_arguments()
+        return lexicon.input.missing
     words = partial.lower().split()
     matches = [p for p in pages if all(w in p.title.lower() for w in words)]
     if not matches:
-        return lexicon.page_not_found()
+        return lexicon.not_found.page
     elif len(matches) == 1:
         return get_page_summary(matches[0])
     else:
@@ -75,11 +73,11 @@ def find_tale(pages, partial, key='global'):
 
 def find_tags(pages, tags, key='global'):
     if not tags:
-        return lexicon.missing_arguments()
+        return lexicon.input.missing
     tags = set(tags.strip().split())
     matches = [p for p in pages if p.tags >= set(tags)]
     if not matches:
-        return lexicon.page_not_found()
+        return lexicon.not_found.page
     elif len(matches) == 1:
         return get_page_summary(matches[0])
     else:
@@ -92,7 +90,7 @@ def lookup_url(pages, url):
         return
     pages = [p for p in pages if p.url == url.lower()]
     if not pages:
-        return lexicon.page_not_found()
+        return lexicon.not_found.page
     else:
         return get_page_summary(pages[0])
 
