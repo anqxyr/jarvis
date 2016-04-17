@@ -155,6 +155,11 @@ def errors(bot, tr):
     bot.send(jarvis.scp.get_error_report(bot.memory['pages']))
 
 
+@sopel.module.commands('random')
+def get_random_page(bot, tr):
+    bot.send(jarvis.scp.get_random_page(bot.memory['pages'], tr.group(2)))
+
+
 @sopel.module.interval(3600)
 def refresh_page_cache(bot):
     bot.memory['pages'] = jarvis.ext.PageView(bot._wiki.list_pages(

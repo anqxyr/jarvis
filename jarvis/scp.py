@@ -6,6 +6,7 @@
 ###############################################################################
 
 import re
+import random
 
 from . import ext, tools, lexicon
 
@@ -211,3 +212,11 @@ def get_error_report(pages):
     if output:
         return output
     return 'I found no errors.'
+
+
+def get_random_page(pages, tag):
+    pages = pages[tag.strip().lower()] if tag else pages
+    if pages:
+        return get_page_summary(random.choice(pages))
+    else:
+        return lexicon.not_found.page
