@@ -39,11 +39,11 @@ def test_tells():
     assert inlex(r, 'tell', 'outbound_empty')
 
     r = jarvis.notes.send_tell('sender', '!!!', 'text')
-    assert inlex(r, 'bad_input')
+    assert inlex(r, 'input', 'incorrect')
     r = jarvis.notes.send_tell('sender', 'recipient', '')
-    assert inlex(r, 'bad_input')
+    assert inlex(r, 'input', 'incorrect')
     r = jarvis.notes.send_tell('sender', None, None)
-    assert inlex(r, 'bad_input')
+    assert inlex(r, 'input', 'incorrect')
     assert not jarvis.notes.get_tells('recipient')
 
 
@@ -56,7 +56,7 @@ def test_seen():
     r = jarvis.notes.get_user_seen(name, 'test-key')
     assert inlex(r, 'seen', 'last', user=name, time=time, text='test-message')
     r = jarvis.notes.get_user_seen('', 'test-key')
-    assert inlex(r, 'bad_input')
+    assert inlex(r, 'input', 'incorrect')
 
 
 def test_quotes():
@@ -73,9 +73,9 @@ def test_quotes():
     r = jarvis.notes.dispatch_quote('{}   2'.format(name), 'test-key')
     assert r == '[2/2] {:YYYY-MM-DD} {}: test #2'.format(arrow.now(), name)
     r = jarvis.notes.dispatch_quote('{} -1'.format(name), 'test-key')
-    assert inlex(r, 'bad_index')
+    assert inlex(r, 'input', 'bad_index')
     r = jarvis.notes.dispatch_quote('{} gibberish'.format(name), 'test-key')
-    assert inlex(r, 'bad_index')
+    assert inlex(r, 'input', 'bad_index')
     r = jarvis.notes.dispatch_quote('del {} test #2'.format(name), 'test-key')
     assert inlex(r, 'quote', 'deleted')
     r = jarvis.notes.dispatch_quote('del {} test #2'.format(name), 'test-key')

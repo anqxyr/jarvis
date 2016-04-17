@@ -7,30 +7,43 @@
         "Repeat that again. Carefully this time.",
         "You're talking nonsense.",
         "I'm sorry Dave, I'm afraid I can't do that.",
-        "No dice.",
-        "No such luck.",
         "Are you sure this is what you want me to do? (Hint: it isn't)",
-        "Maybe another time.",
         "How about you do it yourself if you want it that much.",
-        "Nope. Nope nope nope nope nope. Nope."
+        "Nope. Nope nope nope nope nope. Nope.",
+        "Speak up boy, I can't hear you.",
+        "It appears you are wrong. How utterly shocking.",
+        "Nah, I'm not gonna do something like that."
         ],
 
     "bad_index": [
         "That's way outside the box, and I'm not going there to look for it in this weather.",
-        "A more reasonable index value would be nice."
+        "A more reasonable index value would be nice.",
+        "This index is no good. Try another one.",
+        "I think maybe this index is not within the range of my abilities."
         ],
 
     "options": [
         "Did you mean {head} or {tail}?",
-        "{head} or {tail}. Pick one."
+        "{head} or {tail}. Pick one.",
+        "Ambiguous input. Possible variants: {head}, {tail}.",
+        "I'm not sure whether you meant {head} or {tail}.",
+        "Not quite sure what you wanted here. Was it {head} or {tail}?",
+        "Let me guess. Did you want {head}? Or perhaps {tail}?"
         ],
 
     "cropped_options": [
-        "I have so many choices for you: {head} and another {tail}! Isn't it wonderful?"
+        "I have so many choices for you: {head} and another {tail}! Isn't it wonderful?",
+        "Unclear. Clarify. Options: {head}. Number of additional options: {tail}",
+        "Did you mean {head}? You can use !showmore to check another {tail} matches.",
+        "Now you choose: {head}. ({tail} more)"
         ],
 
     "missing": [
-        "You'll need to tell what it is you want, before I can go and do it, okay?"
+        "You'll need to tell what it is you want, before I can go and do it, okay?",
+        "You don't have enough arguments in your command.",
+        "Did you forget to type something? Yes you did.",
+        "That's not enough.",
+        "That's called a Missing Argument Exception or something like that, I don't really know."
         ]
     },
 
@@ -38,6 +51,12 @@
 "tell": {
 
     "send": [
+        "Yup.",
+        "Right away",
+        "k",
+        "It will be done.",
+        "Sure, pal, sure.",
+        "да",
         "Anything for you, you funny human.",
         "I'm on it, boss.",
         "I will do it.",
@@ -47,31 +66,46 @@
         "Consider it done.",
         "Yeah, yeah, okay, I'll do it.",
         "Hahahahaha yeah alright I'll do it.",
-
+        "It's on its way.",
         "I will deliver it.",
         "What am I, a postman? Oh well, alright, I'll pass it on.",
         "I'll tell them when I see them.",
-        "I'll send it with an owl. Way more hilarious that way."
+        "I'll send it with an owl. Way more hilarious that way.",
+        "Your message has begun its journey through a series of tubes. Who knows where will it end, or when.",
+        "I'm sending it.",
+        "Just let me call USPS real quick, and it'll be on its way.",
+        "I have a trained pigeon I've been saving just for such occasion.",
+        "Initiating Comm Array startup sequence in 3, 2, 1..."
         ],
 
     "no_new": [
-        "You have no pending tells."
+        "You have no pending tells.",
+        "No new tells today.",
+        "There's nothing here.",
+        "You have 4 new messages. Wait, no, those are for someone else. Nevermind.",
+        "Still no tells.",
+        "I don't recall anyone sending you anything."
         ],
 
     "outbound_empty": [
         "You don't have any undelivered tells.",
         "Everything you've sent, has been delivered",
-        "Guess what? They're all gone. I gave away every one of them. They aren't my problem anymore."
+        "I've already delivered everything.",
+        "This place is empty."
         ],
 
     "outbound_count": [
-        "You have {total} undelivered tells, including - {users}.",
-        "These people are yet to recieve your tells - {users}. {total} tells in total."
+        "You have {total} outbound tells, including - {users}.",
+        "In the past, you've sent {total} tells that haven't been delivered yet. You sent them to {users}.",
+        "{total} tells - {users}.",
+        "I found some tells to {users}. In total - {total} tells."
         ],
 
     "outbound_purged": [
-        "You had {count} tells, and now you have none.",
-        "{count} little tells, lost in the wind."
+        "You had {count} outbound tells, and now you have none.",
+        "{count} little tells, lost in the wind.",
+        "Your {count} tells will not be delivered.",
+        "I'm burning them in the fireplace, one by one, all {count} of them."
         ]
     },
 
@@ -79,26 +113,47 @@
 "topic": {
 
     "send": [
-        "I will pass it on to {count} users who are inerested in that kind of stuff.",
-        "Did you know there are {count} meatbags here who are into this? I'll be sending it to all of them."
+        "I will pass it on to {count} users who are interested in that kind of stuff.",
+        "Did you know there are {count} meatbags here who are into this? I'll be sending it to all of them.",
+        "Sending to {count} users.",
+        "I will let each of the {count} subscribers know.",
+        "Great, now I'll have to buy {count} envelopes to send your message to everyone.",
+        "{count} whispers, watch as they fly."
         ],
 
     "no_subscribers": [
-        "No one wants to hear about this, so there's really no point in me doing anything."
+        "No one wants to hear about this, so there's really no point in me doing anything.",
+        "No one is interested in this topic.",
+        "The topic you chose has zero subscribers. Such a shame.",
+        "Someone has to subscribe to that topic first.",
+        "Oh sure, I'll just pretend I'm sending this into a void where no one will ever hear it."        
         ],
 
     "subscribed": [
-        "You've subscribed to @{topic}. Good for you."
+        "You've subscribed to @{topic}. Good for you.",
+        "@{topic} has 1 new subscriber - you!",
+        "Another nerd joining the @{topic} club.",
+        "You humans and your cliques. Fine, I'll add you to @{topic}. Don't say I didn't warn you.",
+        "@{topic}: +1",
+        "Adding @{topic} to the rest of your subscriptions. Are you happy now?"        
         ],
 
     "not_subscribed": [
-        "Looks like you aren't subscribed to it in the first place. So what do you want from me?"],
+        "Looks like you aren't subscribed to it in the first place. So what do you want from me?",
+        "Sorry pal, can't unsubscribe from something you're not subscribed to.",
+        "Can't do that, nope. Try subscribing to it first.",
+        "That would be an interesting trick to pull of. But I'm not doing it."],
 
     "unsubscribed": [
-        "You're no longer subscribed to @{topic}. Good riddance."],
+        "You're no longer subscribed to @{topic}. Good riddance.",
+        "And so @{topic} loses another brave soldier this day.",
+        "@{topic} just lost another one.",
+        "Fine, I'll stop pestering you about @{topic}.",
+        "Forgetting your subscription to @{topic}."],
 
     "count": [
-        "There exists at this time a total of {count} topics. Of those, you are subscribed to the following: {topics}"
+        "There exists at this time a total of {count} topics. Of those, you are subscribed to the following: {topics}",
+        "Your subscriptions: {topics}. {count} total topics."
         ],
 
     "user_has_no_topics": [

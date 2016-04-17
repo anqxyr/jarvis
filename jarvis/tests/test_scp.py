@@ -37,7 +37,9 @@ def test_find_author():
     r = jarvis.scp.find_author(pages, 'anq')
     assert r == jarvis.scp.get_author_summary(pages, 'anqxyr')
     r = jarvis.scp.find_author(pages, 'gears')
-    assert inlex(r, 'input', 'options', head='Dr Gears', tail='TwistedGears')
+    assert inlex(
+        r, 'input', 'options',
+        head='\x02Dr Gears\x02', tail='\x02TwistedGears\x02')
     r = jarvis.tools.recall(2, 'global')
     assert r == jarvis.scp.get_author_summary(pages, 'TwistedGears')
     r = jarvis.scp.find_author(pages, '!!!')
@@ -54,7 +56,9 @@ def test_update_author_details():
     r = jarvis.scp.update_author_details(pages, 'VOCT', stwiki)
     assert r == 'http://scp-stats.wikidot.com/user:voct'
     r = jarvis.scp.update_author_details(pages, 'gears', stwiki)
-    inlex(r, 'input', 'options', head='Dr Gears', tail='TwistedGears')
+    inlex(
+        r, 'input', 'options',
+        head='\x02Dr Gears\x02', tail='\x02TwistedGears\x02')
     r = jarvis.tools.recall(1, 'global')
     assert r == 'http://scp-stats.wikidot.com/user:dr-gears'
     r = jarvis.scp.update_author_details(pages, '!!!', stwiki)
