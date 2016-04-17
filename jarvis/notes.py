@@ -79,7 +79,7 @@ def get_tells(user):
         else:
             tells.append('{} said {} via @{}: {}'.format(
                 tell.sender, time, tell.topic, tell.text))
-    db.Tell.delete().where(db.Tell.id in [i.id for i in query]).execute()
+        tell.delete_instance()
     return tells
 
 
