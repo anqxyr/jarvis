@@ -85,6 +85,36 @@
 
     "no_subscribers": [
         "No one wants to hear about this, so there's really no point in me doing anything."
+        ],
+
+    "subscribed": [
+        "You've subscribed to @{topic}. Good for you."
+        ],
+
+    "not_subscribed": [
+        "Looks like you aren't subscribed to it in the first place. So what do you want from me?"],
+
+    "unsubscribed": [
+        "You're no longer subscribed to @{topic}. Good riddance."],
+
+    "count": [
+        "There exists at this time a total of {count} topics. Of those, you are subscribed to the following: {topics}"
+        ],
+
+    "user_has_no_topics": [
+        "I know of {count} different topics. Alas, you aren't subscribed to any of them."
+        ],
+
+    "restricted": [
+        "This topic is now restricted. Only certain users will be allowed to subscribe to it."
+        ],
+
+    "not_restricted": [
+        "I can't really do that. It isn't actually restricted in the first place"
+        ],
+
+    "unrestricted": [
+        "The topic is no longer restricted."
         ]
     },
 
@@ -192,5 +222,10 @@
         "{user} (better known as {name}) was exiled from this fine and pure kingdom.",
         "{user} was kicked and banned because they look like {name} and their face smells."
         ]
-    }
+    },
+
+
+"denied": [
+    "You are not allowed to do that."]
+
 }

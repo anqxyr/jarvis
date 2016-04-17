@@ -11,7 +11,7 @@ from peewee import fn
 from playhouse import migrate
 import peewee
 
-from . import db, tools, lexicon
+from . import db, lexicon
 
 ###############################################################################
 
@@ -22,6 +22,8 @@ def init():
     db.Message.create_table(True)
     db.Quote.create_table(True)
     db.Rem.create_table(True)
+    db.Subscriber.create_table(True)
+    db.Restricted.create_table(True)
 
     try:
         migrator = migrate.SqliteMigrator(db.db)
@@ -52,13 +54,14 @@ def send_tell(sender, recipient, text):
             text=text, time=time, topic=None)
         return lexicon.tell.send
     else:
-        users = db.Subscriber.select().where(db.Subscriber.topic == recipient)
+        topic = recipient.strip().lower().lstrip('@')
+        users = db.Subscriber.select().where(db.Subscriber.topic == topic)
         users = [i.user for i in users]
         if not users:
             return lexicon.topic.no_subscribers
         db.Tell.insert_many(dict(
             sender=sender, recipient=user, text=text,
-            time=time, topic=recipient) for user in users)
+            time=time, topic=topic) for user in users).execute()
         return lexicon.topic.send.format(count=len(users))
 
 
@@ -71,7 +74,7 @@ def get_tells(user):
         if not tell.topic:
             tells.append('{} said {}: {}'.format(tell.sender, time, tell.text))
         else:
-            tells.append('{} said {} via {}: {}'.format(
+            tells.append('{} said {} via @{}: {}'.format(
                 tell.sender, time, tell.topic, tell.text))
     db.Tell.delete().where(db.Tell.id in [i.id for i in query]).execute()
     return tells
@@ -197,3 +200,57 @@ def recall_user(user, channel):
     except db.Rem.DoesNotExist:
         return lexicon.not_found.generic
     return rem.text
+
+
+def subscribe_to_topic(user, topic, super):
+    user = user.strip().lower()
+    if not topic:
+        return lexicon.input.missing
+    topic = topic.strip().lower().lstrip('@')
+    if (not super and db.Restricted.select().where(
+            db.Restricted.topic == topic).exists()):
+        return lexicon.denied
+    db.Subscriber.create(user=user, topic=topic)
+    return lexicon.topic.subscribed.format(topic=topic)
+
+
+def unsubscribe_from_topic(user, topic):
+    user = user.strip().lower()
+    if not topic:
+        return lexicon.input.missing
+    topic = topic.strip().lower().lstrip('@')
+    query = db.Subscriber.select().where(
+        db.Subscriber.user == user, db.Subscriber.topic == topic)
+    if not query.exists():
+        return lexicon.topic.not_subscribed
+    query.get().delete_instance()
+    return lexicon.topic.unsubscribed.format(topic=topic)
+
+
+def get_topics_count(user):
+    user = user.strip().lower()
+    count = db.Subscriber.select().distinct(db.Subscriber.topic).count()
+    query = db.Subscriber.select().where(db.Subscriber.user == user)
+    if not query.exists():
+        return lexicon.topic.user_has_no_topics.format(count=count)
+    topics = [i.topic for i in query]
+    return lexicon.topic.count.format(count=count, topics=', '.join(topics))
+
+
+def restrict_topic(topic, super):
+    if not super:
+        return lexicon.denied
+    topic = topic.strip().lower().lstrip('@')
+    db.Restricted.create(topic=topic)
+    return lexicon.topic.restricted
+
+
+def unrestrict_topic(topic, super):
+    if not super:
+        return lexicon.denied
+    topic = topic.strip().lower().lstrip('@')
+    query = db.Restricted.select().where(db.Restricted.topic == topic)
+    if not query.exists():
+        return lexicon.topic.not_restricted
+    query.get().delete_instance()
+    return lexicon.topic.unrestricted

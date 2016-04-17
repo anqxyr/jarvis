@@ -137,3 +137,31 @@ def get_rem(bot, tr):
     channel = channel_quotes_enabled(bot, tr)
     if channel:
         bot.send(jarvis.notes.recall_user(tr.group(1), channel))
+
+
+@sopel.module.commands('subscribe')
+def subscribe_to_topic(bot, tr):
+    bot.send(jarvis.notes.subscribe_to_topic(
+        tr.nick, tr.group(2), tr.sender == bot.config.scp.sssc))
+
+
+@sopel.module.commands('unsubscribe')
+def unsubscribe_from_topic(bot, tr):
+    bot.send(jarvis.notes.unsubscribe_from_topic(tr.nick, tr.group(2)))
+
+
+@sopel.module.commands('restrict')
+def restrict_topic(bot, tr):
+    bot.send(jarvis.notes.restrict_topic(
+        tr.group(2), tr.sender == bot.config.scp.sssc))
+
+
+@sopel.module.commands('unrestrict')
+def unrestrict_topic(bot, tr):
+    bot.send(jarvis.notes.unrestrict_topic(
+        tr.group(2), tr.sender == bot.config.scp.sssc))
+
+
+@sopel.module.commands('topics')
+def get_topics_count(bot, tr):
+    bot.send(jarvis.notes.get_topics_count(tr.nick))

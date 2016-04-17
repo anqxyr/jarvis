@@ -32,7 +32,7 @@ def update_bans(bot, tr):
         bot.memory['bans'] = get_ban_list()
         bot.send(jarvis.lexicon.bans.updated)
     except:
-        bot.send(jarvis.lexicon.bans.failed
+        bot.send(jarvis.lexicon.bans.failed)
 
 
 @sopel.module.event('JOIN')
