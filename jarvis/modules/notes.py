@@ -80,13 +80,13 @@ def get_tells(bot, tr):
 
 
 @sopel.module.commands('notdelivered', 'nd')
-def get_stored_tells_count(bot, tr):
-    bot.notice(jarvis.notes.get_stored_tells_count(tr.nick), tr.nick)
+def get_outbound_tells_count(bot, tr):
+    bot.notice(jarvis.notes.get_outbound_tells_count(tr.nick), tr.nick)
 
 
 @sopel.module.commands('purgetells')
-def purge_stored_tells(bot, tr):
-    bot.notice(jarvis.notes.purge_stored_tells(tr.nick), tr.nick)
+def purge_outbound_tells(bot, tr):
+    bot.notice(jarvis.notes.purge_outbound_tells(tr.nick), tr.nick)
 
 
 @sopel.module.commands('seen')
