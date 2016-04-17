@@ -40,11 +40,13 @@ def send(bot, text, private=False, force=False):
 @sopel.module.priority('low')
 def chat_activity(bot, tr):
     jarvis.notes.log_message(tr.nick, tr.sender, tr.group(0))
-    tells = list(jarvis.notes.get_tells(tr.nick))
+    tells = jarvis.notes.get_tells(tr.nick)
     if tells:
         bot.notice('You have {} new messages'.format(len(tells)), tr.nick)
     for t in tells:
         bot.send(t, private=True, force=True)
+    for alert in jarvis.notes.get_alerts(tr.nick):
+        bot.notice(alert, tr.nick)
 
 
 @sopel.module.commands('tell')
@@ -165,3 +167,8 @@ def unrestrict_topic(bot, tr):
 @sopel.module.commands('topics')
 def get_topics_count(bot, tr):
     bot.send(jarvis.notes.get_topics_count(tr.nick))
+
+
+@sopel.module.commands('alert')
+def set_alert(bot, tr):
+    bot.send(jarvis.notes.set_alert(tr.nick, tr.group(2)))

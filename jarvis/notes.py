@@ -24,6 +24,7 @@ def init():
     db.Rem.create_table(True)
     db.Subscriber.create_table(True)
     db.Restricted.create_table(True)
+    db.Alert.create_table(True)
 
     try:
         migrator = migrate.SqliteMigrator(db.db)
@@ -38,6 +39,8 @@ def log_message(user, channel, text):
     db.Message.create(
         user=user.strip(), channel=channel,
         time=arrow.utcnow().timestamp, text=text)
+
+###############################################################################
 
 
 def send_tell(sender, recipient, text):
@@ -100,6 +103,8 @@ def purge_outbound_tells(user):
     db.Tell.delete().where(fn.Lower(db.Tell.sender) == user).execute()
     return lexicon.tell.outbound_purged.format(count=count)
 
+###############################################################################
+
 
 def get_user_seen(user, channel):
     if not user:
@@ -114,6 +119,8 @@ def get_user_seen(user, channel):
         return lexicon.seen.never
     time = arrow.get(msg.time).humanize()
     return lexicon.seen.last.format(user=msg.user, time=time, text=msg.text)
+
+###############################################################################
 
 
 def dispatch_quote(inp, channel):
@@ -181,6 +188,8 @@ def delete_quote(user, channel, text):
     query.get().delete_instance()
     return lexicon.quote.deleted
 
+###############################################################################
+
 
 def remember_user(inp, channel):
     user, text = inp.split(maxsplit=1)
@@ -200,6 +209,8 @@ def recall_user(user, channel):
     except db.Rem.DoesNotExist:
         return lexicon.not_found.generic
     return rem.text
+
+###############################################################################
 
 
 def subscribe_to_topic(user, topic, super):
@@ -254,3 +265,44 @@ def unrestrict_topic(topic, super):
         return lexicon.topic.not_restricted
     query.get().delete_instance()
     return lexicon.topic.unrestricted
+
+
+###############################################################################
+
+
+def set_alert(user, inp):
+    if not inp:
+        return lexicon.input.missing
+    try:
+        time, text = inp.split(maxsplit=1)
+    except ValueError:
+        return lexicon.input.missing
+    text = text.strip()
+    user = user.strip().lower()
+    if not text:
+        return lexicon.input.missing
+    if re.match(r'\d{4}-\d{2}-\d{2}$', time):
+        alert = arrow.get(time)
+        if alert < arrow.utcnow():
+            return lexicon.alert.past
+    elif re.match(r'(\d+[dhm])+$', time):
+        intervals = re.findall(r'(\d+)([dhm])', time)
+        alert = arrow.utcnow()
+        for length, unit in intervals:
+            unit = dict(d='days', h='hours', m='minutes')[unit]
+            alert = alert.replace(**{unit: int(length)})
+    else:
+        return lexicon.input.incorrect
+    db.Alert.create(user=user, time=alert.timestamp, text=text)
+    return lexicon.alert.set
+
+
+def get_alerts(user):
+    user = user.strip().lower()
+    now = arrow.utcnow()
+    results = []
+    for alert in db.Alert.select().where(db.Alert.user == user):
+        if arrow.get(alert.time) < now:
+            results.append(alert.text)
+            alert.delete_instance()
+    return results

@@ -225,6 +225,18 @@
     },
 
 
+"alert": {
+
+    "set": [
+        "I will remind you when the time comes."
+        ],
+
+    "past": [
+        "Do you want me to time travel or something? Because I can't do that, you know? Well, I can, actually, but I won't."
+        ]
+    },
+
+
 "denied": [
     "You are not allowed to do that."]
 

@@ -57,3 +57,9 @@ class Subscriber(BaseModel):
 
 class Restricted(BaseModel):
     topic = peewee.CharField(index=True)
+
+
+class Alert(BaseModel):
+    user = peewee.CharField(index=True)
+    time = peewee.DateTimeField()
+    text = peewee.TextField()
