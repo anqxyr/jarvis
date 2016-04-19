@@ -14,7 +14,7 @@ import sopel
 
 
 def setup(bot):
-    pyscp.utils.default_logging(True)
+    #pyscp.utils.default_logging(True)
     if bot.config.scp.debug:
         bot._wiki = pyscp.snapshot.Wiki('www.scp-wiki.net', 'test.db')
     else:
