@@ -14,7 +14,7 @@ import sopel
 
 
 def setup(bot):
-    #pyscp.utils.default_logging(True)
+    pyscp.utils.default_logging(True)
     if bot.config.scp.debug:
         bot._wiki = pyscp.snapshot.Wiki('www.scp-wiki.net', 'test.db')
     else:
@@ -112,7 +112,7 @@ def url(bot, tr):
 def lastcreated(bot, tr):
     """Display recently created pages."""
     pages = list(bot._wiki.list_pages(
-        order='created_at desc', limit=3, body='created_by rating'))
+        order='created_at desc', limit=3, body='title created_by rating'))
     for p in pages:
         bot.send(jarvis.scp.get_page_summary(p), force=True)
 
@@ -165,8 +165,7 @@ def refresh_page_cache(bot):
     bot.memory['pages'] = jarvis.ext.PageView(bot._wiki.list_pages(
         body='title created_by created_at rating tags', category='*'))
     bot._wiki.titles.cache_clear()
-    bot._wiki.titles.cache_clear()
-    bot._wiki.list_overrides.cache_clear()
+    bot._wiki.metadata.cache_clear()
 
 
 ###############################################################################

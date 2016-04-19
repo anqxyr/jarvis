@@ -166,7 +166,7 @@ def unrestrict_topic(bot, tr):
 
 @sopel.module.commands('topics')
 def get_topics_count(bot, tr):
-    bot.send(jarvis.notes.get_topics_count(tr.nick))
+    bot.notice(jarvis.notes.get_topics_count(tr.nick), tr.nick)
 
 
 @sopel.module.commands('alert')

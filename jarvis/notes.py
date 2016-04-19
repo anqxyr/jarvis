@@ -173,7 +173,7 @@ def get_quote(user, channel, index=None):
             return lexicon.input.bad_index
         if index not in range(1, query.count() + 1):
             return lexicon.input.bad_index
-    quote = list(query.order_by(db.Quote.id))[int(index) - 1]
+    quote = list(query.order_by(db.Quote.time))[int(index) - 1]
     return '[{}/{}] {} {}: {}'.format(
         index, query.count(), quote.time, quote.user, quote.text)
 

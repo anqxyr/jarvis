@@ -42,9 +42,12 @@ class PageView:
         if 'tags' in kwargs:
             for tag in kwargs['tags'].split():
                 results = [p for p in results if tag in p.tags]
-        if 'author' in kwargs:
-            results = [p for p in results if kwargs['author'] in p.authors]
-        return results
+        for i in 'author rewrite translator maintainer'.split():
+            if i in kwargs:
+                results = [p for p in results if any(
+                    kwargs[i] == u and t == i
+                    for u, (t, d) in p.metadata.items())]
+        return PageView(results)
 
     ###########################################################################
     # Other Nice Methods
@@ -72,17 +75,27 @@ class User:
 
     def __init__(self, pages, name):
         """Create user."""
-        good_tags = {'scp', 'tale', 'goi-format', 'artwork'}
+        tags = {'scp', 'tale', 'goi-format', 'artwork'}
         self.pages = PageView(
-            p for p in pages if name == p.author and p.tags & good_tags)
+            p for p in pages if name in p.metadata and p.tags & tags)
+
+        def rating_counts(page):
+            if page.metadata[name][0] == 'author':
+                if any(i[0] == 'rewrite' for i in page.metadata.values()):
+                    return False
+                return True
+            if page.metadata[name][0] in ['rewrite', 'translator']:
+                dates = [i[1] for i in page.metadata.values() if i[1]]
+                if not dates:
+                    return True
+                if page.metadata[name][1] == max(dates):
+                    return True
+                return False
+            return False
+
+        self.owned = PageView(p for p in self.pages if rating_counts(p))
         self.name = name
 
     def __getitem__(self, key):
         return self.pages[key]
 
-    ###########################################################################
-
-    @property
-    def rewrites(self):
-        return PageView(
-            p for p in self.pages if p.authors[self.name] == 'rewrite')
