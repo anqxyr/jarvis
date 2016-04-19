@@ -43,11 +43,12 @@ def log_message(user, channel, text):
 ###############################################################################
 
 
-def send_tell(sender, recipient, text):
-    if not recipient:
-        return lexicon.input.incorrect
-    recipient = recipient.strip().lower()
-    if not re.match(r'^@?[\w\[\]{}^|]+$', recipient) or not text:
+def send_tell(inp, sender):
+    if not inp:
+        return lexicon.input.missing
+    recipient, text = inp.split(maxsplit=1)
+    recipient = recipient.strip().rstrip(':,').lower()
+    if not re.match(r'^@?[\w\[\]{}^|-]+$', recipient) or not text:
         return lexicon.input.incorrect
     sender = str(sender)
     time = arrow.utcnow().timestamp

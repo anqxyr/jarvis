@@ -22,7 +22,7 @@ def google_search(apikey, cseid, inp):
     results = google.list(q=inp, cx=cseid, num=1).execute()
     if not results.get('items'):
         return lexicon.not_found.generic
-    return '\x02{title}\x02 ({formattedUrl}) - {snippet}'.format(
+    return '\x02{title}\x02 ({link}) - {snippet}'.format(
         **results['items'][0])
 
 
@@ -54,7 +54,10 @@ def youtube_video_info(apikey, video_id):
     youtube = googleapi.build('youtube', 'v3', developerKey=apikey)
     vdata = youtube.videos().list(
         part='contentDetails,snippet,statistics',
-        id=video_id, maxResults=1).execute()['items'][0]
+        id=video_id, maxResults=1).execute()
+    if not vdata.get('items'):
+        return lexicon.not_found.generic
+    vdata = vdata['items'][0]
 
     template = ' '.join("""
     \x02{snippet[title]}\x02 - length \x02{duration}\x02 -

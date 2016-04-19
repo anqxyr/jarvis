@@ -25,25 +25,23 @@ def inlex(res, *args, **kwargs):
 def test_tells():
     jarvis.notes.purge_outbound_tells('sender')
     for i in range(200):
-        r = jarvis.notes.send_tell('sender', 'recipient', 'text')
+        r = jarvis.notes.send_tell('recipient text', 'sender')
         assert inlex(r, 'tell', 'send')
     r = jarvis.notes.get_outbound_tells_count('sender')
     assert inlex(r, 'tell', 'outbound_count', total=200, users='recipient')
     r = jarvis.notes.get_tells('RECIPIENT')
     assert len(r) == 200
     for i in range(50):
-        jarvis.notes.send_tell('sender', 'recipi|ent', 'text')
+        jarvis.notes.send_tell('recipient, text', 'sender')
     r = jarvis.notes.purge_outbound_tells('sender')
     assert inlex(r, 'tell', 'outbound_purged', count=50)
     r = jarvis.notes.purge_outbound_tells('sender')
     assert inlex(r, 'tell', 'outbound_empty')
 
-    r = jarvis.notes.send_tell('sender', '!!!', 'text')
+    r = jarvis.notes.send_tell('!!! text', 'sender')
     assert inlex(r, 'input', 'incorrect')
-    r = jarvis.notes.send_tell('sender', 'recipient', '')
-    assert inlex(r, 'input', 'incorrect')
-    r = jarvis.notes.send_tell('sender', None, None)
-    assert inlex(r, 'input', 'incorrect')
+    r = jarvis.notes.send_tell('', 'sender')
+    assert inlex(r, 'input', 'missing')
     assert not jarvis.notes.get_tells('recipient')
 
 

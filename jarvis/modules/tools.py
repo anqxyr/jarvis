@@ -22,7 +22,7 @@ def autocomplete(bot, tr):
     if not funcs:
         return
     if len(funcs) > 1:
-        bot.send(jarvis.lexicon.unclear_input([f.commands[0] for f in funcs]))
+        bot.send(jarvis.tools.choose_input([f.commands[0] for f in funcs]))
     else:
         wrapper = bot.SopelWrapper(bot, tr)
         bot.call(funcs[0], wrapper, tr)

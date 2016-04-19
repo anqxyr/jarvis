@@ -57,7 +57,7 @@ def tell(bot, tr):
     The message will be delivered the next time the user is active in any
     of the channels where the bot is present.
     """
-    bot.send(jarvis.notes.send_tell(tr.nick, *tr.group(2).split(maxsplit=1)))
+    bot.send(jarvis.notes.send_tell(tr.group(2), tr.nick))
 
 
 @sopel.module.commands('showtells', 'showt', 'st')
