@@ -157,10 +157,7 @@ def get_page_summary(page):
         else:
             users = [u for u, d in v]
         *head, tail = sorted(users)
-        result = ', '.join(head)
-        if tail:
-            result += ' and ' + tail
-        rels[k] = result
+        rels[k] = '{} and {}'.format(', '.join(head), tail) if head else tail
     attrib = []
     for key, alias in zip(
             ['author', 'rewrite', 'translator', 'maintainer'],
