@@ -90,7 +90,7 @@ def purge_outbound_tells(bot, tr):
 
 
 @sopel.module.commands('seen')
-def get_user_seen(bot, tr):
+def get_user_last_seen(bot, tr):
     """
     Check when the user was last seen.
 
@@ -98,6 +98,11 @@ def get_user_seen(bot, tr):
     channel where you want to check for the user.
     """
     bot.send(jarvis.notes.get_user_seen(tr.group(2), tr.sender))
+
+
+@sopel.module.commands('firstseen', 'fseen')
+def get_user_first_seen(bot, tr):
+    bot.send(jarvis.notes.get_user_seen(tr.group(2), tr.sender, False))
 
 
 def channel_quotes_enabled(bot, tr):
