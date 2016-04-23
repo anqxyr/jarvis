@@ -161,12 +161,13 @@ def get_author_details(pages, name):
     row = '||{1}||{0.count}||{0.rating}||{0.average}||'
     stats = [
         '[[div class="stats"]]',
-        '||~ Category||~ Page Count||~ Net Rating||~ Average Rating||',
-        row.format(primary, 'Total')]
+        '||~ Category||~ Page Count||~ Net Rating||~ Average||',
+        row.format(primary, 'Total'),
+        '||||||||~ ||']
     stats.extend(get_section(
         row, lambda x: primary.tags(x),
         'scp tale goi-format artwork', 'SCPs Tales GOI-format Artwork'))
-    stats.append('||||||||||')
+    stats.append('||||||||~ ||')
     stats.extend(get_section(
         row, lambda x: pages.related(name, x).articles,
         'author rewrite translator maintainer',
