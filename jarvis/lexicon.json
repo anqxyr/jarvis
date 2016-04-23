@@ -56,7 +56,6 @@
         "k",
         "It will be done.",
         "Sure, pal, sure.",
-        "да",
         "Anything for you, you funny human.",
         "I'm on it, boss.",
         "I will do it.",
@@ -138,6 +137,11 @@
         "Adding @{topic} to the rest of your subscriptions. Are you happy now?"        
         ],
 
+    "already_subscribed": [
+        "You can't subscribe to the same topic twice. Anymore.",
+        "You've done that before already."
+        ],
+
     "not_subscribed": [
         "Looks like you aren't subscribed to it in the first place. So what do you want from me?",
         "Sorry pal, can't unsubscribe from something you're not subscribed to.",
@@ -152,8 +156,8 @@
         "Forgetting your subscription to @{topic}."],
 
     "count": [
-        "There exists at this time a total of {count} topics. Of those, you are subscribed to the following: {topics}",
-        "Your subscriptions: {topics}. {count} total topics."
+        "You are subscribed to the following topics: {topics}",
+        "Your subscriptions: {topics}."
         ],
 
     "user_has_no_topics": [
@@ -162,6 +166,12 @@
 
     "restricted": [
         "This topic is now restricted. Only certain users will be allowed to subscribe to it."
+        ],
+
+    "already_restricted":[
+        "Let me pretend to double-triple restrict it, while actually doing nothing.",
+        "It's already restricted.",
+        "This topic was already restricted in the past."
         ],
 
     "not_restricted": [
@@ -230,12 +240,10 @@
     "author": [
         "Your author is in another castle.",
         "There is nobody here by that name. Now go away.",
-        "That person has been retconned from existence.",
-        "E72 - Author Not Found. That's a made-up error. I made it up."],
+        "That person has been retconned from existence."],
     
     "page": [
-        "E74 - Page Not Found. That's a real error. It's in the book. Look it up.",
-        "The future author of that page haven't written it yet.",
+        "The future author of that page hasn't written it yet.",
         "You're better off reading something else.",
         "Yesterday, upon the wiki, I saw a page that wasn't there. It didn't rhyme again today.",
         "Your search query does not match any existing pages."]

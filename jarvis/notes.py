@@ -222,6 +222,9 @@ def subscribe_to_topic(user, topic, super):
     if (not super and db.Restricted.select().where(
             db.Restricted.topic == topic).exists()):
         return lexicon.denied
+    if db.Subscriber.select().where(
+            db.Subscriber.user == user, db.Subscriber.topic == topic).exists():
+        return lexicon.topic.already_subscribed
     db.Subscriber.create(user=user, topic=topic)
     return lexicon.topic.subscribed.format(topic=topic)
 
@@ -241,18 +244,19 @@ def unsubscribe_from_topic(user, topic):
 
 def get_topics_count(user):
     user = user.strip().lower()
-    count = db.Subscriber.select().distinct(db.Subscriber.topic).count()
     query = db.Subscriber.select().where(db.Subscriber.user == user)
     if not query.exists():
-        return lexicon.topic.user_has_no_topics.format(count=count)
+        return lexicon.topic.user_has_no_topics
     topics = [i.topic for i in query]
-    return lexicon.topic.count.format(count=count, topics=', '.join(topics))
+    return lexicon.topic.count.format(topics=', '.join(topics))
 
 
 def restrict_topic(topic, super):
     if not super:
         return lexicon.denied
     topic = topic.strip().lower().lstrip('@')
+    if db.Restricted.select().where(db.Restricted.topic == topic).exists():
+        return lexicon.topic.already_restricted
     db.Restricted.create(topic=topic)
     return lexicon.topic.restricted
 
