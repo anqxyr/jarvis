@@ -63,7 +63,7 @@ class PageView:
 
     @property
     def articles(self):
-        return self.tags(*'scp tale goi-format artwork -_sys -hub'.split())
+        return self.tags('scp tale goi-format artwork -_sys -hub')
 
     ###########################################################################
     # Scalar End-Points
