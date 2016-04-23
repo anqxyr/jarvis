@@ -25,32 +25,46 @@ class PageView:
     def __iter__(self):
         return iter(self.pages)
 
-    def __getitem__(self, key):
-        """
-        Filter pages based on the key and return a PageView of results.
+    ###########################################################################
+    # Filter Methods
+    ###########################################################################
 
-        Because accessing pages based on their tags is a very common
-        operation, __getitem__ is override to accept a tag string as well as
-        the usual indexes.
-        """
-        if isinstance(key, str):
-            return self.__class__(p for p in self.pages if key in p.tags)
-        return self.pages[key]
+    def tags(self, *tags):
+        all_ = {t.lstrip('+') for t in tags if t.startswith('+')}
+        none = {t.lstrip('-') for t in tags if t.startswith('-')}
+        any_ = {t for t in tags if t[0] not in '-+'}
+        pages = [
+            p for p in self.pages if
+            (p.tags >= all_) and (p.tags & any_) and not (p.tags & none)]
+        return self.__class__(pages)
 
-    def __call__(self, **kwargs):
-        results = self.pages
-        if 'tags' in kwargs:
-            for tag in kwargs['tags'].split():
-                results = [p for p in results if tag in p.tags]
-        for i in 'author rewrite translator maintainer'.split():
-            if i in kwargs:
-                results = [p for p in results if any(
-                    kwargs[i] == u and t == i
-                    for u, (t, d) in p.metadata.items())]
-        return PageView(results)
+    def related(self, user, rel=None):
+        pages = [p for p in self.pages if user in p.metadata]
+        if rel:
+            pages = [p for p in pages if p.metadata[user][0] == rel]
+        return self.__class__(pages)
+
+    def primary(self, user):
+        results = []
+        for p in self.related(user, 'author').articles:
+            if not any(rel == 'rewrite' for rel, date in p.metadata.values()):
+                results.append(p)
+        for p in self.related(user, 'rewrite').articles:
+            dates = [
+                date for rel, date in p.metadata.values() if
+                date and rel == 'rewrite']
+            if not dates or p.metadata[user][1] == max(dates):
+                results.append(p)
+        for p in self.related(user, 'translator').articles:
+            results.append(p)
+        return self.__class__(results)
+
+    @property
+    def articles(self):
+        return self.tags(*'scp tale goi-format artwork -_sys -hub'.split())
 
     ###########################################################################
-    # Other Nice Methods
+    # Scalar End-Points
     ###########################################################################
 
     @property
@@ -68,34 +82,3 @@ class PageView:
         if not self.pages:
             return 0
         return self.rating // self.count
-
-
-class User:
-    """Extended User Methods."""
-
-    def __init__(self, pages, name):
-        """Create user."""
-        tags = {'scp', 'tale', 'goi-format', 'artwork'}
-        self.pages = PageView(
-            p for p in pages if name in p.metadata and p.tags & tags)
-
-        def rating_counts(page):
-            if page.metadata[name][0] == 'author':
-                if any(i[0] == 'rewrite' for i in page.metadata.values()):
-                    return False
-                return True
-            if page.metadata[name][0] in ['rewrite', 'translator']:
-                dates = [i[1] for i in page.metadata.values() if i[1]]
-                if not dates:
-                    return True
-                if page.metadata[name][1] == max(dates):
-                    return True
-                return False
-            return False
-
-        self.owned = PageView(p for p in self.pages if rating_counts(p))
-        self.name = name
-
-    def __getitem__(self, key):
-        return self.pages[key]
-

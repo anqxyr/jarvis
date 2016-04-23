@@ -22,7 +22,7 @@ class NestedDictWrapper:
         if not result:
             return 'ERROR: missing lexicon entry.'
         if isinstance(result, list):
-            return random.choice(result)
+            return random.choice(result).replace('*', '\x02')
         if isinstance(result, dict):
             return NestedDictWrapper(result)
         raise ValueError
