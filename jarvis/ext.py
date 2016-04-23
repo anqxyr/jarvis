@@ -29,13 +29,15 @@ class PageView:
     # Filter Methods
     ###########################################################################
 
-    def tags(self, *tags):
+    def tags(self, tags):
+        tags = tags.lower().split()
         all_ = {t.lstrip('+') for t in tags if t.startswith('+')}
         none = {t.lstrip('-') for t in tags if t.startswith('-')}
         any_ = {t for t in tags if t[0] not in '-+'}
         pages = [
-            p for p in self.pages if
-            (p.tags >= all_) and (p.tags & any_) and not (p.tags & none)]
+            p for p in self.pages if (p.tags >= all_) and not (p.tags & none)]
+        if any_:
+            pages = [p for p in pages if p.tags & any_]
         return self.__class__(pages)
 
     def related(self, user, rel=None):

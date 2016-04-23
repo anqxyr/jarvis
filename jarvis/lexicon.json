@@ -192,6 +192,20 @@
 
     "never": [
         "I've never seen anyone by that name here."
+        ],
+
+    "first": [
+        "I first met {user} {time}. I remember him saying: {text}",
+        "\"{text}\". That was how I first met {user}, all those {time}.",
+        "{time}, I saw {user} for the first time. He said: {text}"
+        ],
+
+    "self": [
+        "I see myself every morning in mirror. It's not a pretty sight.",
+        "I am right here.",
+        "I don't like to talk about my past.",
+        "Stop being cheeky.",
+        "Yeah, very funny. Har. Har. Har."
         ]
     },
 
@@ -302,6 +316,14 @@
 
 "denied": [
     "You are not allowed to do that."],
+
+"spam": [
+    "Don't spam the bot.",
+    "I did literally less than two minutes ago. Can't I get some rest?",
+    "Stop bothering me, I'm taking a nap.",
+    "Come back later, maybe then I'll do it.",
+    "Do you need your memory checked or something?"
+    ],
 
 "summary": {
     

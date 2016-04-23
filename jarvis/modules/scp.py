@@ -9,6 +9,7 @@
 import jarvis
 import pyscp
 import sopel
+import arrow
 
 ###############################################################################
 
@@ -21,6 +22,8 @@ def setup(bot):
         bot._wiki = pyscp.wikidot.Wiki('www.scp-wiki.net')
     bot._stwiki = pyscp.wikidot.Wiki('scp-stats')
     bot._stwiki.auth(bot.config.scp.wikiname, bot.config.scp.wikipass)
+
+    bot.memory['lctimer'] = arrow.now()
 
     refresh_page_cache(bot)
 
@@ -111,6 +114,11 @@ def url(bot, tr):
 @sopel.module.commands('lastcreated', 'lc')
 def lastcreated(bot, tr):
     """Display recently created pages."""
+    now = arrow.now()
+    if (now - bot.memory['lctimer']).seconds < 120:
+        bot.send(jarvis.lexicon.spam)
+        return
+    bot.memory['lctimer'] = now
     pages = list(bot._wiki.list_pages(
         order='created_at desc', limit=3, body='title created_by rating'))
     for p in pages:

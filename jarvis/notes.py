@@ -107,10 +107,12 @@ def purge_outbound_tells(user):
 ###############################################################################
 
 
-def get_user_seen(user, channel, last=True):
+def get_user_seen(user, channel, bot_nick, last=True):
     if not user:
         return lexicon.input.incorrect
     user = user.strip().lower()
+    if user == bot_nick:
+        return lexicon.seen.self
     order = db.Message.time
     if last:
         order = order.desc()
@@ -122,7 +124,8 @@ def get_user_seen(user, channel, last=True):
     except db.Message.DoesNotExist:
         return lexicon.seen.never
     time = arrow.get(msg.time).humanize()
-    return lexicon.seen.last.format(user=msg.user, time=time, text=msg.text)
+    result = lexicon.seen.last if last else lexicon.seen.first
+    return result.format(user=msg.user, time=time, text=msg.text)
 
 
 ###############################################################################

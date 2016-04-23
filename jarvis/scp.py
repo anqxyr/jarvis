@@ -76,8 +76,7 @@ def find_tale(pages, partial, key='global'):
 def find_tags(pages, tags, key='global'):
     if not tags:
         return lexicon.input.missing
-    tags = set(tags.strip().split())
-    matches = [p for p in pages if p.tags >= set(tags)]
+    matches = pages.tags(tags)
     if not matches:
         return lexicon.not_found.page
     elif len(matches) == 1:
@@ -173,13 +172,15 @@ def get_author_details(pages, name):
         'author rewrite translator maintainer',
         'Originals Rewrites Translated Maintained'))
     stats.append('[[/div]]')
+    stats.append('~~~~')
 
     row = '||{0.title}||{0.rating:+d}||{1}||{2}||{0.created:.10}||{3}||'
     articles = [
         '++ Articles',
         '[[div class="articles"]]',
         '||~ Title||~ Rating||~ Tags||~ Link||~ Created||~ Relation||']
-    for p in sorted(pages.related(name), key=lambda x: x.rating, reverse=True):
+    pages = [p for p in pages.related(name) if p.tags]
+    for p in sorted(pages, key=lambda x: x.rating, reverse=True):
         tags = ', '.join(sorted(p.tags)) or ' '
         link = '[[[{}|{}]]]'.format(p.url, p.url.split('/')[-1])
         relation = p.metadata[name][0]
@@ -209,8 +210,8 @@ def get_error_report(pages):
     return 'I found no errors.'
 
 
-def get_random_page(pages, tag):
-    pages = pages[tag.strip().lower()] if tag else pages
+def get_random_page(pages, tags):
+    pages = pages.tags(tags) if tags else pages
     if pages:
         return get_page_summary(random.choice(pages))
     else:

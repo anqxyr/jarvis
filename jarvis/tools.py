@@ -53,7 +53,7 @@ def choose(inp):
     """Return one random comma-separated option."""
     if not inp:
         return lexicon.input.missing
-    options = [i.strip() for i in inp.split(',')]
+    options = [i.strip() for i in inp.split(',') if i.strip()]
     return random.choice(options)
 
 

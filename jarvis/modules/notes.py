@@ -97,12 +97,14 @@ def get_user_last_seen(bot, tr):
     Results are channel specific. You must issue the command in the same
     channel where you want to check for the user.
     """
-    bot.send(jarvis.notes.get_user_seen(tr.group(2), tr.sender))
+    bot.send(jarvis.notes.get_user_seen(
+        tr.group(2), tr.sender, bot.config.core.nick))
 
 
 @sopel.module.commands('firstseen', 'fseen')
 def get_user_first_seen(bot, tr):
-    bot.send(jarvis.notes.get_user_seen(tr.group(2), tr.sender, False))
+    bot.send(jarvis.notes.get_user_seen(
+        tr.group(2), tr.sender, bot.config.core.nick, False))
 
 
 def channel_quotes_enabled(bot, tr):
