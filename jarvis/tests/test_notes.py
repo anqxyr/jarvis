@@ -47,13 +47,13 @@ def test_tells():
 
 def test_seen():
     name = str(uuid.uuid4())
-    r = jarvis.notes.get_user_seen(name, 'test-key')
+    r = jarvis.notes.get_user_seen(name, 'jarvis-dev', 'test-key')
     assert inlex(r, 'seen', 'never')
     time = arrow.utcnow().humanize()
     jarvis.notes.log_message(name, 'test-key', 'test-message')
-    r = jarvis.notes.get_user_seen(name, 'test-key')
+    r = jarvis.notes.get_user_seen(name, 'test-key', 'jarvis-dev')
     assert inlex(r, 'seen', 'last', user=name, time=time, text='test-message')
-    r = jarvis.notes.get_user_seen('', 'test-key')
+    r = jarvis.notes.get_user_seen('', 'test-key', 'jarvis-dev')
     assert inlex(r, 'input', 'incorrect')
 
 

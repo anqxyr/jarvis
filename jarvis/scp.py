@@ -16,96 +16,80 @@ from . import tools, lexicon
 ###############################################################################
 
 
-def find_author(pages, partial, key='global'):
-    if not partial:
-        return lexicon.input.incorrect
-    partial = partial.strip().lower()
-    authors = {u for p in pages for u in p.metadata}
-    matches = sorted(a for a in authors if partial in a.lower())
-    if not matches:
-        return lexicon.not_found.author
-    elif len(matches) == 1:
-        return get_author_summary(pages, matches[0])
+def sanitize(fn):
+    return lambda pages, inp, *args: (
+        fn(pages, inp.strip().lower(), *args)
+        if inp else lexicon.input.missing)
+
+
+def search(results, channel, zero, one, many):
+    if not results:
+        return getattr(lexicon.not_found, zero)
+    elif len(results) == 1:
+        return one(results[0])
     else:
-        tools.remember(matches, key, lambda x: get_author_summary(pages, x))
-        return tools.choose_input(matches)
+        tools.remember(results, channel, one)
+        return many(results)
 
 
-def update_author_details(pages, partial, stwiki, key='global'):
-    if not partial:
-        return lexicon.input.incorrect
-    partial = partial.strip().lower()
-    authors = {u for p in pages for u in p.metadata}
-    matches = sorted(a for a in authors if partial in a.lower())
-    if not matches:
-        return lexicon.not_found.author
-    elif len(matches) == 1:
-        data = get_author_details(pages, matches[0])
-        p = stwiki('user:' + matches[0])
-        p.create(data, matches[0], 'automated update')
-        return p.url
-    else:
-        tools.remember(
-            matches, key,
-            lambda x: update_author_details(pages, x, stwiki, key))
-        return tools.choose_input(matches)
+@sanitize
+def find_page_by_title(pages, inp, channel):
+    pages = [p for p in pages if set(p.title.split()) & set(inp.split())]
+    return search(pages, channel, 'page', page_summary, search_results)
 
 
-def find_page(pages, partial, key='global'):
-    if not partial:
-        return lexicon.input.missing
-    words = partial.lower().split()
-    matches = [p for p in pages if all(w in p.title.lower() for w in words)]
-    if not matches:
-        return lexicon.not_found.page
-    elif len(matches) == 1:
-        return get_page_summary(matches[0])
-    else:
-        tools.remember(matches, key, get_page_summary)
-        return display_search_results([i.title for i in matches])
+def find_tale_by_title(pages, inp, channel):
+    return find_page_by_title(pages.tags('tale'), inp, channel)
 
 
-def find_scp(pages, partial, key='global'):
-    return find_page([p for p in pages if 'scp' in p.tags], partial, key)
+@sanitize
+def find_page_by_tags(pages, inp, channel):
+    return search(
+        pages.tags(inp), channel, 'page', page_summary, search_results)
 
 
-def find_tale(pages, partial, key='global'):
-    return find_page([p for p in pages if 'tale' in p.tags], partial, key)
-
-
-def find_tags(pages, tags, key='global'):
-    if not tags:
-        return lexicon.input.missing
-    matches = pages.tags(tags)
-    if not matches:
-        return lexicon.not_found.page
-    elif len(matches) == 1:
-        return get_page_summary(matches[0])
-    else:
-        tools.remember(matches, key, get_page_summary)
-        return display_search_results([i.title for i in matches])
-
-
-def lookup_url(pages, url):
-    if '/forum/' in url:
+@sanitize
+def find_page_by_url(pages, inp):
+    if '/forum/' in inp:
         return
-    pages = [p for p in pages if p.url == url.lower()]
-    if not pages:
-        return lexicon.not_found.page
-    else:
-        return get_page_summary(pages[0])
+    inp = inp.replace('/comments/show', '')
+    pages = [p for p in pages if p.url == inp]
+    return search(
+        pages, None, 'page', page_summary, lambda x: page_summary(x[0]))
 
 
-def display_search_results(results):
+@sanitize
+def find_author(pages, inp, channel):
+    results = sorted(
+        {i for p in pages for i in p.metadata if inp in i.lower()})
+    return search(
+        results, channel, 'author',
+        lambda x: author_summary(pages, x), tools.choose_input)
+
+
+@sanitize
+def update_author_details(pages, inp, channel, wiki):
+
+    def update(name):
+        p = wiki('user:' + name.lower())
+        p.create(name, author_details(pages, name), 'automated update')
+        return p.url
+    results = sorted(
+        {i for p in pages for i in p.metadata if inp in i.lower()})
+    return search(results, channel, 'author', update, tools.choose_input)
+
+###############################################################################
+# Output Generation Functions
+###############################################################################
+
+
+def search_results(results):
+    results = [p.title for p in results]
     head, tail = results[:3], results[3:]
     output = ', '.join('\x02{}\x02'.format(i) for i in head)
     if tail:
         output += ' and {} more...'.format(len(tail))
     return output
-
-###############################################################################
-# Output Generation Functions
-###############################################################################
 
 
 def get_section(template, func, args, descriptions):
@@ -117,7 +101,22 @@ def get_section(template, func, args, descriptions):
     return results
 
 
-def get_author_summary(pages, name):
+def page_summary(page):
+    rels = collections.defaultdict(list)
+    for user, (rel, date) in page.metadata.items():
+        rels[rel].append(user)
+    for rel, users in rels.items():
+        *head, tail = users
+        rels[rel] = '{} and {}'.format(', '.join(head), tail) if head else tail
+    attribution = '; '.join(get_section(
+        '{1} by {0}', lambda x: rels[x],
+        'author rewrite translator maintainer',
+        'written rewritten translated maintained'))
+    return lexicon.summary.page.format(
+        page=page, attribution=attribution)
+
+
+def author_summary(pages, name):
     pages = pages.related(name)
     url = pages.tags('author')[0].url if pages.tags('athor') else None
     url = '({}) '.format(url) if url else ''
@@ -139,22 +138,7 @@ def get_author_summary(pages, name):
         primary=pages.primary(name), last=last)
 
 
-def get_page_summary(page):
-    rels = collections.defaultdict(list)
-    for user, (rel, date) in page.metadata.items():
-        rels[rel].append(user)
-    for rel, users in rels.items():
-        *head, tail = users
-        rels[rel] = '{} and {}'.format(', '.join(head), tail) if head else tail
-    attribution = '; '.join(get_section(
-        '{1} by {0}', lambda x: rels[x],
-        'author rewrite translator maintainer',
-        'written rewritten translated maintained'))
-    return lexicon.summary.page.format(
-        page=page, attribution=attribution)
-
-
-def get_author_details(pages, name):
+def author_details(pages, name):
     primary = pages.primary(name)
 
     row = '||{1}||{0.count}||{0.rating}||{0.average}||'
@@ -211,8 +195,8 @@ def get_error_report(pages):
 
 
 def get_random_page(pages, tags):
-    pages = pages.tags(tags) if tags else pages
+    pages = pages.tags(tags) if tags else pages.articles
     if pages:
-        return get_page_summary(random.choice(pages))
+        return page_summary(random.choice(pages))
     else:
         return lexicon.not_found.page

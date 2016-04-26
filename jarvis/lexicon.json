@@ -328,10 +328,10 @@
 "summary": {
     
     "author": [
-        "*{name}*{url} has *{pages.count}* pages ({rels}) ({tags}). They have *{primary.rating}* net upvotes with an average of *{primary.average}*. Their latest page is *{last.title}* at *{last.rating:+d}*.'"
+        "*{name}*{url} has *{pages.count}* pages ({rels}) ({tags}). They have *{primary.rating}* net upvotes with an average of *{primary.average}*. Their latest page is *{last.title}* at *{last.rating:+d}*."
         ],
 
     "page": [
-        "*{page.title}* ({attribution}; rating: {page.rating:+d}) - {page.url}'"]
+        "*{page.title}* ({attribution}; rating: {page.rating:+d}) - {page.url}"]
     }
 }

@@ -54,7 +54,8 @@ def search(bot, tr):
     When multiple results are found, the extended information about each result
     can be accessed via the !showmore command.
     """
-    bot.send(jarvis.scp.find_page(bot.memory['pages'], tr.group(2), tr.sender))
+    bot.send(jarvis.scp.find_page_by_title(
+        bot.memory['pages'], tr.group(2), tr.sender))
 
 
 @sopel.module.rule(r'(?i)^(scp-[\d]+(?:-[\w]+)?)$')
@@ -62,7 +63,7 @@ def search(bot, tr):
 def scp(bot, tr):
     """Display page summary for the matching scp article."""
     url = 'http://www.scp-wiki.net/' + tr.group(1)
-    bot.send(jarvis.scp.lookup_url(bot.memory['pages'], url))
+    bot.send(jarvis.scp.find_page_by_url(bot.memory['pages'], url))
 
 
 @sopel.module.commands('tale')
@@ -75,7 +76,8 @@ def tale(bot, tr):
     When multiple results are found, the extended information about each result
     can be accessed via the !showmore command.
     """
-    bot.send(jarvis.scp.find_tale(bot.memory['pages'], tr.group(2), tr.sender))
+    bot.send(jarvis.scp.find_tale_by_title(
+        bot.memory['pages'], tr.group(2), tr.sender))
 
 
 @sopel.module.commands('tags')
@@ -88,7 +90,8 @@ def tags(bot, tr):
     When multiple results are found, the extended information about each result
     can be accessed via the !showmore command.
     """
-    bot.send(jarvis.scp.find_tags(bot.memory['pages'], tr.group(2), tr.sender))
+    bot.send(jarvis.scp.find_page_by_tags(
+        bot.memory['pages'], tr.group(2), tr.sender))
 
 
 @sopel.module.commands('showmore', 'sm')
@@ -106,9 +109,7 @@ def showmore(bot, tr):
 @sopel.module.rule(r'(?i).*(http://www\.scp-wiki\.net/[^ ]+)')
 def url(bot, tr):
     """Display page summary for the matching wiki page."""
-    output = jarvis.scp.lookup_url(bot.memory['pages'], tr.group(1))
-    if output:
-        bot.send(output)
+    bot.send(jarvis.scp.find_page_by_url(bot.memory['pages'], tr.group(1))
 
 
 @sopel.module.commands('lastcreated', 'lc')
@@ -122,7 +123,7 @@ def lastcreated(bot, tr):
     pages = list(bot._wiki.list_pages(
         order='created_at desc', limit=3, body='title created_by rating'))
     for p in pages:
-        bot.send(jarvis.scp.get_page_summary(p), force=True)
+        bot.send(jarvis.scp.page_summary(p), force=True)
 
 ###############################################################################
 # Extended Stats
