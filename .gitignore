@@ -1,0 +1,7 @@
+__pycache__/ 
+*.log
+*.db
+*.db-shm
+*.db-wal
+*.cfg
+*.sublime-*
