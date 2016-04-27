@@ -6,8 +6,10 @@
 # Module Imports
 ###############################################################################
 
+import collections
 
 ###############################################################################
+
 
 class PageView:
     """Extended list of pyscp Pages."""
@@ -24,6 +26,9 @@ class PageView:
 
     def __iter__(self):
         return iter(self.pages)
+
+    def __getitem__(self, index):
+        return self.pages[index]
 
     ###########################################################################
     # Filter Methods
@@ -64,6 +69,25 @@ class PageView:
     @property
     def articles(self):
         return self.tags('scp tale goi-format artwork -_sys -hub')
+
+    ###########################################################################
+    # Splitters
+    ###########################################################################
+
+    def split_page_type(self):
+        keys = ['SCP Articles', 'Tales',
+                'GOI-Format Articles', 'Artwork Galleries']
+        values = [self.tags(i) for i in 'scp tale goi-format artwork'.split()]
+        return collections.OrderedDict(
+            (k, v) for k, v in zip(keys, values) if v)
+
+    def split_relation(self, name):
+        keys = ['Originals', 'Rewrites', 'Translations', 'Maintained']
+        values = [
+            self.related(name, i)
+            for i in 'author rewrite translator maintainer'.split()]
+        return collections.OrderedDict(
+            (k, v) for k, v in zip(keys, values) if v)
 
     ###########################################################################
     # Scalar End-Points

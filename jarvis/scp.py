@@ -5,11 +5,16 @@
 # Module Imports
 ###############################################################################
 
+import arrow
 import collections
 import re
 import random
 
-from . import tools, lexicon
+from . import core, tools, lexicon, stats
+
+###############################################################################
+
+lc_cooldown = arrow.now()
 
 ###############################################################################
 # Find And Lookup Functions
@@ -17,9 +22,8 @@ from . import tools, lexicon
 
 
 def sanitize(fn):
-    return lambda pages, inp, *args: (
-        fn(pages, inp.strip().lower(), *args)
-        if inp else lexicon.input.missing)
+    return lambda inp, *args: (
+        fn(inp.strip().lower(), *args) if inp else lexicon.input.missing)
 
 
 def search(results, channel, zero, one, many):
@@ -33,50 +37,48 @@ def search(results, channel, zero, one, many):
 
 
 @sanitize
-def find_page_by_title(pages, inp, channel):
-    pages = [p for p in pages if set(p.title.split()) & set(inp.split())]
+def find_page_by_title(inp, channel):
+    pages = [p for p in core.pages if set(p.title.split()) & set(inp.split())]
     return search(pages, channel, 'page', page_summary, search_results)
 
 
-def find_tale_by_title(pages, inp, channel):
-    return find_page_by_title(pages.tags('tale'), inp, channel)
+def find_tale_by_title(inp, channel):
+    pages = [
+        p for p in core.pages.tags('tale')
+        if set(p.title.split()) & set(inp.split())]
+    return search(pages, channel, 'page', page_summary, search_results)
 
 
 @sanitize
-def find_page_by_tags(pages, inp, channel):
+def find_page_by_tags(inp, channel):
     return search(
-        pages.tags(inp), channel, 'page', page_summary, search_results)
+        core.pages.tags(inp), channel, 'page', page_summary, search_results)
 
 
 @sanitize
-def find_page_by_url(pages, inp):
+def find_page_by_url(inp):
     if '/forum/' in inp:
         return
     inp = inp.replace('/comments/show', '')
-    pages = [p for p in pages if p.url == inp]
+    pages = [p for p in core.pages if p.url == inp]
     return search(
         pages, None, 'page', page_summary, lambda x: page_summary(x[0]))
 
 
 @sanitize
-def find_author(pages, inp, channel):
+def find_author(inp, channel):
     results = sorted(
-        {i for p in pages for i in p.metadata if inp in i.lower()})
+        {i for p in core.pages for i in p.metadata if inp in i.lower()})
     return search(
-        results, channel, 'author',
-        lambda x: author_summary(pages, x), tools.choose_input)
+        results, channel, 'author', author_summary, tools.choose_input)
 
 
 @sanitize
-def update_author_details(pages, inp, channel, wiki):
-
-    def update(name):
-        p = wiki('user:' + name.lower())
-        p.create(name, author_details(pages, name), 'automated update')
-        return p.url
+def update_author_details(inp, channel):
     results = sorted(
-        {i for p in pages for i in p.metadata if inp in i.lower()})
-    return search(results, channel, 'author', update, tools.choose_input)
+        {i for p in core.pages for i in p.metadata if inp in i.lower()})
+    return search(
+        results, channel, 'author', stats.update_user, tools.choose_input)
 
 ###############################################################################
 # Output Generation Functions
@@ -92,94 +94,47 @@ def search_results(results):
     return output
 
 
-def get_section(template, func, args, descriptions):
-    template = template.replace('*', '\x02')
-    results = []
-    for value, desc in zip(map(func, args.split()), descriptions.split()):
-        if value:
-            results.append(template.format(value, desc))
-    return results
-
-
 def page_summary(page):
+
+    def get_segment(rel, date, users):
+        name = dict(author='written', rewrite='rewritten',
+                    translator='translated', maintainer='maintained')[rel]
+        if not date and rel == 'author':
+            date = page.created
+        if date:
+            date = arrow.get(date).humanize()
+        *head, tail = users
+        users = '{} and {}'.format(', '.join(head), tail) if head else tail
+        return '{} {} by {}'.format(name, date, users)
+
     rels = collections.defaultdict(list)
     for user, (rel, date) in page.metadata.items():
-        rels[rel].append(user)
-    for rel, users in rels.items():
-        *head, tail = users
-        rels[rel] = '{} and {}'.format(', '.join(head), tail) if head else tail
-    attribution = '; '.join(get_section(
-        '{1} by {0}', lambda x: rels[x],
-        'author rewrite translator maintainer',
-        'written rewritten translated maintained'))
-    return lexicon.summary.page.format(
-        page=page, attribution=attribution)
+        rels[(rel, date)].append(user)
+
+    attribution = '; '.join(get_segment(r, d, u) for (r, d), u in rels.items())
+    return lexicon.summary.page.format(page=page, attribution=attribution)
 
 
-def author_summary(pages, name):
-    pages = pages.related(name)
-    url = pages.tags('author')[0].url if pages.tags('athor') else None
-    url = '({}) '.format(url) if url else ''
+def author_summary(name):
+    pages = core.pages.related(name)
+    url = pages.tags('author')[0].url if pages.tags('author') else None
+    url = ' ({})'.format(url) if url else ''
     pages = pages.articles
-
-    tags = get_section(
-        '*{}* {}', lambda x: pages.tags(x).count,
-        'scp tale goi-format artwork',
-        'SCPs tales GOI-formats art-galleries')
-    rels = get_section(
-        '*{}* {}', lambda x: pages.related(name, x).count,
-        'author rewrite translator maintainer',
-        'originals rewrites translated maintained')
-    tags, rels = ', '.join(tags), ', '.join(rels)
+    template = '\x02{1.count}\x02 {0}'.format
+    tags = ', '.join(template(*i) for i in pages.split_page_type().items())
+    rels = ', '.join(template(*i) for i in pages.split_relation(name).items())
     last = sorted(pages, key=lambda x: x.created, reverse=True)[0]
-
     return lexicon.summary.author.format(
         name=name, url=url, pages=pages, rels=rels, tags=tags,
         primary=pages.primary(name), last=last)
-
-
-def author_details(pages, name):
-    primary = pages.primary(name)
-
-    row = '||{1}||{0.count}||{0.rating}||{0.average}||'
-    stats = [
-        '[[div class="stats"]]',
-        '||~ Category||~ Page Count||~ Net Rating||~ Average||',
-        row.format(primary, 'Total'),
-        '||||||||~ ||']
-    stats.extend(get_section(
-        row, lambda x: primary.tags(x),
-        'scp tale goi-format artwork', 'SCPs Tales GOI-format Artwork'))
-    stats.append('||||||||~ ||')
-    stats.extend(get_section(
-        row, lambda x: pages.related(name, x).articles,
-        'author rewrite translator maintainer',
-        'Originals Rewrites Translated Maintained'))
-    stats.append('[[/div]]')
-    stats.append('~~~~')
-
-    row = '||{0.title}||{0.rating:+d}||{1}||{2}||{0.created:.10}||{3}||'
-    articles = [
-        '++ Articles',
-        '[[div class="articles"]]',
-        '||~ Title||~ Rating||~ Tags||~ Link||~ Created||~ Relation||']
-    pages = [p for p in pages.related(name) if p.tags]
-    for p in sorted(pages, key=lambda x: x.rating, reverse=True):
-        tags = ', '.join(sorted(p.tags)) or ' '
-        link = '[[[{}|{}]]]'.format(p.url, p.url.split('/')[-1])
-        relation = p.metadata[name][0]
-        articles.append(row.format(p, tags, link, relation))
-    articles.append('[[/div]]')
-
-    return '\n'.join(stats + articles)
 
 ###############################################################################
 # Misc
 ###############################################################################
 
 
-def get_error_report(pages):
-    pages = [p for p in pages if ':' not in p.url]
+def get_error_report():
+    pages = [p for p in core.pages if ':' not in p.url]
     output = ''
     no_tags = ['\x02{}\x02'.format(p.title) for p in pages if not p.tags]
     if no_tags:
@@ -194,9 +149,20 @@ def get_error_report(pages):
     return 'I found no errors.'
 
 
-def get_random_page(pages, tags):
-    pages = pages.tags(tags) if tags else pages.articles
+def get_random_page(tags):
+    pages = core.pages.tags(tags) if tags else core.pages.articles
     if pages:
         return page_summary(random.choice(pages))
     else:
         return lexicon.not_found.page
+
+
+def get_last_created():
+    global lc_cooldown
+    now = arrow.now()
+    if lc_cooldown and (now - lc_cooldown).seconds < 120:
+        return [lexicon.spam]
+    lc_cooldown = now
+    return map(page_summary, core.wiki.list_pages(
+        body='title created_by created_at rating', limit=3,
+        order='created_at desc'))
