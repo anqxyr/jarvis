@@ -37,18 +37,25 @@ def search(results, channel, zero, one, many):
 
 
 @sanitize
-def find_page_by_title(inp, channel):
-    pages = [
-        p for p in core.pages
-        if set(p.title.lower().split()) & set(inp.split())]
-    return search(pages, channel, 'page', page_summary, search_results)
+def find_page_by_title(inp, channel, pages=None):
+    pages = pages or core.pages
+    all_ = {t.lstrip('+') for t in inp.split() if t.startswith('+')}
+    none = {t.lstrip('-') for t in inp.split() if t.startswith('-')}
+    partial = {t for t in inp.split() if t[0] not in '-+'}
+    results = []
+    for p in pages:
+        words = re.split(r'[\s-]', p.title.lower())
+        words = set(re.sub(r'[^\w]', '', i) for i in words)
+        if not (words >= all_) or (words & none):
+            continue
+        if partial and not any(i in p.title.lower() for i in partial):
+            continue
+        results.append(p)
+    return search(results, channel, 'page', page_summary, search_results)
 
 
 def find_tale_by_title(inp, channel):
-    pages = [
-        p for p in core.pages.tags('tale')
-        if set(p.title.lower().split()) & set(inp.split())]
-    return search(pages, channel, 'page', page_summary, search_results)
+    return find_page_by_title(inp, channel, core.pages.tags('tale'))
 
 
 @sanitize
@@ -104,16 +111,19 @@ def page_summary(page):
         if not date and rel == 'author':
             date = page.created
         if date:
-            date = arrow.get(date).humanize()
+            date = ' ' + arrow.get(date).humanize()
         *head, tail = users
         users = '{} and {}'.format(', '.join(head), tail) if head else tail
-        return '{} {} by {}'.format(name, date, users)
+        return '{}{} by {}'.format(name, date, users)
 
     rels = collections.defaultdict(list)
     for user, (rel, date) in page.metadata.items():
         rels[(rel, date)].append(user)
+    items = sorted(rels.items(), key=lambda x: (
+        'author rewrite translator maintainer'
+        .split().index(x[0][0]), x[0][1]))
 
-    attribution = '; '.join(get_segment(r, d, u) for (r, d), u in rels.items())
+    attribution = '; '.join(get_segment(r, d, u) for (r, d), u in items)
     return lexicon.summary.page.format(page=page, attribution=attribution)
 
 
