@@ -34,65 +34,59 @@ def inlex(res, *args, **kwargs):
 
 
 def test_find_author():
-    r = jarvis.scp.find_author(pages, 'anq', 'test-channel')
+    r = jarvis.scp.find_author('anq', 'test-channel')
     assert r == jarvis.scp.author_summary(pages, 'anqxyr')
-    r = jarvis.scp.find_author(pages, 'gears', 'test-channel')
+    r = jarvis.scp.find_author('gears', 'test-channel')
     assert inlex(
         r, 'input', 'options',
         head='\x02Dr Gears\x02', tail='\x02TwistedGears\x02')
     r = jarvis.tools.recall(2, 'test-channel')
-    assert r == jarvis.scp.author_summary(
-        pages, 'TwistedGears')
-    r = jarvis.scp.find_author(pages, '!!!', 'test-channel')
+    assert r == jarvis.scp.author_summary('TwistedGears')
+    r = jarvis.scp.find_author('!!!', 'test-channel')
     assert inlex(r, 'not_found', 'author')
-    r = jarvis.scp.find_author(pages, None, 'test-channel')
+    r = jarvis.scp.find_author(None, 'test-channel')
     assert inlex(r, 'input', 'missing')
 
 
 def test_update_author_details():
-    stwiki = pyscp.wikidot.Wiki('scp-stats')
-    stwiki.auth(config['wikiname'], config['wikipass'])
-    r = jarvis.scp.update_author_details(
-        pages, 'anqxyr', 'test-channel', stwiki)
+    r = jarvis.scp.update_author_details('anqxyr', 'test-channel')
     assert r == 'http://scp-stats.wikidot.com/user:anqxyr'
-    r = jarvis.scp.update_author_details(
-        pages, 'VOCT', 'test-channel', stwiki)
+    r = jarvis.scp.update_author_details('VOCT', 'test-channel')
     assert r == 'http://scp-stats.wikidot.com/user:voct'
-    r = jarvis.scp.update_author_details(
-        pages, 'gears', 'test-channel', stwiki)
+    r = jarvis.scp.update_author_details('gears', 'test-channel')
     inlex(
         r, 'input', 'options',
         head='\x02Dr Gears\x02', tail='\x02TwistedGears\x02')
     r = jarvis.tools.recall(1, 'test-channel')
     assert r == 'http://scp-stats.wikidot.com/user:dr-gears'
-    r = jarvis.scp.update_author_details(pages, '!!!', 'test-channel', stwiki)
+    r = jarvis.scp.update_author_details('!!!', 'test-channel')
     assert inlex(r, 'not_found', 'author')
-    r = jarvis.scp.update_author_details(pages, None, 'test-channel', stwiki)
+    r = jarvis.scp.update_author_details(None, 'test-channel')
     assert inlex(r, 'input', 'missing')
 
 
 def test_find_page_by_title():
-    jarvis.scp.find_page_by_title(pages, 'routine', 'test-channel')
-    jarvis.scp.find_page_by_title(pages, 'scp-', 'test-channel')
-    jarvis.scp.find_page_by_title(pages, 'белки', 'test-channel')
-    jarvis.scp.find_page_by_title(pages, 'paradise mobile', 'test-channel')
-    jarvis.scp.find_page_by_title(pages, '', 'test-channel')
-    jarvis.scp.find_page_by_title(pages, None, 'test-channel')
+    jarvis.scp.find_page_by_title('routine', 'test-channel')
+    jarvis.scp.find_page_by_title('scp-', 'test-channel')
+    jarvis.scp.find_page_by_title('белки', 'test-channel')
+    jarvis.scp.find_page_by_title('paradise mobile', 'test-channel')
+    jarvis.scp.find_page_by_title('', 'test-channel')
+    jarvis.scp.find_page_by_title(None, 'test-channel')
 
 
 def test_find_tale():
-    jarvis.scp.find_tale_by_title(pages, '173', 'test-channel')
-    jarvis.scp.find_tale_by_title(pages, 'scp-', 'test-channel')
-    jarvis.scp.find_tale_by_title(pages, 'Kitten Flu', 'test-channel')
+    jarvis.scp.find_tale_by_title('173', 'test-channel')
+    jarvis.scp.find_tale_by_title('scp-', 'test-channel')
+    jarvis.scp.find_tale_by_title('Kitten Flu', 'test-channel')
 
 
 def test_find_page_by_tags():
-    jarvis.scp.find_page_by_tags(pages, 'keter temporal', 'test-channel')
-    jarvis.scp.find_page_by_tags(pages, 'safe keter', 'test-channel')
-    jarvis.scp.find_page_by_tags(pages, 'blahblahblah', 'test-channel')
-    jarvis.scp.find_page_by_tags(pages, '', 'test-channel')
-    jarvis.scp.find_page_by_tags(pages, None, 'test-channel')
+    jarvis.scp.find_page_by_tags('keter temporal', 'test-channel')
+    jarvis.scp.find_page_by_tags('safe keter', 'test-channel')
+    jarvis.scp.find_page_by_tags('blahblahblah', 'test-channel')
+    jarvis.scp.find_page_by_tags('', 'test-channel')
+    jarvis.scp.find_page_by_tags(None, 'test-channel')
 
 
 def test_error_report():
-    jarvis.scp.get_error_report(pages)
+    jarvis.scp.get_error_report()

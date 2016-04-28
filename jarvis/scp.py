@@ -38,14 +38,16 @@ def search(results, channel, zero, one, many):
 
 @sanitize
 def find_page_by_title(inp, channel):
-    pages = [p for p in core.pages if set(p.title.split()) & set(inp.split())]
+    pages = [
+        p for p in core.pages
+        if set(p.title.lower().split()) & set(inp.split())]
     return search(pages, channel, 'page', page_summary, search_results)
 
 
 def find_tale_by_title(inp, channel):
     pages = [
         p for p in core.pages.tags('tale')
-        if set(p.title.split()) & set(inp.split())]
+        if set(p.title.lower().split()) & set(inp.split())]
     return search(pages, channel, 'page', page_summary, search_results)
 
 

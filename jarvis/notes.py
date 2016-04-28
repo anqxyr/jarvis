@@ -7,45 +7,91 @@
 import arrow
 import random
 import re
-from peewee import fn
-from playhouse import migrate
 import peewee
+import playhouse
 
-from . import db, lexicon
+from . import core, lexicon
+
+
+###############################################################################
+# Database ORM Classes
+###############################################################################
+
+
+db = playhouse.sqlite_ext.SqliteExtDatabase('jarvis.db', journal_mode='WAL')
+
+
+class BaseModel(peewee.Model):
+
+    class Meta:
+        database = db
+
+
+class Tell(BaseModel):
+    sender = peewee.CharField()
+    recipient = peewee.CharField(index=True)
+    topic = peewee.CharField(null=True)
+    text = peewee.TextField()
+    time = peewee.DateTimeField()
+
+
+class Message(BaseModel):
+    user = peewee.CharField(index=True)
+    channel = peewee.CharField()
+    time = peewee.CharField()
+    text = peewee.TextField()
+
+
+class Quote(BaseModel):
+    user = peewee.CharField(index=True)
+    channel = peewee.CharField()
+    time = peewee.CharField()
+    text = peewee.TextField()
+
+
+class Rem(BaseModel):
+    user = peewee.CharField(index=True)
+    channel = peewee.CharField()
+    text = peewee.TextField()
+
+
+class Subscriber(BaseModel):
+    user = peewee.CharField()
+    topic = peewee.CharField(index=True)
+
+
+class Restricted(BaseModel):
+    topic = peewee.CharField(index=True)
+
+
+class Alert(BaseModel):
+    user = peewee.CharField(index=True)
+    time = peewee.DateTimeField()
+    text = peewee.TextField()
 
 ###############################################################################
 
 
 def init():
-    db.db.connect()
-    db.Tell.create_table(True)
-    db.Message.create_table(True)
-    db.Quote.create_table(True)
-    db.Rem.create_table(True)
-    db.Subscriber.create_table(True)
-    db.Restricted.create_table(True)
-    db.Alert.create_table(True)
-
-    try:
-        migrator = migrate.SqliteMigrator(db.db)
-        migrate.migrate(
-            migrator.add_column('Tell', 'topic', peewee.CharField(null=True)),
-            migrator.rename_column('Tell', 'message', 'text'))
-    except:
-        pass
+    db.connect()
+    db.create_tables(
+        [Tell, Message, Quote, Rem, Subscriber, Restricted, Alert], safe=True)
 
 
 def log_message(user, channel, text):
-    db.Message.create(
+    Message.create(
         user=user.strip(), channel=channel,
         time=arrow.utcnow().timestamp, text=text)
 
 ###############################################################################
 
 
+def sanitize(fn):
+    return lambda x, *y: (fn(x, *y) if x else lexicon.input.missing)
+
+
+@sanitize
 def send_tell(inp, sender):
-    if not inp:
-        return lexicon.input.missing
     recipient, text = inp.split(maxsplit=1)
     recipient = recipient.strip().rstrip(':,').lower()
     if not re.match(r'^@?[\w\[\]{}^|-]+$', recipient) or not text:
@@ -53,17 +99,17 @@ def send_tell(inp, sender):
     sender = str(sender)
     time = arrow.utcnow().timestamp
     if not recipient.startswith('@'):
-        db.Tell.create(
+        Tell.create(
             sender=sender, recipient=recipient,
             text=text, time=time, topic=None)
         return lexicon.tell.send
     else:
-        topic = recipient.strip().lower().lstrip('@')
-        users = db.Subscriber.select().where(db.Subscriber.topic == topic)
+        topic = recipient.lstrip('@')
+        users = Subscriber.select().where(Subscriber.topic == topic)
         users = [i.user for i in users]
         if not users:
             return lexicon.topic.no_subscribers
-        db.Tell.insert_many(dict(
+        Tell.insert_many(dict(
             sender=sender, recipient=user, text=text,
             time=time, topic=topic) for user in users).execute()
         return lexicon.topic.send.format(count=len(users))
@@ -71,7 +117,7 @@ def send_tell(inp, sender):
 
 def get_tells(user):
     user = user.strip().lower()
-    query = db.Tell.select().where(db.Tell.recipient == user).execute()
+    query = Tell.select().where(Tell.recipient == user).execute()
     tells = []
     for tell in query:
         time = arrow.get(tell.time).humanize()
@@ -86,8 +132,8 @@ def get_tells(user):
 
 def get_outbound_tells_count(user):
     user = user.strip().lower()
-    query = db.Tell.select().where(
-        fn.Lower(db.Tell.sender) == user, db.Tell.topic.is_null())
+    query = Tell.select().where(
+        peewee.fn.Lower(Tell.sender) == user, Tell.topic.is_null())
     if not query.exists():
         return lexicon.tell.outbound_empty
     users = ', '.join(sorted({i.recipient for i in query}))
@@ -96,32 +142,30 @@ def get_outbound_tells_count(user):
 
 def purge_outbound_tells(user):
     user = user.strip().lower()
-    query = db.Tell.select().where(
-        fn.Lower(db.Tell.sender) == user, db.Tell.topic.is_null())
+    query = Tell.select().where(
+        peewee.fn.Lower(Tell.sender) == user, Tell.topic.is_null())
     if not query.exists():
         return lexicon.tell.outbound_empty
     count = query.count()
-    db.Tell.delete().where(fn.Lower(db.Tell.sender) == user).execute()
+    Tell.delete().where(peewee.fn.Lower(Tell.sender) == user).execute()
     return lexicon.tell.outbound_purged.format(count=count)
 
 ###############################################################################
 
 
-def get_user_seen(user, channel, bot_nick, last=True):
+def get_user_seen(user, channel, last=True):
     if not user:
         return lexicon.input.incorrect
     user = user.strip().lower()
-    if user == bot_nick:
+    if user == core.config['irc']['nick']:
         return lexicon.seen.self
-    order = db.Message.time
-    if last:
-        order = order.desc()
-    query = db.Message.select().where(
-        fn.Lower(db.Message.user) == user,
-        db.Message.channel == channel).order_by(order)
+    order = Message.time.desc() if last else Message.time
+    query = Message.select().where(
+        peewee.fn.Lower(Message.user) == user,
+        Message.channel == channel).order_by(order)
     try:
         msg = query.get()
-    except db.Message.DoesNotExist:
+    except Message.DoesNotExist:
         return lexicon.seen.never
     time = arrow.get(msg.time).humanize()
     result = lexicon.seen.last if last else lexicon.seen.first
@@ -154,21 +198,21 @@ def dispatch_quote(inp, channel):
 
 def add_quote(user, channel, text, time=None):
     user = user.strip().lower()
-    if db.Quote.select().where(
-            db.Quote.user == user,
-            db.Quote.channel == channel, db.Quote.text == text).exists():
+    if Quote.select().where(
+            Quote.user == user,
+            Quote.channel == channel, Quote.text == text).exists():
         return lexicon.quote.already_exists
     if not time:
         time = arrow.utcnow().format('YYYY-MM-DD')
-    db.Quote.create(user=user, channel=channel, time=time, text=text)
+    Quote.create(user=user, channel=channel, time=time, text=text)
     return lexicon.quote.saved
 
 
 def get_quote(user, channel, index=None):
-    query = db.Quote.select().where(db.Quote.channel == channel)
+    query = Quote.select().where(Quote.channel == channel)
     if user:
         user = user.strip().lower()
-        query = query.where(db.Quote.user == user)
+        query = query.where(Quote.user == user)
     if not query.exists():
         return lexicon.quote.none_saved
     if not index:
@@ -180,17 +224,15 @@ def get_quote(user, channel, index=None):
             return lexicon.input.bad_index
         if index not in range(1, query.count() + 1):
             return lexicon.input.bad_index
-    quote = list(query.order_by(db.Quote.time))[int(index) - 1]
+    quote = list(query.order_by(Quote.time))[int(index) - 1]
     return '[{}/{}] {} {}: {}'.format(
         index, query.count(), quote.time, quote.user, quote.text)
 
 
 def delete_quote(user, channel, text):
     user = user.strip().lower()
-    query = db.Quote.select().where(
-        db.Quote.user == user,
-        db.Quote.channel == channel,
-        db.Quote.text == text)
+    query = Quote.select().where(
+        Quote.user == user, Quote.channel == channel, Quote.text == text)
     if not query.exists():
         return lexicon.quote.not_found
     query.get().delete_instance()
@@ -203,18 +245,17 @@ def remember_user(inp, channel):
     user, text = inp.split(maxsplit=1)
     user = user.strip().lower()
     text = text.strip()
-    db.Rem.delete().where(
-        db.Rem.user == user, db.Rem.channel == channel).execute()
-    db.Rem.create(user=user, channel=channel, text=text)
+    Rem.delete().where(Rem.user == user, Rem.channel == channel).execute()
+    Rem.create(user=user, channel=channel, text=text)
     return lexicon.quote.saved
 
 
 def recall_user(user, channel):
     user = user.strip().lower()
     try:
-        rem = db.Rem.select().where(
-            db.Rem.user == user, db.Rem.channel == channel).get()
-    except db.Rem.DoesNotExist:
+        rem = Rem.select().where(
+            Rem.user == user, Rem.channel == channel).get()
+    except Rem.DoesNotExist:
         return lexicon.not_found.generic
     return rem.text
 
@@ -226,13 +267,13 @@ def subscribe_to_topic(user, topic, super):
     if not topic:
         return lexicon.input.missing
     topic = topic.strip().lower().lstrip('@')
-    if (not super and db.Restricted.select().where(
-            db.Restricted.topic == topic).exists()):
+    if (not super and Restricted.select().where(
+            Restricted.topic == topic).exists()):
         return lexicon.denied
-    if db.Subscriber.select().where(
-            db.Subscriber.user == user, db.Subscriber.topic == topic).exists():
+    if Subscriber.select().where(
+            Subscriber.user == user, Subscriber.topic == topic).exists():
         return lexicon.topic.already_subscribed
-    db.Subscriber.create(user=user, topic=topic)
+    Subscriber.create(user=user, topic=topic)
     return lexicon.topic.subscribed.format(topic=topic)
 
 
@@ -241,8 +282,8 @@ def unsubscribe_from_topic(user, topic):
     if not topic:
         return lexicon.input.missing
     topic = topic.strip().lower().lstrip('@')
-    query = db.Subscriber.select().where(
-        db.Subscriber.user == user, db.Subscriber.topic == topic)
+    query = Subscriber.select().where(
+        Subscriber.user == user, Subscriber.topic == topic)
     if not query.exists():
         return lexicon.topic.not_subscribed
     query.get().delete_instance()
@@ -251,7 +292,7 @@ def unsubscribe_from_topic(user, topic):
 
 def get_topics_count(user):
     user = user.strip().lower()
-    query = db.Subscriber.select().where(db.Subscriber.user == user)
+    query = Subscriber.select().where(Subscriber.user == user)
     if not query.exists():
         return lexicon.topic.user_has_no_topics
     topics = [i.topic for i in query]
@@ -262,9 +303,9 @@ def restrict_topic(topic, super):
     if not super:
         return lexicon.denied
     topic = topic.strip().lower().lstrip('@')
-    if db.Restricted.select().where(db.Restricted.topic == topic).exists():
+    if Restricted.select().where(Restricted.topic == topic).exists():
         return lexicon.topic.already_restricted
-    db.Restricted.create(topic=topic)
+    Restricted.create(topic=topic)
     return lexicon.topic.restricted
 
 
@@ -272,7 +313,7 @@ def unrestrict_topic(topic, super):
     if not super:
         return lexicon.denied
     topic = topic.strip().lower().lstrip('@')
-    query = db.Restricted.select().where(db.Restricted.topic == topic)
+    query = Restricted.select().where(Restricted.topic == topic)
     if not query.exists():
         return lexicon.topic.not_restricted
     query.get().delete_instance()
@@ -305,7 +346,7 @@ def set_alert(user, inp):
             alert = alert.replace(**{unit: int(length)})
     else:
         return lexicon.input.incorrect
-    db.Alert.create(user=user, time=alert.timestamp, text=text)
+    Alert.create(user=user, time=alert.timestamp, text=text)
     return lexicon.alert.set
 
 
@@ -313,7 +354,7 @@ def get_alerts(user):
     user = user.strip().lower()
     now = arrow.utcnow()
     results = []
-    for alert in db.Alert.select().where(db.Alert.user == user):
+    for alert in Alert.select().where(Alert.user == user):
         if arrow.get(alert.time) < now:
             results.append(alert.text)
             alert.delete_instance()

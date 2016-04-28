@@ -89,6 +89,14 @@ class PageView:
         return collections.OrderedDict(
             (k, v) for k, v in zip(keys, values) if v)
 
+    def split_date(self, span='month'):
+        crop = dict(year=4, month=7, day=10)[span]
+        pages = collections.defaultdict(list)
+        for p in self.pages:
+            pages[p.created[:crop]].append(p)
+        return collections.OrderedDict(
+            [(k, self.__class__(v)) for k, v in sorted(pages.items())])
+
     ###########################################################################
     # Scalar End-Points
     ###########################################################################

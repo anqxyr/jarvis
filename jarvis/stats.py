@@ -4,6 +4,8 @@
 # Module Imports
 ###############################################################################
 
+import pathlib
+import pygal
 import pyscp
 
 from . import core
@@ -48,6 +50,24 @@ def user_articles(name):
         articles.append(row.format(p, tags, link, relation))
     articles.append('[[/div]]')
     return '\n'.join(articles)
+
+
+def plot_user_page_count(name):
+    pages = core.pages.related(name).articles
+    plot = pygal.Line(
+        title='Pages Created', fill=True, style=pygal.style.CleanStyle)
+    plot.x_labels = list(pages.split_date().keys())
+    data = pages.split_date(accumulate=True).values()
+    plot.add('Total', [i.count for i in data])
+    for k, v in pages.split_page_type().items():
+        data = v.split_date(accumulate=True).values()
+        plot.add(k, [i.count for i in data])
+    path = 'images/users/{}/'.format(name)
+    try:
+        pathlib.Path(path).mkdir(parents=True)
+    except FileExistsError:
+        pass
+    plot.render_to_file(path + 'page_count.svg')
 
 
 def get_user(name):
