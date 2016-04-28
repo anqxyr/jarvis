@@ -1,1 +1,1 @@
-from . import core, db, lexicon, tools, scp, ext, websearch, notes
+from . import core, lexicon, tools, scp, ext, websearch, notes

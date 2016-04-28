@@ -8,7 +8,7 @@ import arrow
 import random
 import re
 import peewee
-import playhouse
+import playhouse.sqlite_ext
 
 from . import core, lexicon
 
