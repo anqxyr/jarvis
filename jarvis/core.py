@@ -13,7 +13,7 @@ from . import ext
 ###############################################################################
 
 config = configparser.ConfigParser()
-config.read(str(pathlib.Path(__file__).parent / 'jarvis.cfg'))
+config.read('jarvis.cfg')
 
 wiki = pyscp.wikidot.Wiki('www.scp-wiki.net')
 pages = None
