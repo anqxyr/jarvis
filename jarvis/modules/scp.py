@@ -54,7 +54,7 @@ def find_page_by_url(bot, tr):
 
 @sopel.module.commands('lastcreated', 'lc')
 def get_last_created(bot, tr):
-    for line in jarvis.scp.get_last_created():
+    for line in jarvis.scp.get_last_created(tr.sender):
         bot.send(line, force=True)
 
 ###############################################################################

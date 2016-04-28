@@ -14,7 +14,7 @@ from . import core, tools, lexicon, stats
 
 ###############################################################################
 
-lc_cooldown = arrow.now()
+lc_cooldown = {}
 
 ###############################################################################
 # Find And Lookup Functions
@@ -159,12 +159,12 @@ def get_random_page(tags):
         return lexicon.not_found.page
 
 
-def get_last_created():
+def get_last_created(channel):
     global lc_cooldown
     now = arrow.now()
-    if lc_cooldown and (now - lc_cooldown).seconds < 120:
+    if channel in lc_cooldown and (now - lc_cooldown[channel]).seconds < 120:
         return [lexicon.spam]
-    lc_cooldown = now
+    lc_cooldown[channel] = now
     return map(page_summary, core.wiki.list_pages(
         body='title created_by created_at rating', limit=3,
         order='created_at desc'))
