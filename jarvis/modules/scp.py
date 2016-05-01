@@ -49,7 +49,9 @@ def showmore(bot, tr):
 
 @sopel.module.rule(r'(?i).*(http://www\.scp-wiki\.net/[^ ]+)')
 def find_page_by_url(bot, tr):
-    bot.send(jarvis.scp.find_page_by_url(tr.group(1)))
+    res = jarvis.scp.find_page_by_url(tr.group(1))
+    if res:
+        bot.send(res)
 
 
 @sopel.module.commands('lastcreated', 'lc')

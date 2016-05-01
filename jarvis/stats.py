@@ -89,7 +89,7 @@ def get_plot(url, css_class):
     data = [
         '[[html]]',
         '<div class="plot-pages">',
-        '<embed type="image/svg+xml" src="{}"/>',
+        '<embed type="image/svg+xml" src="http://{}"/>',
         '</div>',
         '[[/html]]']
     return '\n'.join(data).format(url)
