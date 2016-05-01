@@ -87,6 +87,7 @@ def wikipedia_search(inp, key='global'):
             warnings.simplefilter("ignore")
             url = wikipedia.page(inp).url
             summary = wikipedia.summary(inp, sentences=1)
+            summary = summary[:360]
             return '{} - {}'.format(summary, url)
     except wikipedia.exceptions.PageError:
         return lexicon.not_found.generic

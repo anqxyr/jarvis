@@ -8,7 +8,9 @@ import pathlib
 import pygal
 import pyscp
 
+
 from . import core
+
 
 ###############################################################################
 
@@ -17,7 +19,7 @@ def update_user(name):
     wiki = pyscp.wikidot.Wiki('scp-stats')
     wiki.auth(core.config['wiki']['name'], core.config['wiki']['pass'])
     p = wiki('user:' + name.lower())
-    p.create(name, get_user(name), 'automated update')
+    p.create(get_user(name), title=name, comment='automated update')
     return p.url
 
 ###############################################################################
@@ -52,26 +54,50 @@ def user_articles(name):
     return '\n'.join(articles)
 
 
-def plot_user_page_count(name):
+def plot_user_pages(name):
     pages = core.pages.related(name).articles
-    plot = pygal.Line(
-        title='Pages Created', fill=True, style=pygal.style.CleanStyle)
-    plot.x_labels = list(pages.split_date().keys())
-    data = pages.split_date(accumulate=True).values()
-    plot.add('Total', [i.count for i in data])
-    for k, v in pages.split_page_type().items():
-        data = v.split_date(accumulate=True).values()
-        plot.add(k, [i.count for i in data])
+    plot = pygal.Bar(
+        style=pygal.style.CleanStyle,
+        show_x_labels=False,
+        show_legend=False, show_y_guides=False,
+        margin=0, width=800, height=400)
+
+    pages = sorted(pages, key=lambda x: x.created)
+    plot.x_labels = [p.created[:10] for p in pages]
+    data = []
+    for p in pages:
+        if 'scp' in p.tags:
+            color = '#DC0000'
+        elif 'tale' in p.tags:
+            color = '#4040DD'
+        else:
+            color = '#FF9900'
+        data.append({'value': p.rating, 'label': p.title, 'color': color})
+    plot.add('Rating', data)
+
     path = 'images/users/{}/'.format(name)
     try:
         pathlib.Path(path).mkdir(parents=True)
     except FileExistsError:
         pass
-    plot.render_to_file(path + 'page_count.svg')
+    plot.render_to_file(path + 'pages.svg')
+    return '{}:8000/users/{}/pages.svg'.format(
+        core.config['aws']['address'], name)
+
+
+def get_plot(url, css_class):
+    data = [
+        '[[html]]',
+        '<div class="plot-pages">',
+        '<embed type="image/svg+xml" src="{}"/>',
+        '</div>',
+        '[[/html]]']
+    return '\n'.join(data).format(url)
 
 
 def get_user(name):
     source = [
+        get_plot(plot_user_pages(name), 'plot-pages'),
         user_summary(name),
         '~~~~',
         '++ Articles',

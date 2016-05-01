@@ -48,7 +48,7 @@ def find_page_by_title(inp, channel, pages=None):
         words = set(re.sub(r'[^\w]', '', i) for i in words)
         if not (words >= all_) or (words & none):
             continue
-        if partial and not any(i in p.title.lower() for i in partial):
+        if partial and not all(i in p.title.lower() for i in partial):
             continue
         results.append(p)
     return search(results, channel, 'page', page_summary, search_results)
