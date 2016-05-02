@@ -9,7 +9,7 @@ import pygal
 import pyscp
 
 
-from . import core
+from . import core, gviz
 
 
 ###############################################################################
@@ -40,18 +40,25 @@ def user_summary(name):
 
 
 def user_articles(name):
-    row = '||{0.title}||{0.rating:+d}||{1}||{2}||{0.created:.10}||{3}||'
-    articles = [
-        '[[div class="articles"]]',
-        '||~ Title||~ Rating||~ Tags||~ Link||~ Created||~ Relation||']
+    table = gviz.Table('articles')
+
+    table.add_column('Title')
+    table.add_column('Rating', 'number')
+    table.add_column('Tags')
+    table.add_column('Link')
+    table.add_column('Created')
+    table.add_column('Relation')
+
     pages = [p for p in core.pages.related(name) if p.tags]
     for p in sorted(pages, key=lambda x: x.rating, reverse=True):
-        tags = ', '.join(sorted(p.tags)) or ' '
-        link = '[[[{}|{}]]]'.format(p.url, p.url.split('/')[-1])
-        relation = p.metadata[name][0]
-        articles.append(row.format(p, tags, link, relation))
-    articles.append('[[/div]]')
-    return '\n'.join(articles)
+        tags = ['<b>{}</b>'.format(t) if t in 'scp tale hub admin author'
+                else t for t in p.tags]
+        tags = ', '.join(sorted(tags))
+        link = '<a href={}>{}</a>'.format(p.url, p.url.split('/')[-1])
+        relation = '<span class="rel-{0}">{0}</span>'.format(
+            p.metadata[name][0])
+        table.add_row(p.title, p.rating, tags, link, p.created[:10], relation)
+    return table.render()
 
 
 def plot_user_pages(name):
@@ -87,11 +94,13 @@ def plot_user_pages(name):
 
 def get_plot(url, css_class):
     data = [
+        '[[div id="iframe-plot-pages"]]',
         '[[html]]',
         '<div class="plot-pages">',
-        '<embed type="image/svg+xml" src="http://{}"/>',
+        '<embed type="image/svg+xml" src="{}"/>',
         '</div>',
-        '[[/html]]']
+        '[[/html]]',
+        '[[/div]]']
     return '\n'.join(data).format(url)
 
 
@@ -101,5 +110,9 @@ def get_user(name):
         user_summary(name),
         '~~~~',
         '++ Articles',
-        user_articles(name)]
+        '[[div id="iframe-articles"]]',
+        '[[html]]',
+        user_articles(name),
+        '[[/html]]',
+        '[[/div]]']
     return '\n'.join(source)
