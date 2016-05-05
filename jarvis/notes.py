@@ -78,242 +78,256 @@ def init():
         [Tell, Message, Quote, Rem, Subscriber, Restricted, Alert], safe=True)
 
 
-def log_message(user, channel, text):
+def logevent(inp):
     Message.create(
-        user=user.strip(), channel=channel,
-        time=arrow.utcnow().timestamp, text=text)
+        user=inp._user, channel=inp._channel,
+        time=arrow.utcnow().timestamp, text=inp._text)
 
+
+###############################################################################
+# Tells
 ###############################################################################
 
 
-def sanitize(fn):
-    return lambda x, *y: (fn(x, *y) if x else lexicon.input.missing)
-
-
-@sanitize
-def send_tell(inp, sender):
-    recipient, text = inp.split(maxsplit=1)
-    recipient = recipient.strip().rstrip(':,').lower()
-    if not re.match(r'^@?[\w\[\]{}^|-]+$', recipient) or not text:
-        return lexicon.input.incorrect
-    sender = str(sender)
-    time = arrow.utcnow().timestamp
-    if not recipient.startswith('@'):
-        Tell.create(
-            sender=sender, recipient=recipient,
-            text=text, time=time, topic=None)
-        return lexicon.tell.send
-    else:
-        topic = recipient.lstrip('@')
-        users = Subscriber.select().where(Subscriber.topic == topic)
+@core.command
+@core.parse_input(r'(?P<topic>@)?{name}[:,]? {text}')
+def send_tell(inp):
+    if inp.topic:
+        users = Subscriber.select().where(Subscriber.topic == inp.name)
         users = [i.user for i in users]
         if not users:
             return lexicon.topic.no_subscribers
-        Tell.insert_many(dict(
-            sender=sender, recipient=user, text=text,
-            time=time, topic=topic) for user in users).execute()
+    else:
+        users = [inp.name]
+    data = dict(sender=inp._user, text=inp.text,
+                time=arrow.utcnow().timestamp, topic=bool(inp.topic))
+    Tell.insert_many(dict(recipient=i, **data) for i in users)
+    if inp.topic:
         return lexicon.topic.send.format(count=len(users))
+    else:
+        return lexicon.tell.send
 
 
-def get_tells(user):
-    user = user.strip().lower()
-    query = Tell.select().where(Tell.recipient == user).execute()
-    tells = []
+@core.command
+@core.private
+@core.multiline
+@core.case_insensitive
+def get_tells(inp):
+    query = Tell.select().where(Tell.recipient == inp._user).execute()
     for tell in query:
         time = arrow.get(tell.time).humanize()
-        if not tell.topic:
-            tells.append('{} said {}: {}'.format(tell.sender, time, tell.text))
-        else:
-            tells.append('{} said {} via @{}: {}'.format(
-                tell.sender, time, tell.topic, tell.text))
+        msg = lexicon.topic.get if tell.topic else lexicon.tell.get
+        yield msg.format(
+            name=tell.sender, time=time, topic=tell.topic, text=tell.text)
         tell.delete_instance()
-    return tells
 
 
-def get_outbound_tells_count(user):
-    user = user.strip().lower()
+@core.command
+@core.notice
+@core.case_insensitive
+def get_outbound_tells_count(inp):
     query = Tell.select().where(
-        peewee.fn.Lower(Tell.sender) == user, Tell.topic.is_null())
+        peewee.fn.Lower(Tell.sender) == inp._user, Tell.topic.is_null())
     if not query.exists():
         return lexicon.tell.outbound_empty
     users = ', '.join(sorted({i.recipient for i in query}))
     return lexicon.tell.outbound_count.format(total=query.count(), users=users)
 
 
-def purge_outbound_tells(user):
-    user = user.strip().lower()
-    query = Tell.select().where(
-        peewee.fn.Lower(Tell.sender) == user, Tell.topic.is_null())
+@core.command
+@core.notice
+@core.case_insensitive
+def purge_outbound_tells(inp):
+    where_clause = peewee.fn.Lower(Tell.sender) == inp._user
+    query = Tell.select().where(where_clause, Tell.topic.is_null())
     if not query.exists():
         return lexicon.tell.outbound_empty
-    count = query.count()
-    Tell.delete().where(peewee.fn.Lower(Tell.sender) == user).execute()
-    return lexicon.tell.outbound_purged.format(count=count)
+    Tell.delete().where(where_clause).execute()
+    return lexicon.tell.outbound_purged.format(count=query.count())
 
+
+###############################################################################
+# Seen
 ###############################################################################
 
 
-def get_user_seen(user, channel, last=True):
-    if not user:
-        return lexicon.input.incorrect
-    user = user.strip().lower()
-    if user == core.config['irc']['nick']:
+@core.command
+@core.case_insensitive
+@core.parse_input(r'{name} ?(?P<first>--first|-f)?')
+def get_user_seen(inp):
+    if inp.name == core.config['irc']['nick']:
         return lexicon.seen.self
-    order = Message.time.desc() if last else Message.time
+    order = Message.time if inp.first else Message.time.desc()
     query = Message.select().where(
-        peewee.fn.Lower(Message.user) == user,
-        Message.channel == channel).order_by(order)
+        peewee.fn.Lower(Message.user) == inp.name,
+        Message.channel == inp._channel).order_by(order)
     try:
-        msg = query.get()
+        seen = query.get()
     except Message.DoesNotExist:
         return lexicon.seen.never
-    time = arrow.get(msg.time).humanize()
-    result = lexicon.seen.last if last else lexicon.seen.first
-    return result.format(user=msg.user, time=time, text=msg.text)
+    time = arrow.get(seen.time).humanize()
+    msg = lexicon.seen.first if inp.first else lexicon.seen.last
+    return msg.format(user=seen.user, time=time, text=seen.text)
 
 
 ###############################################################################
+# Quotes
+###############################################################################
 
 
-def dispatch_quote(inp, channel):
-    inp = inp.strip() if inp else ''
-    parsed = re.match(r'^ *[0-9]* *$', inp)
-    if parsed:
-        return get_quote(None, channel, parsed.group(0).strip())
-    parsed = re.match(
-        r'^(add|del)? ?(\d{4}-\d{2}-\d{2})? ?([\w\d<>^{}[\]\\-]+)(.*)$', inp)
-    if not parsed:
-        return lexicon.input.incorrect
-    cmd, time, name, text = parsed.groups()
-    text = text.strip()
-    channel = str(channel).strip()
-    if cmd == 'add':
-        return add_quote(name, channel, text, time)
-    if cmd == 'del':
-        return delete_quote(name, channel, text)
-    if name == channel:
-        name = None
-    return get_quote(name, channel, text)
+@core.command
+@core.parse_input(r'(?P<cmd>add|del)?.*')
+def dispatch_quote(inp):
+    if inp.cmd == 'add':
+        return add_quote(inp)
+    elif inp.cmd == 'del':
+        return del_quote(inp)
+    return get_quote(inp)
 
 
-def add_quote(user, channel, text, time=None):
-    user = user.strip().lower()
+@core.parse_input(r'add ?{date}? {name} {text}')
+def add_quote(inp):
+
     if Quote.select().where(
-            Quote.user == user,
-            Quote.channel == channel, Quote.text == text).exists():
+            Quote.user == inp.name.lower(),
+            Quote.channel == inp._channel,
+            Quote.text == inp.text).exists():
         return lexicon.quote.already_exists
-    if not time:
-        time = arrow.utcnow().format('YYYY-MM-DD')
-    Quote.create(user=user, channel=channel, time=time, text=text)
+
+    Quote.create(
+        user=inp.name.lower(),
+        channel=inp._channel,
+        time=inp.time or arrow.utcnow().format('YYYY-MM-DD'),
+        text=inp.text)
+
     return lexicon.quote.saved
 
 
-def get_quote(user, channel, index=None):
-    query = Quote.select().where(Quote.channel == channel)
-    if user:
-        user = user.strip().lower()
-        query = query.where(Quote.user == user)
-    if not query.exists():
-        return lexicon.quote.none_saved
-    if not index:
-        index = random.randint(1, query.count())
-    else:
-        try:
-            index = int(index)
-        except ValueError:
-            return lexicon.input.bad_index
-        if index not in range(1, query.count() + 1):
-            return lexicon.input.bad_index
-    quote = list(query.order_by(Quote.time))[int(index) - 1]
-    return '[{}/{}] {} {}: {}'.format(
-        index, query.count(), quote.time, quote.user, quote.text)
-
-
-def delete_quote(user, channel, text):
-    user = user.strip().lower()
+@core.parse_input('del {name} {text}')
+def del_quote(inp):
     query = Quote.select().where(
-        Quote.user == user, Quote.channel == channel, Quote.text == text)
+        Quote.user == inp.name.lower(),
+        Quote.channel == inp._channel,
+        Quote.text == inp.text)
     if not query.exists():
         return lexicon.quote.not_found
     query.get().delete_instance()
     return lexicon.quote.deleted
 
+
+@core.case_insensitive
+@core.parse_input(r'{name}? ?{index}?')
+def get_quote(inp):
+    query = Quote.select().where(Quote.channel == inp._channel)
+    if inp.name:
+        query = query.where(Quote.user == inp.name)
+    if not query.exists():
+        return lexicon.quote.none_saved
+    index = int(inp.index or random.randint(1, query.count()))
+    if index > query.count():
+        return lexicon.input.bad_index
+    quote = query.order_by(Quote.time).offset(index - 1).limit(1).get()
+    return '[{}/{}] {} {}: {}'.format(
+        index, query.count(), quote.time, quote.user, quote.text)
+
+
+###############################################################################
+# Memos
 ###############################################################################
 
 
-def remember_user(inp, channel):
-    user, text = inp.split(maxsplit=1)
-    user = user.strip().lower()
-    text = text.strip()
-    Rem.delete().where(Rem.user == user, Rem.channel == channel).execute()
-    Rem.create(user=user, channel=channel, text=text)
+@core.command
+@core.parse_input('{name} {text}')
+def remember_user(inp):
+
+    Rem.delete().where(
+        Rem.user == inp.name.lower(),
+        Rem.channel == inp._channel).execute()
+
+    Rem.create(
+        user=inp.name.lower(),
+        channel=inp._channel,
+        text=inp.text)
+
     return lexicon.quote.saved
 
 
-def recall_user(user, channel):
-    user = user.strip().lower()
-    try:
-        rem = Rem.select().where(
-            Rem.user == user, Rem.channel == channel).get()
-    except Rem.DoesNotExist:
+@core.command
+@core.case_insensitive
+@core.parse_input(r'\?{name}')
+def recall_user(inp):
+    rem = Rem.select().where(
+        Rem.user == inp.name,
+        Rem.channel == inp._channel)
+    if rem.exists():
+        return rem.get().text
+    else:
         return lexicon.not_found.generic
-    return rem.text
 
+
+###############################################################################
+# Topics
 ###############################################################################
 
 
-def subscribe_to_topic(user, topic, super):
-    user = user.strip().lower()
-    if not topic:
-        return lexicon.input.missing
-    topic = topic.strip().lower().lstrip('@')
-    if (not super and Restricted.select().where(
-            Restricted.topic == topic).exists()):
-        return lexicon.denied
+@core.command
+@core.case_insensitive
+@core.parse_input(r'@?{name}')
+def subscribe_to_topic(inp):
+    if inp._channel != core.config['irc']['sssc']:
+        if Restricted.select().where(
+                Restricted.topic == inp.name).exists():
+            return lexicon.denied
     if Subscriber.select().where(
-            Subscriber.user == user, Subscriber.topic == topic).exists():
+            Subscriber.user == inp._user,
+            Subscriber.topic == inp.name).exists():
         return lexicon.topic.already_subscribed
-    Subscriber.create(user=user, topic=topic)
-    return lexicon.topic.subscribed.format(topic=topic)
+    Subscriber.create(user=inp._user, topic=inp.name)
+    return lexicon.topic.subscribed.format(topic=inp.name)
 
 
-def unsubscribe_from_topic(user, topic):
-    user = user.strip().lower()
-    if not topic:
-        return lexicon.input.missing
-    topic = topic.strip().lower().lstrip('@')
+@core.command
+@core.case_insensitive
+@core.parse_input(r'@?{name}')
+def unsubscribe_from_topic(inp):
     query = Subscriber.select().where(
-        Subscriber.user == user, Subscriber.topic == topic)
+        Subscriber.user == inp._user, Subscriber.topic == inp.name)
     if not query.exists():
         return lexicon.topic.not_subscribed
     query.get().delete_instance()
-    return lexicon.topic.unsubscribed.format(topic=topic)
+    return lexicon.topic.unsubscribed.format(topic=inp.name)
 
 
-def get_topics_count(user):
-    user = user.strip().lower()
-    query = Subscriber.select().where(Subscriber.user == user)
+@core.command
+@core.notice
+@core.case_insensitive
+def get_topics_count(inp):
+    query = Subscriber.select().where(Subscriber.user == inp._user)
     if not query.exists():
         return lexicon.topic.user_has_no_topics
     topics = [i.topic for i in query]
     return lexicon.topic.count.format(topics=', '.join(topics))
 
 
-def restrict_topic(topic, super):
-    if not super:
+@core.command
+@core.case_insensitive
+@core.parse_input(r'@?{name}')
+def restrict_topic(inp):
+    if inp._channel != core.config['irc']['sssc']:
         return lexicon.denied
-    topic = topic.strip().lower().lstrip('@')
-    if Restricted.select().where(Restricted.topic == topic).exists():
+    if Restricted.select().where(Restricted.topic == inp.name).exists():
         return lexicon.topic.already_restricted
-    Restricted.create(topic=topic)
+    Restricted.create(topic=inp.name)
     return lexicon.topic.restricted
 
 
-def unrestrict_topic(topic, super):
-    if not super:
+@core.command
+@core.case_insensitive
+@core.parse_input(r'@?{name}')
+def unrestrict_topic(inp):
+    if inp._channel != core.config['irc']['sssc']:
         return lexicon.denied
-    topic = topic.strip().lower().lstrip('@')
-    query = Restricted.select().where(Restricted.topic == topic)
+    query = Restricted.select().where(Restricted.topic == inp.name)
     if not query.exists():
         return lexicon.topic.not_restricted
     query.get().delete_instance()
@@ -321,41 +335,33 @@ def unrestrict_topic(topic, super):
 
 
 ###############################################################################
+# Alerts
+###############################################################################
 
 
-def set_alert(user, inp):
-    if not inp:
-        return lexicon.input.missing
-    try:
-        time, text = inp.split(maxsplit=1)
-    except ValueError:
-        return lexicon.input.missing
-    text = text.strip()
-    user = user.strip().lower()
-    if not text:
-        return lexicon.input.missing
-    if re.match(r'\d{4}-\d{2}-\d{2}$', time):
-        alert = arrow.get(time)
+@core.command
+@core.parse_input(r'{date}|(?P<span>(\d+[dhm])+) {text}')
+def set_alert(inp):
+    if inp.date:
+        alert = arrow.get(inp.date)
         if alert < arrow.utcnow():
             return lexicon.alert.past
-    elif re.match(r'(\d+[dhm])+$', time):
-        intervals = re.findall(r'(\d+)([dhm])', time)
+    else:
         alert = arrow.utcnow()
-        for length, unit in intervals:
+        for length, unit in re.findall(r'(\d+)([dhm])', inp.span):
             unit = dict(d='days', h='hours', m='minutes')[unit]
             alert = alert.replace(**{unit: int(length)})
-    else:
-        return lexicon.input.incorrect
-    Alert.create(user=user, time=alert.timestamp, text=text)
+    Alert.create(user=inp._user.lower(), time=alert.timestamp, text=inp.text)
     return lexicon.alert.set
 
 
-def get_alerts(user):
-    user = user.strip().lower()
+@core.command
+@core.private
+@core.multiline
+@core.case_insensitive
+def get_alerts(inp):
     now = arrow.utcnow()
-    results = []
-    for alert in Alert.select().where(Alert.user == user):
+    for alert in Alert.select().where(Alert.user == inp._user):
         if arrow.get(alert.time) < now:
-            results.append(alert.text)
+            yield alert.text
             alert.delete_instance()
-    return results
