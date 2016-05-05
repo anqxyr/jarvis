@@ -92,6 +92,7 @@ def logevent(inp):
 @core.command
 @core.parse_input(r'(?P<topic>@)?{name}[:,]? {text}')
 def send_tell(inp):
+
     if inp.topic:
         users = Subscriber.select().where(Subscriber.topic == inp.name)
         users = [i.user for i in users]
@@ -99,9 +100,14 @@ def send_tell(inp):
             return lexicon.topic.no_subscribers
     else:
         users = [inp.name]
-    data = dict(sender=inp._user, text=inp.text,
-                time=arrow.utcnow().timestamp, topic=bool(inp.topic))
+
+    data = dict(
+        sender=inp._user,
+        text=inp.text,
+        time=arrow.utcnow().timestamp,
+        topic=bool(inp.topic))
     Tell.insert_many(dict(recipient=i, **data) for i in users)
+
     if inp.topic:
         return lexicon.topic.send.format(count=len(users))
     else:
@@ -115,10 +121,15 @@ def send_tell(inp):
 def get_tells(inp):
     query = Tell.select().where(Tell.recipient == inp._user).execute()
     for tell in query:
+
         time = arrow.get(tell.time).humanize()
         msg = lexicon.topic.get if tell.topic else lexicon.tell.get
+
         yield msg.format(
-            name=tell.sender, time=time, topic=tell.topic, text=tell.text)
+            name=tell.sender,
+            time=time,
+            topic=tell.topic,
+            text=tell.text)
         tell.delete_instance()
 
 
@@ -126,12 +137,18 @@ def get_tells(inp):
 @core.notice
 @core.case_insensitive
 def get_outbound_tells_count(inp):
+
     query = Tell.select().where(
-        peewee.fn.Lower(Tell.sender) == inp._user, Tell.topic.is_null())
+        peewee.fn.Lower(Tell.sender) == inp._user,
+        Tell.topic.is_null())
+
     if not query.exists():
         return lexicon.tell.outbound_empty
+
     users = ', '.join(sorted({i.recipient for i in query}))
-    return lexicon.tell.outbound_count.format(total=query.count(), users=users)
+    return lexicon.tell.outbound_count.format(
+        total=query.count(),
+        users=users)
 
 
 @core.command
@@ -139,9 +156,13 @@ def get_outbound_tells_count(inp):
 @core.case_insensitive
 def purge_outbound_tells(inp):
     where_clause = peewee.fn.Lower(Tell.sender) == inp._user
-    query = Tell.select().where(where_clause, Tell.topic.is_null())
+    query = Tell.select().where(
+        where_clause,
+        Tell.topic.is_null())
+
     if not query.exists():
         return lexicon.tell.outbound_empty
+
     Tell.delete().where(where_clause).execute()
     return lexicon.tell.outbound_purged.format(count=query.count())
 
@@ -161,10 +182,9 @@ def get_user_seen(inp):
     query = Message.select().where(
         peewee.fn.Lower(Message.user) == inp.name,
         Message.channel == inp._channel).order_by(order)
-    try:
-        seen = query.get()
-    except Message.DoesNotExist:
+    if not query.exists():
         return lexicon.seen.never
+    seen = query.get()
     time = arrow.get(seen.time).humanize()
     msg = lexicon.seen.first if inp.first else lexicon.seen.last
     return msg.format(user=seen.user, time=time, text=seen.text)
@@ -205,12 +225,15 @@ def add_quote(inp):
 
 @core.parse_input('del {name} {text}')
 def del_quote(inp):
+
     query = Quote.select().where(
         Quote.user == inp.name.lower(),
         Quote.channel == inp._channel,
         Quote.text == inp.text)
+
     if not query.exists():
         return lexicon.quote.not_found
+
     query.get().delete_instance()
     return lexicon.quote.deleted
 
@@ -218,15 +241,19 @@ def del_quote(inp):
 @core.case_insensitive
 @core.parse_input(r'{name}? ?{index}?')
 def get_quote(inp):
+
     query = Quote.select().where(Quote.channel == inp._channel)
     if inp.name:
         query = query.where(Quote.user == inp.name)
+
     if not query.exists():
         return lexicon.quote.none_saved
+
     index = int(inp.index or random.randint(1, query.count()))
     if index > query.count():
         return lexicon.input.bad_index
     quote = query.order_by(Quote.time).offset(index - 1).limit(1).get()
+
     return '[{}/{}] {} {}: {}'.format(
         index, query.count(), quote.time, quote.user, quote.text)
 
@@ -256,9 +283,11 @@ def remember_user(inp):
 @core.case_insensitive
 @core.parse_input(r'\?{name}')
 def recall_user(inp):
+
     rem = Rem.select().where(
         Rem.user == inp.name,
         Rem.channel == inp._channel)
+
     if rem.exists():
         return rem.get().text
     else:
@@ -274,14 +303,17 @@ def recall_user(inp):
 @core.case_insensitive
 @core.parse_input(r'@?{name}')
 def subscribe_to_topic(inp):
+
     if inp._channel != core.config['irc']['sssc']:
         if Restricted.select().where(
                 Restricted.topic == inp.name).exists():
             return lexicon.denied
+
     if Subscriber.select().where(
             Subscriber.user == inp._user,
             Subscriber.topic == inp.name).exists():
         return lexicon.topic.already_subscribed
+
     Subscriber.create(user=inp._user, topic=inp.name)
     return lexicon.topic.subscribed.format(topic=inp.name)
 
@@ -290,10 +322,14 @@ def subscribe_to_topic(inp):
 @core.case_insensitive
 @core.parse_input(r'@?{name}')
 def unsubscribe_from_topic(inp):
+
     query = Subscriber.select().where(
-        Subscriber.user == inp._user, Subscriber.topic == inp.name)
+        Subscriber.user == inp._user,
+        Subscriber.topic == inp.name)
+
     if not query.exists():
         return lexicon.topic.not_subscribed
+
     query.get().delete_instance()
     return lexicon.topic.unsubscribed.format(topic=inp.name)
 
@@ -302,9 +338,12 @@ def unsubscribe_from_topic(inp):
 @core.notice
 @core.case_insensitive
 def get_topics_count(inp):
+
     query = Subscriber.select().where(Subscriber.user == inp._user)
+
     if not query.exists():
         return lexicon.topic.user_has_no_topics
+
     topics = [i.topic for i in query]
     return lexicon.topic.count.format(topics=', '.join(topics))
 
@@ -313,10 +352,13 @@ def get_topics_count(inp):
 @core.case_insensitive
 @core.parse_input(r'@?{name}')
 def restrict_topic(inp):
+
     if inp._channel != core.config['irc']['sssc']:
         return lexicon.denied
+
     if Restricted.select().where(Restricted.topic == inp.name).exists():
         return lexicon.topic.already_restricted
+
     Restricted.create(topic=inp.name)
     return lexicon.topic.restricted
 
@@ -325,11 +367,14 @@ def restrict_topic(inp):
 @core.case_insensitive
 @core.parse_input(r'@?{name}')
 def unrestrict_topic(inp):
+
     if inp._channel != core.config['irc']['sssc']:
         return lexicon.denied
+
     query = Restricted.select().where(Restricted.topic == inp.name)
     if not query.exists():
         return lexicon.topic.not_restricted
+
     query.get().delete_instance()
     return lexicon.topic.unrestricted
 
