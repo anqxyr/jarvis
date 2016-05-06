@@ -100,8 +100,6 @@ def send_tell(inp, *, user, topic, message):
     tell topic. In the later case, all users subscribed to the topic at the
     moment the tell it sent will recieve the message.
     """
-    print(inp.text)
-    print(user, topic, message)
     if topic:
         users = Subscriber.select().where(Subscriber.topic == topic)
         users = [i.user for i in users]
