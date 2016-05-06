@@ -38,14 +38,14 @@ class Tell(BaseModel):
 class Message(BaseModel):
     user = peewee.CharField(index=True)
     channel = peewee.CharField()
-    time = peewee.CharField()
+    time = peewee.DateTimeField()
     text = peewee.TextField()
 
 
 class Quote(BaseModel):
     user = peewee.CharField(index=True)
     channel = peewee.CharField()
-    time = peewee.CharField()
+    time = peewee.DateTimeField()
     text = peewee.TextField()
 
 
@@ -80,8 +80,8 @@ def init():
 
 def logevent(inp):
     Message.create(
-        user=inp._user, channel=inp._channel,
-        time=arrow.utcnow().timestamp, text=inp._text)
+        user=inp.user, channel=inp.channel,
+        time=arrow.utcnow().timestamp, text=inp.text)
 
 
 ###############################################################################
@@ -90,36 +90,44 @@ def logevent(inp):
 
 
 @core.command
-@core.parse_input(r'(?P<topic>@)?{name}[:,]? {text}')
-def send_tell(inp):
+@core.parse_input(r'({user}|{topic})[:,]? {message}')
+def send_tell(inp, *, user, topic, message):
+    """
+    !tell <name>|@<topic> <message> -- Send messages to other users.
 
-    if inp.topic:
-        users = Subscriber.select().where(Subscriber.topic == inp.name)
+    Saves the message and delivers them to the target next time they're in
+    the same channel with the bot. The target is either a single user, or a
+    tell topic. In the later case, all users subscribed to the topic at the
+    moment the tell it sent will recieve the message.
+    """
+    print(inp.text)
+    print(user, topic, message)
+    if topic:
+        users = Subscriber.select().where(Subscriber.topic == topic)
         users = [i.user for i in users]
         if not users:
             return lexicon.topic.no_subscribers
     else:
-        users = [inp.name]
+        users = [user]
 
     data = dict(
-        sender=inp._user,
-        text=inp.text,
+        sender=inp.user,
+        text=message,
         time=arrow.utcnow().timestamp,
-        topic=bool(inp.topic))
-    Tell.insert_many(dict(recipient=i, **data) for i in users)
+        topic=bool(topic))
+    Tell.insert_many(dict(recipient=i, **data) for i in users).execute()
 
-    if inp.topic:
-        return lexicon.topic.send.format(count=len(users))
-    else:
-        return lexicon.tell.send
+    msg = lexicon.topic.send if topic else lexicon.tell.send
+    return msg.format(count=len(users))
 
 
 @core.command
 @core.private
 @core.multiline
-@core.case_insensitive
+@core.lower_input
 def get_tells(inp):
-    query = Tell.select().where(Tell.recipient == inp._user).execute()
+    """Retrieve incoming messages."""
+    query = Tell.select().where(Tell.recipient == inp.user).execute()
     for tell in query:
 
         time = arrow.get(tell.time).humanize()
@@ -135,36 +143,34 @@ def get_tells(inp):
 
 @core.command
 @core.notice
-@core.case_insensitive
-def get_outbound_tells_count(inp):
+@core.lower_input
+@core.parse_input(r'(?P<mode>count|purge)')
+def outbound_tells(inp, *, mode):
+    """
+    !outbound count|purge -- Access outbound tells.
 
+    Outband tells are tells sent by the input user, which haven't been
+    delivered to their targets yet.
+
+    Ignores messages sent to tell topics.
+    """
     query = Tell.select().where(
-        peewee.fn.Lower(Tell.sender) == inp._user,
+        peewee.fn.Lower(Tell.sender) == inp.user,
         Tell.topic.is_null())
 
     if not query.exists():
-        return lexicon.tell.outbound_empty
+        return lexicon.tell.outbound.empty
+
+    if mode == 'count':
+        msg = lexicon.tell.outbound.count
+    elif mode == 'purge':
+        Tell.delete().where(
+            peewee.fn.Lower(Tell.sender) == inp.user,
+            Tell.topic.is_null()).execute()
+        msg = lexicon.tell.outbound.purged
 
     users = ', '.join(sorted({i.recipient for i in query}))
-    return lexicon.tell.outbound_count.format(
-        total=query.count(),
-        users=users)
-
-
-@core.command
-@core.notice
-@core.case_insensitive
-def purge_outbound_tells(inp):
-    where_clause = peewee.fn.Lower(Tell.sender) == inp._user
-    query = Tell.select().where(
-        where_clause,
-        Tell.topic.is_null())
-
-    if not query.exists():
-        return lexicon.tell.outbound_empty
-
-    Tell.delete().where(where_clause).execute()
-    return lexicon.tell.outbound_purged.format(count=query.count())
+    return msg.format(count=query.count(), users=users)
 
 
 ###############################################################################
@@ -173,20 +179,23 @@ def purge_outbound_tells(inp):
 
 
 @core.command
-@core.case_insensitive
-@core.parse_input(r'{name} ?(?P<first>--first|-f)?')
-def get_user_seen(inp):
-    if inp.name == core.config['irc']['nick']:
+@core.lower_input
+@core.parse_input(r'{user} ?(?P<first>-f)?')
+def get_user_seen(inp, *, user, first):
+    """!seen <user> [-f] -- Get the last/first message said by the user."""
+    if user == core.config['irc']['nick']:
         return lexicon.seen.self
-    order = Message.time if inp.first else Message.time.desc()
+
+    order = Message.time if first else Message.time.desc()
     query = Message.select().where(
-        peewee.fn.Lower(Message.user) == inp.name,
-        Message.channel == inp._channel).order_by(order)
+        peewee.fn.Lower(Message.user) == user,
+        Message.channel == inp.channel).order_by(order)
     if not query.exists():
         return lexicon.seen.never
+
     seen = query.get()
     time = arrow.get(seen.time).humanize()
-    msg = lexicon.seen.first if inp.first else lexicon.seen.last
+    msg = lexicon.seen.first if first else lexicon.seen.last
     return msg.format(user=seen.user, time=time, text=seen.text)
 
 
@@ -196,40 +205,40 @@ def get_user_seen(inp):
 
 
 @core.command
-@core.parse_input(r'(?P<cmd>add|del)?.*')
-def dispatch_quote(inp):
-    if inp.cmd == 'add':
+@core.parse_input(r'(?P<mode>add|del)?.*')
+def dispatch_quote(inp, *, mode):
+    if mode == 'add':
         return add_quote(inp)
-    elif inp.cmd == 'del':
+    elif mode == 'del':
         return del_quote(inp)
     return get_quote(inp)
 
 
-@core.parse_input(r'add ?{date}? {name} {text}')
-def add_quote(inp):
+@core.parse_input(r'add ?{date}? {user} {message}')
+def add_quote(inp, *, date, user, message):
 
     if Quote.select().where(
-            Quote.user == inp.name.lower(),
-            Quote.channel == inp._channel,
-            Quote.text == inp.text).exists():
+            Quote.user == user.lower(),
+            Quote.channel == inp.channel,
+            Quote.text == message).exists():
         return lexicon.quote.already_exists
 
     Quote.create(
-        user=inp.name.lower(),
-        channel=inp._channel,
-        time=inp.time or arrow.utcnow().format('YYYY-MM-DD'),
-        text=inp.text)
+        user=user.lower(),
+        channel=inp.channel,
+        time=date or arrow.utcnow().format('YYYY-MM-DD'),
+        text=message)
 
     return lexicon.quote.saved
 
 
-@core.parse_input('del {name} {text}')
-def del_quote(inp):
+@core.parse_input('del {user} {message}')
+def del_quote(inp, *, user, message):
 
     query = Quote.select().where(
-        Quote.user == inp.name.lower(),
-        Quote.channel == inp._channel,
-        Quote.text == inp.text)
+        Quote.user == user.lower(),
+        Quote.channel == inp.channel,
+        Quote.text == message)
 
     if not query.exists():
         return lexicon.quote.not_found
@@ -238,23 +247,23 @@ def del_quote(inp):
     return lexicon.quote.deleted
 
 
-@core.case_insensitive
-@core.parse_input(r'{name}? ?{index}?')
-def get_quote(inp):
+@core.lower_input
+@core.parse_input(r'{user}? ?{index}?')
+def get_quote(inp, *, user, index):
 
-    query = Quote.select().where(Quote.channel == inp._channel)
-    if inp.name:
-        query = query.where(Quote.user == inp.name)
+    query = Quote.select().where(Quote.channel == inp.channel)
+    if user:
+        query = query.where(Quote.user == user)
 
     if not query.exists():
         return lexicon.quote.none_saved
 
-    index = int(inp.index or random.randint(1, query.count()))
+    index = int(index or random.randint(1, query.count()))
     if index > query.count():
         return lexicon.input.bad_index
     quote = query.order_by(Quote.time).offset(index - 1).limit(1).get()
 
-    return '[{}/{}] {} {}: {}'.format(
+    return '[{}/{}] {:.10} {}: {}'.format(
         index, query.count(), quote.time, quote.user, quote.text)
 
 
@@ -264,29 +273,26 @@ def get_quote(inp):
 
 
 @core.command
-@core.parse_input('{name} {text}')
-def remember_user(inp):
+@core.parse_input('{user} {message}')
+def remember_user(inp, *, user, message):
 
     Rem.delete().where(
-        Rem.user == inp.name.lower(),
-        Rem.channel == inp._channel).execute()
+        Rem.user == user.lower(),
+        Rem.channel == inp.channel).execute()
 
-    Rem.create(
-        user=inp.name.lower(),
-        channel=inp._channel,
-        text=inp.text)
+    Rem.create(user=user.lower(), channel=inp.channel, text=message)
 
     return lexicon.quote.saved
 
 
 @core.command
-@core.case_insensitive
-@core.parse_input(r'\?{name}')
-def recall_user(inp):
+@core.lower_input
+@core.parse_input(r'\?{user}')
+def recall_user(inp, *, user):
 
     rem = Rem.select().where(
-        Rem.user == inp.name,
-        Rem.channel == inp._channel)
+        Rem.user == user,
+        Rem.channel == inp.channel)
 
     if rem.exists():
         return rem.get().text
@@ -300,46 +306,46 @@ def recall_user(inp):
 
 
 @core.command
-@core.case_insensitive
-@core.parse_input(r'@?{name}')
-def subscribe_to_topic(inp):
+@core.lower_input
+@core.parse_input('{topic}')
+def subscribe_to_topic(inp, *, topic):
 
-    if inp._channel != core.config['irc']['sssc']:
+    if inp.channel != core.config['irc']['sssc']:
         if Restricted.select().where(
-                Restricted.topic == inp.name).exists():
+                Restricted.topic == topic).exists():
             return lexicon.denied
 
     if Subscriber.select().where(
-            Subscriber.user == inp._user,
-            Subscriber.topic == inp.name).exists():
+            Subscriber.user == inp.user,
+            Subscriber.topic == topic).exists():
         return lexicon.topic.already_subscribed
 
-    Subscriber.create(user=inp._user, topic=inp.name)
-    return lexicon.topic.subscribed.format(topic=inp.name)
+    Subscriber.create(user=inp.user, topic=topic)
+    return lexicon.topic.subscribed.format(topic=topic)
 
 
 @core.command
-@core.case_insensitive
-@core.parse_input(r'@?{name}')
-def unsubscribe_from_topic(inp):
+@core.lower_input
+@core.parse_input('{topic}')
+def unsubscribe_from_topic(inp, *, topic):
 
     query = Subscriber.select().where(
-        Subscriber.user == inp._user,
-        Subscriber.topic == inp.name)
+        Subscriber.user == inp.user,
+        Subscriber.topic == topic)
 
     if not query.exists():
         return lexicon.topic.not_subscribed
 
     query.get().delete_instance()
-    return lexicon.topic.unsubscribed.format(topic=inp.name)
+    return lexicon.topic.unsubscribed.format(topic=topic)
 
 
 @core.command
 @core.notice
-@core.case_insensitive
+@core.lower_input
 def get_topics_count(inp):
 
-    query = Subscriber.select().where(Subscriber.user == inp._user)
+    query = Subscriber.select().where(Subscriber.user == inp.user)
 
     if not query.exists():
         return lexicon.topic.user_has_no_topics
@@ -349,29 +355,29 @@ def get_topics_count(inp):
 
 
 @core.command
-@core.case_insensitive
-@core.parse_input(r'@?{name}')
-def restrict_topic(inp):
+@core.lower_input
+@core.parse_input('{topic}')
+def restrict_topic(inp, *, topic):
 
-    if inp._channel != core.config['irc']['sssc']:
+    if inp.channel != core.config['irc']['sssc']:
         return lexicon.denied
 
-    if Restricted.select().where(Restricted.topic == inp.name).exists():
+    if Restricted.select().where(Restricted.topic == topic).exists():
         return lexicon.topic.already_restricted
 
-    Restricted.create(topic=inp.name)
+    Restricted.create(topic=topic)
     return lexicon.topic.restricted
 
 
 @core.command
-@core.case_insensitive
-@core.parse_input(r'@?{name}')
-def unrestrict_topic(inp):
+@core.lower_input
+@core.parse_input('{topic}')
+def unrestrict_topic(inp, *, topic):
 
     if inp._channel != core.config['irc']['sssc']:
         return lexicon.denied
 
-    query = Restricted.select().where(Restricted.topic == inp.name)
+    query = Restricted.select().where(Restricted.topic == topic)
     if not query.exists():
         return lexicon.topic.not_restricted
 
@@ -385,28 +391,31 @@ def unrestrict_topic(inp):
 
 
 @core.command
-@core.parse_input(r'{date}|(?P<span>(\d+[dhm])+) {text}')
-def set_alert(inp):
-    if inp.date:
-        alert = arrow.get(inp.date)
+@core.parse_input(r'{date}|(?P<delay>(\d+[dhm])+) {message}')
+def set_alert(inp, *, date, delay, message):
+
+    if date:
+        alert = arrow.get(date)
         if alert < arrow.utcnow():
             return lexicon.alert.past
-    else:
+
+    elif delay:
         alert = arrow.utcnow()
-        for length, unit in re.findall(r'(\d+)([dhm])', inp.span):
+        for length, unit in re.findall(r'(\d+)([dhm])', delay):
             unit = dict(d='days', h='hours', m='minutes')[unit]
             alert = alert.replace(**{unit: int(length)})
-    Alert.create(user=inp._user.lower(), time=alert.timestamp, text=inp.text)
+
+    Alert.create(user=inp.user.lower(), time=alert.timestamp, text=message)
     return lexicon.alert.set
 
 
 @core.command
 @core.private
 @core.multiline
-@core.case_insensitive
+@core.lower_input
 def get_alerts(inp):
     now = arrow.utcnow()
-    for alert in Alert.select().where(Alert.user == inp._user):
+    for alert in Alert.select().where(Alert.user == inp.user):
         if arrow.get(alert.time) < now:
             yield alert.text
             alert.delete_instance()
