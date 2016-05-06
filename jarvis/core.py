@@ -4,7 +4,6 @@
 # Module Imports
 ###############################################################################
 
-import collections
 import configparser
 import funcy
 import pyscp
@@ -43,39 +42,51 @@ refresh()
 ###############################################################################
 
 
-Inp = collections.namedtuple('Inp', 'text user channel send')
+class Inp:
+
+    def __init__(self, text, user, channel, send):
+        self.text = text.strip() if text else ''
+        self.user = str(user).strip()
+        self.channel = str(channel).strip()
+        self._send = send
+
+        self.private = False
+        self.notice = False
+        self.multiline = False
+
+    def send(self, text):
+        text = text if self.multiline else [text]
+        for line in text:
+            self._send(line, private=self.private, notice=self.notice)
 
 
 EXPR = {
     'user': r'(?P<user>[\w\[\]{}^|-]+)',
     'topic': r'@?(?P<topic>[\w\[\]{}^|-]+)',
     'message': r'(?P<message>.*)',
-    'index': r'(?P<index>\d+)'}
+    'index': r'(?P<index>\d+)',
+    'date': r'(?P<date>\d{4}-\d{2}-\d{2})'}
 
 
 @funcy.decorator
 def command(call):
     """Enable generic command functionality."""
-    text = call.inp.text.strip()
-    user = str(call.inp.user).strip()
-    channel = str(call.inp.channel).strip()
-    inp = Inp(text, user, channel, call.inp.send)
-    call._args[0] = inp
     result = call()
     if result:
-        call.inp.send(result)
+        call._args[0].send(result)
     return result
 
 
 @funcy.decorator
 def parse_input(call, regex):
     """Parse input text and suppy necessary function arguments."""
+    inp = call._args[0]
     regex = regex.format(**EXPR)
-    match = re.match(regex, call.inp.text)
+    match = re.match(regex, inp.text)
     if not match:
-        if call.inp.text:
+        if inp.text:
             return lexicon.input.incorrect
-        doc = call.__func__.__doc__
+        doc = call._func.__doc__
         if doc:
             return doc.split('\n')[0] or doc.split('\n')[1]
         return lexicon.input.incorrect
@@ -85,32 +96,25 @@ def parse_input(call, regex):
 @funcy.decorator
 def lower_input(call):
     """Turn input into lowercase."""
-    user = call.inp.user.lower()
-    text = call.inp.text.lower()
-    call._args[0] = call._args[0]._replace(user=user, text=text)
+    inp = call._args[0]
+    inp.user = inp.user.lower()
+    inp.text = inp.text.lower()
     return call()
 
 
 @funcy.decorator
 def private(call):
-    send = funcy.partial(call.inp.send, private=True)
-    call._args[0] = call._args[0]._replace(send=send)
+    call._args[0].private = True
     return call()
 
 
 @funcy.decorator
 def notice(call):
-    send = funcy.partial(call.inp.send, notice=True)
-    call._args[0] = call._args[0]._replace(send=send)
+    call._args[0].notice = True
     return call()
 
 
 @funcy.decorator
 def multiline(call):
-
-    def send(text, **kwargs):
-        for line in text:
-            call.inp.send(line)
-
-    call._args[0] = call._args[0]._replace(send=send)
+    call._args[0].multiline = True
     return call()
