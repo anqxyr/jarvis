@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
+"""
+Jarvis Notes Module.
 
+All commands that require persistent storage belong here. This includes
+logging, tells, and quotes.
+"""
 ###############################################################################
 # Module Imports
 ###############################################################################
@@ -22,12 +27,17 @@ db = playhouse.sqlite_ext.SqliteExtDatabase('jarvis.db', journal_mode='WAL')
 
 
 class BaseModel(peewee.Model):
+    """Peewee Base Table/Model Class."""
 
     class Meta:
+        """Bind Model definitions to the database."""
+
         database = db
 
 
 class Tell(BaseModel):
+    """Database Tell Table."""
+
     sender = peewee.CharField()
     recipient = peewee.CharField(index=True)
     topic = peewee.CharField(null=True)
@@ -36,6 +46,8 @@ class Tell(BaseModel):
 
 
 class Message(BaseModel):
+    """Database Message Table."""
+
     user = peewee.CharField(index=True)
     channel = peewee.CharField()
     time = peewee.DateTimeField()
@@ -43,6 +55,8 @@ class Message(BaseModel):
 
 
 class Quote(BaseModel):
+    """Database Quote Table."""
+
     user = peewee.CharField(index=True)
     channel = peewee.CharField()
     time = peewee.DateTimeField()
@@ -50,21 +64,29 @@ class Quote(BaseModel):
 
 
 class Rem(BaseModel):
+    """Database Rem Table."""
+
     user = peewee.CharField(index=True)
     channel = peewee.CharField()
     text = peewee.TextField()
 
 
 class Subscriber(BaseModel):
+    """Database Subscriber Table."""
+
     user = peewee.CharField()
     topic = peewee.CharField(index=True)
 
 
 class Restricted(BaseModel):
+    """Database Restricted Table."""
+
     topic = peewee.CharField(index=True)
 
 
 class Alert(BaseModel):
+    """Database Alert Table."""
+
     user = peewee.CharField(index=True)
     time = peewee.DateTimeField()
     text = peewee.TextField()
@@ -73,12 +95,14 @@ class Alert(BaseModel):
 
 
 def init():
+    """Initialize the database, create missing tables."""
     db.connect()
     db.create_tables(
         [Tell, Message, Quote, Rem, Subscriber, Restricted, Alert], safe=True)
 
 
 def logevent(inp):
+    """Log input into the database."""
     Message.create(
         user=inp.user, channel=inp.channel,
         time=arrow.utcnow().timestamp, text=inp.text)
@@ -145,7 +169,7 @@ def get_tells(inp):
 @core.parse_input(r'(?P<mode>count|purge)')
 def outbound_tells(inp, *, mode):
     """
-    !outbound count|purge -- Access outbound tells.
+    !outbound [count|purge] -- Access outbound tells.
 
     Outband tells are tells sent by the input user, which haven't been
     delivered to their targets yet.
@@ -178,9 +202,9 @@ def outbound_tells(inp, *, mode):
 
 @core.command
 @core.lower_input
-@core.parse_input(r'{user} ?(?P<first>-f)?')
+@core.parse_input(r'(?P<first>first |f )?{user}')
 def get_user_seen(inp, *, user, first):
-    """!seen <user> [-f] -- Get the last/first message said by the user."""
+    """!seen [first] <user> -- Get the last/first thing said by the user."""
     if user == core.config['irc']['nick']:
         return lexicon.seen.self
 
@@ -203,18 +227,21 @@ def get_user_seen(inp, *, user, first):
 
 
 @core.command
-@core.parse_input(r'(?P<mode>add|del)?.*')
+@core.parse_input(r'(?P<mode>add|del)?(?(mode) ).*')
 def dispatch_quote(inp, *, mode):
+    """!quote [add|del] [<user>] [<index>] -- Access users' quotes."""
     if mode == 'add':
+        inp.text = inp.text[4:]
         return add_quote(inp)
     elif mode == 'del':
+        inp.text = inp.text[4:]
         return del_quote(inp)
     return get_quote(inp)
 
 
 @core.parse_input(r'add ?{date}? {user} {message}')
 def add_quote(inp, *, date, user, message):
-
+    """!quote add [<date>] <user> <message> -- Save user's quote."""
     if Quote.select().where(
             Quote.user == user.lower(),
             Quote.channel == inp.channel,
@@ -232,7 +259,7 @@ def add_quote(inp, *, date, user, message):
 
 @core.parse_input('del {user} {message}')
 def del_quote(inp, *, user, message):
-
+    """!quote del <user> <message> -- Delete the matching quote."""
     query = Quote.select().where(
         Quote.user == user.lower(),
         Quote.channel == inp.channel,
@@ -248,7 +275,7 @@ def del_quote(inp, *, user, message):
 @core.lower_input
 @core.parse_input(r'{user}? ?{index}?')
 def get_quote(inp, *, user, index):
-
+    """Retrieve a quote."""
     query = Quote.select().where(Quote.channel == inp.channel)
     if user:
         query = query.where(Quote.user == user)
@@ -259,10 +286,10 @@ def get_quote(inp, *, user, index):
     index = int(index or random.randint(1, query.count()))
     if index > query.count():
         return lexicon.input.bad_index
-    quote = query.order_by(Quote.time).offset(index - 1).limit(1).get()
+    quote = query.order_by(Quote.time).limit(1).offset(index - 1)[0]
 
     return '[{}/{}] {:.10} {}: {}'.format(
-        index, query.count(), quote.time, quote.user, quote.text)
+        index, query.count(), str(quote.time), quote.user, quote.text)
 
 
 ###############################################################################
@@ -273,7 +300,7 @@ def get_quote(inp, *, user, index):
 @core.command
 @core.parse_input('{user} {message}')
 def remember_user(inp, *, user, message):
-
+    """!rem <user> <message> -- Make a memo about the user."""
     Rem.delete().where(
         Rem.user == user.lower(),
         Rem.channel == inp.channel).execute()
@@ -287,7 +314,7 @@ def remember_user(inp, *, user, message):
 @core.lower_input
 @core.parse_input(r'\?{user}')
 def recall_user(inp, *, user):
-
+    """?<user> -- Display the user's memo."""
     rem = Rem.select().where(
         Rem.user == user,
         Rem.channel == inp.channel)
@@ -307,7 +334,7 @@ def recall_user(inp, *, user):
 @core.lower_input
 @core.parse_input('{topic}')
 def subscribe_to_topic(inp, *, topic):
-
+    """!sub <topic> -- Subscribe to topic."""
     if inp.channel != core.config['irc']['sssc']:
         if Restricted.select().where(
                 Restricted.topic == topic).exists():
@@ -326,7 +353,7 @@ def subscribe_to_topic(inp, *, topic):
 @core.lower_input
 @core.parse_input('{topic}')
 def unsubscribe_from_topic(inp, *, topic):
-
+    """!unsub <topic> -- Remove topic subscription."""
     query = Subscriber.select().where(
         Subscriber.user == inp.user,
         Subscriber.topic == topic)
@@ -342,7 +369,7 @@ def unsubscribe_from_topic(inp, *, topic):
 @core.notice
 @core.lower_input
 def get_topics_count(inp):
-
+    """!topics -- Display the list of topics you're subscribed to."""
     query = Subscriber.select().where(Subscriber.user == inp.user)
 
     if not query.exists():
@@ -356,7 +383,7 @@ def get_topics_count(inp):
 @core.lower_input
 @core.parse_input('{topic}')
 def restrict_topic(inp, *, topic):
-
+    """!restrict <topic> -- Prevent users from subscribing to the topic."""
     if inp.channel != core.config['irc']['sssc']:
         return lexicon.denied
 
@@ -371,7 +398,7 @@ def restrict_topic(inp, *, topic):
 @core.lower_input
 @core.parse_input('{topic}')
 def unrestrict_topic(inp, *, topic):
-
+    """!restrict <topic> -- Lift restriction from the topic."""
     if inp._channel != core.config['irc']['sssc']:
         return lexicon.denied
 
@@ -391,7 +418,7 @@ def unrestrict_topic(inp, *, topic):
 @core.command
 @core.parse_input(r'{date}|(?P<delay>(\d+[dhm])+) {message}')
 def set_alert(inp, *, date, delay, message):
-
+    """!alert [<date>|<delay>] <message> -- Remind your future self."""
     if date:
         alert = arrow.get(date)
         if alert < arrow.utcnow():
@@ -412,6 +439,7 @@ def set_alert(inp, *, date, delay, message):
 @core.multiline
 @core.lower_input
 def get_alerts(inp):
+    """Retrieve stored alerts."""
     now = arrow.utcnow()
     for alert in Alert.select().where(Alert.user == inp.user):
         if arrow.get(alert.time) < now:
