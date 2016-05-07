@@ -13,81 +13,90 @@ import random
 from . import core, tools, lexicon, stats
 
 ###############################################################################
-
-lc_cooldown = {}
-
-###############################################################################
 # Find And Lookup Functions
 ###############################################################################
 
 
-def sanitize(fn):
-    return lambda inp, *args: (
-        fn(inp.strip().lower(), *args) if inp else lexicon.input.missing)
-
-
-def search(results, channel, zero, one, many):
+@core.lower_input
+def page_search(inp, results):
+    """Process page search results."""
     if not results:
-        return getattr(lexicon.not_found, zero)
+        return lexicon.not_found.page
     elif len(results) == 1:
-        return one(results[0])
+        return page_summary(results[0])
     else:
-        tools.remember(results, channel, one)
-        return many(results)
+        tools.remember(results, inp.channel, page_summary)
+        return search_results(results)
 
 
-@sanitize
-def find_page_by_title(inp, channel, pages=None):
+@core.lower_input
+def author_search(inp, func):
+    """Find author via partial name, and process results."""
+    authors = {i.lower() for p in core.pages for i in p.metadata}
+    results = {i for i in authors if inp.text in i}
+    if not results:
+        return lexicon.not_found.author
+    elif len(results) == 1:
+        return func(results[0])
+    else:
+        tools.remember(results, inp.channel, func)
+        return tools.choose_input(results)
+
+
+@core.command
+def find_page_by_title(inp, pages=None):
+    """!s [+|-]<word> ... -- Search for pages with words in title."""
     pages = pages or core.pages
-    all_ = {t.lstrip('+') for t in inp.split() if t.startswith('+')}
-    none = {t.lstrip('-') for t in inp.split() if t.startswith('-')}
-    partial = {t for t in inp.split() if t[0] not in '-+'}
+
+    req, exc, par = set(), set(), set()
+    for w in inp.text.split():
+        seq = req if w[0] == '+' else exc if w[0] == '-' else par
+        seq.add(w.lstrip('+-'))
+
     results = []
     for p in pages:
-        words = re.split(r'[\s-]', p.title.lower())
-        words = set(re.sub(r'[^\w]', '', i) for i in words)
-        if not (words >= all_) or (words & none):
-            continue
-        if partial and not all(i in p.title.lower() for i in partial):
-            continue
-        results.append(p)
-    return search(results, channel, 'page', page_summary, search_results)
+        words = {re.sub(r'[^\w-]', '', w) for w in p.title.lower().split()}
+        if (
+                words >= req and
+                not (words & exc) and
+                all(i in p.title.lower() for i in par)):
+            results.append(p)
+    return page_search(inp, results)
 
 
-def find_tale_by_title(inp, channel):
-    return find_page_by_title(inp, channel, core.pages.tags('tale'))
+@core.command
+def find_tale_by_title(inp):
+    """!s [+|-]<word> ... -- Search for tale title."""
+    return find_page_by_title(inp, core.pages.tags('tale'))
 
 
-@sanitize
-def find_page_by_tags(inp, channel):
-    return search(
-        core.pages.tags(inp), channel, 'page', page_summary, search_results)
+@core.command
+def find_page_by_tags(inp):
+    """!tags <tags> -- Display pages with the given tags."""
+    return page_search(inp, core.pages.tags(inp.text))
 
 
-@sanitize
-def find_page_by_url(inp):
-    if '/forum/' in inp:
-        return
-    inp = inp.replace('/comments/show', '')
-    pages = [p for p in core.pages if p.url == inp]
-    return search(
-        pages, None, 'page', page_summary, lambda x: page_summary(x[0]))
+@core.command
+@core.lower_input
+@core.parse_input(
+    r'(http[s]?://(www.)?scp-wiki.net/)?(?P<url>[^/]+)(/comments/show)?')
+def find_page_by_url(inp, url):
+    """Find the page with the given url."""
+    pages = [p for p in core.pages if p.url.split('/')[-1] == url]
+    return page_search(inp, pages)
 
 
-@sanitize
-def find_author(inp, channel):
-    results = sorted(
-        {i for p in core.pages for i in p.metadata if inp in i.lower()})
-    return search(
-        results, channel, 'author', author_summary, tools.choose_input)
+@core.command
+def author(inp):
+    """!au <name> -- Get information about the author."""
+    return author_search(inp, author_summary)
 
 
-@sanitize
-def update_author_details(inp, channel):
-    results = sorted(
-        {i for p in core.pages for i in p.metadata if inp in i.lower()})
-    return search(
-        results, channel, 'author', stats.update_user, tools.choose_input)
+@core.command
+def author_details(inp):
+    """!ad <name> -- Additional author statistics."""
+    return author_search(inp, stats.update_user)
+
 
 ###############################################################################
 # Output Generation Functions
@@ -95,6 +104,7 @@ def update_author_details(inp, channel):
 
 
 def search_results(results):
+    """Display search results."""
     results = [p.title for p in results]
     head, tail = results[:3], results[3:]
     output = ', '.join('\x02{}\x02'.format(i) for i in head)
@@ -104,7 +114,7 @@ def search_results(results):
 
 
 def page_summary(page):
-
+    """Compose page summary."""
     def get_segment(rel, date, users):
         name = dict(author='written', rewrite='rewritten',
                     translator='translated', maintainer='maintained')[rel]
@@ -128,6 +138,7 @@ def page_summary(page):
 
 
 def author_summary(name):
+    """Compose author summary."""
     pages = core.pages.related(name)
     url = pages.tags('author')[0].url if pages.tags('author') else None
     url = ' ({})'.format(url) if url else ''
@@ -145,7 +156,9 @@ def author_summary(name):
 ###############################################################################
 
 
-def get_error_report():
+@core.command
+def get_error_report(inp):
+    """!errors -- Get error report."""
     pages = [p for p in core.pages if ':' not in p.url]
     output = ''
     no_tags = ['\x02{}\x02'.format(p.title) for p in pages if not p.tags]
@@ -161,20 +174,26 @@ def get_error_report():
     return 'I found no errors.'
 
 
-def get_random_page(tags):
-    pages = core.pages.tags(tags) if tags else core.pages.articles
+@core.command
+@core.lower_input
+def get_random_page(inp):
+    """!rand [<tags>] -- Get random page."""
+    pages = core.pages.tags(inp.text) if inp.text else core.pages.articles
     if pages:
         return page_summary(random.choice(pages))
     else:
         return lexicon.not_found.page
 
 
-def get_last_created(channel):
-    global lc_cooldown
+@core.command
+@core.multiline
+def last_created(inp, cooldown={}):
+    """!lc -- Display recently created pages."""
     now = arrow.now()
-    if channel in lc_cooldown and (now - lc_cooldown[channel]).seconds < 120:
-        return [lexicon.spam]
-    lc_cooldown[channel] = now
-    return map(page_summary, core.wiki.list_pages(
+    if inp.channel in cooldown and (now - cooldown[inp.channel]).seconds < 120:
+        yield lexicon.spam
+        return
+    cooldown[inp.channel] = now
+    yield from map(page_summary, core.wiki.list_pages(
         body='title created_by created_at rating', limit=3,
         order='created_at desc'))
