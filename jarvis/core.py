@@ -4,10 +4,13 @@
 # Module Imports
 ###############################################################################
 
+import argparse
 import configparser
 import funcy
+import functools
 import pyscp
 import re
+import shlex
 
 from . import ext, lexicon
 
@@ -43,8 +46,10 @@ refresh()
 
 
 class Inp:
+    """Wrap input data."""
 
     def __init__(self, text, user, channel, send):
+        """Clean input values."""
         self.text = text.strip() if text else ''
         self.user = str(user).strip()
         self.channel = str(channel).strip()
@@ -55,42 +60,19 @@ class Inp:
         self.multiline = False
 
     def send(self, text):
+        """Send output data."""
         text = text if self.multiline else [text]
         for line in text:
             self._send(line, private=self.private, notice=self.notice)
 
-
-EXPR = {
-    'user': r'(?P<user>[\w\[\]{}^|-]+)',
-    'topic': r'@?(?P<topic>[\w\[\]{}^|-]+)',
-    'message': r'(?P<message>.*)',
-    'index': r'(?P<index>\d+)',
-    'date': r'(?P<date>\d{4}-\d{2}-\d{2})'}
-
-
-@funcy.decorator
-def command(call):
+def command(func):
     """Enable generic command functionality."""
-    result = call()
-    if result:
-        call._args[0].send(result)
-    return result
-
-
-@funcy.decorator
-def parse_input(call, regex):
-    """Parse input text and suppy necessary function arguments."""
-    inp = call._args[0]
-    regex = regex.format(**EXPR)
-    match = re.match(regex, inp.text)
-    if not match:
-        if inp.text:
-            return lexicon.input.incorrect
-        doc = call._func.__doc__
-        if doc:
-            return doc.split('\n')[0] or doc.split('\n')[1]
-        return lexicon.input.incorrect
-    return call(**match.groupdict())
+    @functools.wraps(func)
+    def inner(inp, *args, **kwargs):
+        result = func(inp, *args, **kwargs)
+        if result:
+            inp.send(result)
+    return inner
 
 
 @funcy.decorator

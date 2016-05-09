@@ -15,7 +15,7 @@ import re
 import peewee
 import playhouse.sqlite_ext
 
-from . import core, lexicon
+from . import core, lexicon, parser
 
 
 ###############################################################################
@@ -114,10 +114,10 @@ def logevent(inp):
 
 
 @core.command
-@core.parse_input(r'({user}|{topic})[:,]? {message}')
-def send_tell(inp, *, user, topic, message):
+@parser.tell
+def tell(inp, *, user, topic, message):
     """
-    !tell <name>|@<topic> <message> -- Send messages to other users.
+    Send messages to other users.
 
     Saves the message and delivers them to the target next time they're in
     the same channel with the bot. The target is either a single user, or a
@@ -146,10 +146,9 @@ def send_tell(inp, *, user, topic, message):
 @core.command
 @core.private
 @core.multiline
-@core.lower_input
 def get_tells(inp):
     """Retrieve incoming messages."""
-    query = Tell.select().where(Tell.recipient == inp.user).execute()
+    query = Tell.select().where(Tell.recipient == inp.user.lower()).execute()
     for tell in query:
 
         time = arrow.get(tell.time).humanize()
@@ -165,11 +164,10 @@ def get_tells(inp):
 
 @core.command
 @core.notice
-@core.lower_input
-@core.parse_input(r'(?P<mode>count|purge)')
-def outbound_tells(inp, *, mode):
+@parser.outbound
+def outbound(inp, *, count, purge):
     """
-    !outbound [count|purge] -- Access outbound tells.
+    Access outbound tells.
 
     Outband tells are tells sent by the input user, which haven't been
     delivered to their targets yet.
@@ -177,15 +175,15 @@ def outbound_tells(inp, *, mode):
     Ignores messages sent to tell topics.
     """
     query = Tell.select().where(
-        peewee.fn.Lower(Tell.sender) == inp.user,
+        peewee.fn.Lower(Tell.sender) == inp.user.lower(),
         Tell.topic.is_null())
 
     if not query.exists():
         return lexicon.tell.outbound.empty
 
-    if mode == 'count':
+    if count:
         msg = lexicon.tell.outbound.count
-    elif mode == 'purge':
+    elif purge:
         Tell.delete().where(
             peewee.fn.Lower(Tell.sender) == inp.user,
             Tell.topic.is_null()).execute()
@@ -202,9 +200,9 @@ def outbound_tells(inp, *, mode):
 
 @core.command
 @core.lower_input
-@core.parse_input(r'(?P<first>first |f )?{user}')
-def get_user_seen(inp, *, user, first):
-    """!seen [first] <user> -- Get the last/first thing said by the user."""
+@parser.seen
+def seen(inp, *, user, first):
+    """Retrieve the first or the last message said by the user."""
     if user == core.config['irc']['nick']:
         return lexicon.seen.self
 
@@ -227,7 +225,7 @@ def get_user_seen(inp, *, user, first):
 
 
 @core.command
-@core.parse_input(r'(?P<mode>add|del)?(?(mode) ).*')
+#@core.parse_input(r'(?P<mode>add|del)?(?(mode) ).*')
 def dispatch_quote(inp, *, mode):
     """!quote [add|del] [<user>] [<index>] -- Access users' quotes."""
     if mode == 'add':
@@ -239,7 +237,7 @@ def dispatch_quote(inp, *, mode):
     return get_quote(inp)
 
 
-@core.parse_input(r'add ?{date}? {user} {message}')
+#@core.parse_input(r'add ?{date}? {user} {message}')
 def add_quote(inp, *, date, user, message):
     """!quote add [<date>] <user> <message> -- Save user's quote."""
     if Quote.select().where(
@@ -257,7 +255,7 @@ def add_quote(inp, *, date, user, message):
     return lexicon.quote.saved
 
 
-@core.parse_input('del {user} {message}')
+#@core.parse_input('del {user} {message}')
 def del_quote(inp, *, user, message):
     """!quote del <user> <message> -- Delete the matching quote."""
     query = Quote.select().where(
@@ -273,7 +271,7 @@ def del_quote(inp, *, user, message):
 
 
 @core.lower_input
-@core.parse_input(r'{user}? ?{index}?')
+#@core.parse_input(r'{user}? ?{index}?')
 def get_quote(inp, *, user, index):
     """Retrieve a quote."""
     query = Quote.select().where(Quote.channel == inp.channel)
@@ -298,7 +296,7 @@ def get_quote(inp, *, user, index):
 
 
 @core.command
-@core.parse_input('{user} {message}')
+#@core.parse_input('{user} {message}')
 def remember_user(inp, *, user, message):
     """!rem <user> <message> -- Make a memo about the user."""
     Rem.delete().where(
@@ -312,7 +310,7 @@ def remember_user(inp, *, user, message):
 
 @core.command
 @core.lower_input
-@core.parse_input(r'\?{user}')
+#@core.parse_input(r'\?{user}')
 def recall_user(inp, *, user):
     """?<user> -- Display the user's memo."""
     rem = Rem.select().where(
@@ -332,7 +330,7 @@ def recall_user(inp, *, user):
 
 @core.command
 @core.lower_input
-@core.parse_input('{topic}')
+#@core.parse_input('{topic}')
 def subscribe_to_topic(inp, *, topic):
     """!sub <topic> -- Subscribe to topic."""
     if inp.channel != core.config['irc']['sssc']:
@@ -351,7 +349,7 @@ def subscribe_to_topic(inp, *, topic):
 
 @core.command
 @core.lower_input
-@core.parse_input('{topic}')
+#@core.parse_input('{topic}')
 def unsubscribe_from_topic(inp, *, topic):
     """!unsub <topic> -- Remove topic subscription."""
     query = Subscriber.select().where(
@@ -381,7 +379,7 @@ def get_topics_count(inp):
 
 @core.command
 @core.lower_input
-@core.parse_input('{topic}')
+#@core.parse_input('{topic}')
 def restrict_topic(inp, *, topic):
     """!restrict <topic> -- Prevent users from subscribing to the topic."""
     if inp.channel != core.config['irc']['sssc']:
@@ -396,7 +394,7 @@ def restrict_topic(inp, *, topic):
 
 @core.command
 @core.lower_input
-@core.parse_input('{topic}')
+#@core.parse_input('{topic}')
 def unrestrict_topic(inp, *, topic):
     """!restrict <topic> -- Lift restriction from the topic."""
     if inp._channel != core.config['irc']['sssc']:
@@ -416,7 +414,7 @@ def unrestrict_topic(inp, *, topic):
 
 
 @core.command
-@core.parse_input(r'{date}|(?P<delay>(\d+[dhm])+) {message}')
+#@core.parse_input(r'{date}|(?P<delay>(\d+[dhm])+) {message}')
 def set_alert(inp, *, date, delay, message):
     """!alert [<date>|<delay>] <message> -- Remind your future self."""
     if date:
