@@ -8,6 +8,7 @@ Contains argument parsers for other commands.
 # Module Imports
 ###############################################################################
 
+import arrow
 import functools
 
 ###############################################################################
@@ -22,13 +23,13 @@ def parser(usage):
         def inner_decorator(command):
             @functools.wraps(command)
             def wrapped(inp, *args, **kwargs):
-                usage = '!{} {}'.format(command.__name__, usage)
-                if not inp.text or inp.text == '--help':
-                    return usage
+                f_usage = '!{} {}'.format(command.__name__, usage)
+                if inp.text.endswith('--help'):
+                    return f_usage
                 try:
                     parsed_args = par(inp.text)
                 except:
-                    return usage
+                    return f_usage
                 kwargs.update(parsed_args)
                 return command(inp, *args, **kwargs)
             return wrapped
@@ -37,6 +38,7 @@ def parser(usage):
 
 
 def get_flags(inp, *flags):
+    """Retrieve flags from input string."""
     args = {f: False for f in flags}
     inp = inp.split()
     for i in inp:
@@ -58,7 +60,7 @@ def get_flags(inp, *flags):
 def tell(inp):
     """Argument parser for the notes.send_tell command."""
     uort, message = inp.split(maxsplit=1)
-    user, topic = uort.lstrip('@').rstrip(':,'), None
+    user, topic = uort.lower().lstrip('@').rstrip(':,'), None
     if uort[0] == '@':
         user, topic = topic, user
     return dict(user=user, topic=topic, message=message)
@@ -77,5 +79,49 @@ def outbound(inp):
 def seen(inp):
     """Argument parser for the notes.seen command."""
     inp, args = get_flags(inp, 'first')
-    args.update(user=inp)
+    args.update(user=inp.lower())
     return args
+
+
+@parser('[add|del] [<user>] [<index>]')
+def quote(inp):
+    """Argument parser for the notes.quote command."""
+    mode, _ = inp.split(maxsplit=1)
+    if mode.lower() not in ('add', 'del'):
+        mode = None
+    return dict(mode=mode.lower())
+
+
+@parser('add [<date>] <user> <message>')
+def quote_add(inp):
+    """Argument parser for the notes.quote_add command."""
+    _, date, user, message = inp.split(maxsplit=3)
+    date = arrow.get(date).format('YYYY-MM-DD')
+    return dict(date=date, user=user.lower(), message=message)
+
+
+@parser('del <user> <message>')
+def quote_del(inp):
+    """Argument parser for the notes.quote_del command."""
+    _, user, message = inp.split(maxsplit=3)
+    return dict(user=user.lower(), message=message)
+
+
+@parser('[<user>] [<index>]')
+def quote_get(inp):
+    """Argument parser for the notes.quote_add command."""
+    inp = inp.lower().split()
+    user = index = None
+    if len(inp) == 1:
+        try:
+            index = int(inp[0])
+        except ValueError:
+            user = inp[0]
+    elif len(inp) == 2:
+        user = inp[0]
+        index = int(inp[1])
+    elif len(inp) > 2:
+        raise ValueError
+    if index is not None and index <= 0:
+        raise ValueError
+    return dict(user=user, index=index)
