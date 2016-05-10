@@ -1,80 +1,108 @@
 #!/usr/bin/env python3
+"""Test jarvis.notes module."""
 
 ###############################################################################
 # Module Imports
 ###############################################################################
 
-import arrow
-import jarvis
-import uuid
+import hypothesis as hy
+import hypothesis.strategies as st
+
+from jarvis import core, notes
 
 ###############################################################################
 
-jarvis.notes.init()
+
+class MockLexicon:
+
+    def __init__(self, path='lexicon'):
+        self.path = path
+
+    def __getattr__(self, value):
+        return self.__class__(self.path + '.' + value)
+
+    def format(self, **kwargs):
+        return self.path
+
+    def __str__(self):
+        return self.path
+
+notes.lexicon = MockLexicon()
+
+###############################################################################
 
 
-def inlex(res, *args, **kwargs):
-    data = jarvis.lexicon.data
-    for i in args:
-        data = data[i]
-    if kwargs:
-        data = [i.format(**kwargs) for i in data]
-    return res in data
+def run(fn, inp, *args, **kwargs):
+    results = []
+    inp = core.Inp(
+        inp, 'test-user', 'test-channel',
+        lambda x, private, notice: results.append(x))
+    fn(inp, *args, **kwargs)
+    if len(results) == 1:
+        return str(results[0])
+    return list(map(str, results))
+
+###############################################################################
 
 
-def test_tells():
-    jarvis.notes.purge_outbound_tells('sender')
-    for i in range(200):
-        r = jarvis.notes.send_tell('recipient text', 'sender')
-        assert inlex(r, 'tell', 'send')
-    r = jarvis.notes.get_outbound_tells_count('sender')
-    assert inlex(r, 'tell', 'outbound_count', total=200, users='recipient')
-    r = jarvis.notes.get_tells('RECIPIENT')
-    assert len(r) == 200
-    for i in range(50):
-        jarvis.notes.send_tell('recipient, text', 'sender')
-    r = jarvis.notes.purge_outbound_tells('sender')
-    assert inlex(r, 'tell', 'outbound_purged', count=50)
-    r = jarvis.notes.purge_outbound_tells('sender')
-    assert inlex(r, 'tell', 'outbound_empty')
-
-    r = jarvis.notes.send_tell('!!! text', 'sender')
-    assert inlex(r, 'input', 'incorrect')
-    r = jarvis.notes.send_tell('', 'sender')
-    assert inlex(r, 'input', 'missing')
-    assert not jarvis.notes.get_tells('recipient')
+@hy.given(st.text())
+def test_tell_random_input(inp):
+    run(notes.tell, inp)
 
 
-def test_seen():
-    name = str(uuid.uuid4())
-    r = jarvis.notes.get_user_seen(name, 'jarvis-dev', 'test-key')
-    assert inlex(r, 'seen', 'never')
-    time = arrow.utcnow().humanize()
-    jarvis.notes.log_message(name, 'test-key', 'test-message')
-    r = jarvis.notes.get_user_seen(name, 'test-key', 'jarvis-dev')
-    assert inlex(r, 'seen', 'last', user=name, time=time, text='test-message')
-    r = jarvis.notes.get_user_seen('', 'test-key', 'jarvis-dev')
-    assert inlex(r, 'input', 'incorrect')
+@hy.given(st.text())
+def test_tell_send_user_successful(inp):
+    """Test notes.tell command."""
+    hy.assume(not inp.startswith('@'))
+    hy.assume(len(inp.split()) > 1)
+    count = notes.Tell.select().count()
+    assert run(notes.tell, inp) == 'lexicon.tell.send'
+    assert notes.Tell.select().count() == count + 1
 
 
-def test_quotes():
-    name = str(uuid.uuid4())
-    r = jarvis.notes.dispatch_quote(name, 'test-key')
-    assert inlex(r, 'quote', 'none_saved')
-    r = jarvis.notes.dispatch_quote(
-        'add {}      this is a test message   '.format(name), 'test-key')
-    assert inlex(r, 'quote', 'saved')
-    r = jarvis.notes.dispatch_quote('add {} test #2'.format(name), 'test-key')
-    assert inlex(r, 'quote', 'saved')
-    r = jarvis.notes.dispatch_quote('add {} test #2'.format(name), 'test-key')
-    assert inlex(r, 'quote', 'already_exists')
-    r = jarvis.notes.dispatch_quote('{}   2'.format(name), 'test-key')
-    assert r == '[2/2] {:YYYY-MM-DD} {}: test #2'.format(arrow.now(), name)
-    r = jarvis.notes.dispatch_quote('{} -1'.format(name), 'test-key')
-    assert inlex(r, 'input', 'bad_index')
-    r = jarvis.notes.dispatch_quote('{} gibberish'.format(name), 'test-key')
-    assert inlex(r, 'input', 'bad_index')
-    r = jarvis.notes.dispatch_quote('del {} test #2'.format(name), 'test-key')
-    assert inlex(r, 'quote', 'deleted')
-    r = jarvis.notes.dispatch_quote('del {} test #2'.format(name), 'test-key')
-    assert inlex(r, 'quote', 'not_found')
+@hy.given(st.none())
+def test_tell_send_failed(inp):
+    """Test notes.tell command."""
+    assert run(notes.tell, inp) == notes.tell._usage
+
+
+@hy.given(st.lists(st.text()))
+def test_get_tells(messages):
+    run(notes.get_tells, '')
+    for m in messages:
+        hy.assume(m.strip())
+        run(notes.tell, 'test-user ' + m)
+    query = notes.Tell.select().where(notes.Tell.recipient == 'test-user')
+    assert query.count() == len(messages)
+    tells = run(notes.get_tells, '')
+    if len(messages) != 1:
+        assert tells == ['lexicon.tell.get'] * len(messages)
+    else:
+        assert tells == 'lexicon.tell.get'
+    assert query.count() == 0
+
+###############################################################################
+
+
+@hy.given(st.text())
+def test_outbound_random_input(inp):
+    run(notes.outbound, inp)
+
+
+def test_outbound_count_successful():
+    run(notes.tell, 'test tell')
+    assert run(notes.outbound, '--count') == 'lexicon.tell.outbound.count'
+
+
+def test_outbound_purge_successful():
+    run(notes.tell, 'test tell')
+    assert run(notes.outbound, '--purge') == 'lexicon.tell.outbound.purged'
+    query = notes.Tell.select().where(notes.Tell.sender == 'test-user')
+    assert query.count() == 0
+
+
+def test_outbound_count_empty():
+    run(notes.outbound, '--purge')
+    assert run(notes.outbound, '--count') == 'lexicon.tell.outbound.empty'
+
+###############################################################################
