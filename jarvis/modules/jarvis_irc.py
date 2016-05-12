@@ -74,10 +74,10 @@ rule = functools.partial(register, sopel.module.rule, 1)
 ###############################################################################
 
 
-command('tell', notes.send_tell)
-command('outboundtells', notes.outbound_tells)
-command('seen', notes.get_user_seen)
-command('quote', notes.dispatch_quote)
+command('tell', notes.tell)
+command('outbound', notes.outbound)
+command('seen', notes.seen)
+command('quote', notes.quote)
 command('remember', notes.remember_user)
 command('subscribe', notes.subscribe_to_topic)
 command('unsubscribe', notes.unsubscribe_from_topic)

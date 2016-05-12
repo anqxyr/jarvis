@@ -33,7 +33,7 @@ def page_search(inp, results):
 def author_search(inp, func):
     """Find author via partial name, and process results."""
     authors = {i.lower() for p in core.pages for i in p.metadata}
-    results = {i for i in authors if inp.text in i}
+    results = sorted(i for i in authors if inp.text in i)
     if not results:
         return lexicon.not_found.author
     elif len(results) == 1:
@@ -45,7 +45,7 @@ def author_search(inp, func):
 
 @core.command
 def find_page_by_title(inp, pages=None):
-    """!s [+|-]<word> ... -- Search for pages with words in title."""
+    """!s <words> ... -- Search for pages with words in title."""
     pages = pages or core.pages
 
     req, exc, par = set(), set(), set()
@@ -66,7 +66,7 @@ def find_page_by_title(inp, pages=None):
 
 @core.command
 def find_tale_by_title(inp):
-    """!s [+|-]<word> ... -- Search for tale title."""
+    """!s <words> ... -- Search for tale title."""
     return find_page_by_title(inp, core.pages.tags('tale'))
 
 
@@ -78,8 +78,7 @@ def find_page_by_tags(inp):
 
 @core.command
 @core.lower_input
-@core.parse_input(
-    r'(http[s]?://(www.)?scp-wiki.net/)?(?P<url>[^/]+)(/comments/show)?')
+#@core.parse_input(r'(?P<url>[^/]+)?')
 def find_page_by_url(inp, url):
     """Find the page with the given url."""
     pages = [p for p in core.pages if p.url.split('/')[-1] == url]

@@ -136,7 +136,7 @@ def tell(inp, *, user, topic, message):
         sender=inp.user,
         text=message,
         time=arrow.utcnow().timestamp,
-        topic=bool(topic))
+        topic=topic)
     Tell.insert_many(dict(recipient=i, **data) for i in users).execute()
 
     msg = lexicon.topic.send if topic else lexicon.tell.send
@@ -148,7 +148,8 @@ def tell(inp, *, user, topic, message):
 @core.multiline
 def get_tells(inp):
     """Retrieve incoming messages."""
-    query = Tell.select().where(Tell.recipient == inp.user.lower()).execute()
+    query = Tell.select().where(
+        peewee.fn.Lower(Tell.recipient) == inp.user.lower()).execute()
     for tell in query:
 
         time = arrow.get(tell.time).humanize()
@@ -185,7 +186,7 @@ def outbound(inp, *, count, purge):
         msg = lexicon.tell.outbound.count
     elif purge:
         Tell.delete().where(
-            peewee.fn.Lower(Tell.sender) == inp.user,
+            peewee.fn.Lower(Tell.sender) == inp.user.lower(),
             Tell.topic.is_null()).execute()
         msg = lexicon.tell.outbound.purged
 
@@ -225,29 +226,27 @@ def seen(inp, *, user, first):
 
 
 @core.command
-#@core.parse_input(r'(?P<mode>add|del)?(?(mode) ).*')
-def dispatch_quote(inp, *, mode):
+@parser.quote
+def quote(inp, *, mode):
     """!quote [add|del] [<user>] [<index>] -- Access users' quotes."""
     if mode == 'add':
-        inp.text = inp.text[4:]
-        return add_quote(inp)
+        return quote_add(inp)
     elif mode == 'del':
-        inp.text = inp.text[4:]
-        return del_quote(inp)
-    return get_quote(inp)
+        return quote_del(inp)
+    return quote_get(inp)
 
 
-#@core.parse_input(r'add ?{date}? {user} {message}')
-def add_quote(inp, *, date, user, message):
+@parser.quote_add
+def quote_add(inp, *, date, user, message):
     """!quote add [<date>] <user> <message> -- Save user's quote."""
     if Quote.select().where(
-            Quote.user == user.lower(),
+            Quote.user == user,
             Quote.channel == inp.channel,
             Quote.text == message).exists():
         return lexicon.quote.already_exists
 
     Quote.create(
-        user=user.lower(),
+        user=user,
         channel=inp.channel,
         time=date or arrow.utcnow().format('YYYY-MM-DD'),
         text=message)
@@ -255,11 +254,11 @@ def add_quote(inp, *, date, user, message):
     return lexicon.quote.saved
 
 
-#@core.parse_input('del {user} {message}')
-def del_quote(inp, *, user, message):
+@parser.quote_del
+def quote_del(inp, *, user, message):
     """!quote del <user> <message> -- Delete the matching quote."""
     query = Quote.select().where(
-        Quote.user == user.lower(),
+        peewee.fn.Lower(Quote.user) == user.lower(),
         Quote.channel == inp.channel,
         Quote.text == message)
 
@@ -270,9 +269,8 @@ def del_quote(inp, *, user, message):
     return lexicon.quote.deleted
 
 
-@core.lower_input
-#@core.parse_input(r'{user}? ?{index}?')
-def get_quote(inp, *, user, index):
+@parser.quote_get
+def quote_get(inp, *, user, index):
     """Retrieve a quote."""
     query = Quote.select().where(Quote.channel == inp.channel)
     if user:
@@ -286,8 +284,12 @@ def get_quote(inp, *, user, index):
         return lexicon.input.bad_index
     quote = query.order_by(Quote.time).limit(1).offset(index - 1)[0]
 
-    return '[{}/{}] {:.10} {}: {}'.format(
-        index, query.count(), str(quote.time), quote.user, quote.text)
+    return lexicon.quote.get.format(
+        index=index,
+        total=query.count(),
+        time=str(quote.time)[:10],
+        user=quote.user,
+        text=quote.text)
 
 
 ###############################################################################
@@ -296,21 +298,18 @@ def get_quote(inp, *, user, index):
 
 
 @core.command
-#@core.parse_input('{user} {message}')
 def remember_user(inp, *, user, message):
     """!rem <user> <message> -- Make a memo about the user."""
     Rem.delete().where(
-        Rem.user == user.lower(),
+        peewee.fn.Lower(Rem.user) == user.lower(),
         Rem.channel == inp.channel).execute()
 
-    Rem.create(user=user.lower(), channel=inp.channel, text=message)
+    Rem.create(user=user, channel=inp.channel, text=message)
 
     return lexicon.quote.saved
 
 
 @core.command
-@core.lower_input
-#@core.parse_input(r'\?{user}')
 def recall_user(inp, *, user):
     """?<user> -- Display the user's memo."""
     rem = Rem.select().where(

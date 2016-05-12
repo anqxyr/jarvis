@@ -21,9 +21,11 @@ def parser(usage):
     def outer_decorator(par):
         @functools.wraps(par)
         def inner_decorator(command):
+            f_usage = '!{} {}'.format(command.__name__, usage)
+            command._usage = f_usage
+
             @functools.wraps(command)
             def wrapped(inp, *args, **kwargs):
-                f_usage = '!{} {}'.format(command.__name__, usage)
                 if inp.text.endswith('--help'):
                     return f_usage
                 try:
@@ -60,15 +62,19 @@ def get_flags(inp, *flags):
 def tell(inp):
     """Argument parser for the notes.send_tell command."""
     uort, message = inp.split(maxsplit=1)
-    user, topic = uort.lower().lstrip('@').rstrip(':,'), None
+    user, topic = uort.lstrip('@').rstrip(':,'), None
     if uort[0] == '@':
         user, topic = topic, user
+    if not user and not topic:
+        raise ValueError
     return dict(user=user, topic=topic, message=message)
 
 
 @parser('[--count | --purge]')
 def outbound(inp):
     """Argument parser for the notes.outbound command."""
+    if not inp:
+        raise ValueError
     inp, args = get_flags(inp, 'count', 'purge')
     if inp or (args['count'] and args['purge']):
         raise ValueError
@@ -86,25 +92,30 @@ def seen(inp):
 @parser('[add|del] [<user>] [<index>]')
 def quote(inp):
     """Argument parser for the notes.quote command."""
-    mode, _ = inp.split(maxsplit=1)
-    if mode.lower() not in ('add', 'del'):
+    if not inp or inp.split()[0].lower() not in ('add', 'del'):
         mode = None
-    return dict(mode=mode.lower())
+    else:
+        mode = inp.split()[0].lower()
+    return dict(mode=mode)
 
 
 @parser('add [<date>] <user> <message>')
 def quote_add(inp):
     """Argument parser for the notes.quote_add command."""
-    _, date, user, message = inp.split(maxsplit=3)
-    date = arrow.get(date).format('YYYY-MM-DD')
+    _, user, message = inp.split(maxsplit=2)
+    try:
+        date = arrow.get(user, 'YYYY-MM-DD').format('YYYY-MM-DD')
+        user, message = message.split(maxsplit=1)
+    except arrow.parser.ParserError:
+        date = None
     return dict(date=date, user=user.lower(), message=message)
 
 
 @parser('del <user> <message>')
 def quote_del(inp):
     """Argument parser for the notes.quote_del command."""
-    _, user, message = inp.split(maxsplit=3)
-    return dict(user=user.lower(), message=message)
+    _, user, message = inp.split(maxsplit=2)
+    return dict(user=user, message=message)
 
 
 @parser('[<user>] [<index>]')

@@ -77,6 +77,10 @@
         "Initiating Comm Array startup sequence in 3, 2, 1..."
         ],
 
+    "get": [
+        "{name} said {time}: {text}"
+        ],
+
     "no_new": [
         "You have no pending tells.",
         "No new tells today.",
@@ -86,26 +90,30 @@
         "I don't recall anyone sending you anything."
         ],
 
-    "outbound_empty": [
-        "You don't have any undelivered tells.",
-        "Everything you've sent, has been delivered",
-        "I've already delivered everything.",
-        "This place is empty."
-        ],
+    "outbound": {
 
-    "outbound_count": [
-        "You have {total} outbound tells, including - {users}.",
-        "In the past, you've sent {total} tells that haven't been delivered yet. You sent them to {users}.",
-        "{total} tells - {users}.",
-        "I found some tells to {users}. In total - {total} tells."
-        ],
+        "empty": [
+            "You don't have any undelivered tells.",
+            "Everything you've sent, has been delivered",
+            "I've already delivered everything.",
+            "This place is empty."
+            ],
 
-    "outbound_purged": [
-        "You had {count} outbound tells, and now you have none.",
-        "{count} little tells, lost in the wind.",
-        "Your {count} tells will not be delivered.",
-        "I'm burning them in the fireplace, one by one, all {count} of them."
-        ]
+        "count": [
+            "You have {total} outbound tells, including - {users}.",
+            "In the past, you've sent {total} tells that haven't been delivered yet. You sent them to {users}.",
+            "{total} tells - {users}.",
+            "I found some tells to {users}. In total - {total} tells."
+            ],
+
+        "purged": [
+            "You had {count} outbound tells, and now you have none.",
+            "{count} little tells, lost in the wind.",
+            "Your {count} tells will not be delivered.",
+            "I'm burning them in the fireplace, one by one, all {count} of them."
+            ]
+
+        }
     },
 
 
@@ -118,6 +126,10 @@
         "I will let each of the {count} subscribers know.",
         "Great, now I'll have to buy {count} envelopes to send your message to everyone.",
         "{count} whispers, watch as they fly."
+        ],
+
+    "get": [
+        "{name} said {time} via @{topic}: {text}"
         ],
 
     "no_subscribers": [
@@ -224,6 +236,10 @@
         "Hahahahaha yeah alright I'll do it.",
 
         "I will remember it untils the stars themselves turn cold and die"
+        ],
+
+    "get": [
+        "[{index}/{total}] {time} {user}: {text}"
         ],
 
     "already_exists": [
