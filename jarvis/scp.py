@@ -7,17 +7,17 @@
 
 import arrow
 import collections
-import re
+import pyscp
 import random
+import re
 
-from . import core, tools, lexicon, stats
+from . import ext, core, parser, tools, lexicon, stats
 
 ###############################################################################
 # Find And Lookup Functions
 ###############################################################################
 
 
-@core.lower_input
 def page_search(inp, results):
     """Process page search results."""
     if not results:
@@ -29,11 +29,10 @@ def page_search(inp, results):
         return search_results(results)
 
 
-@core.lower_input
 def author_search(inp, func):
     """Find author via partial name, and process results."""
     authors = {i.lower() for p in core.pages for i in p.metadata}
-    results = sorted(i for i in authors if inp.text in i)
+    results = sorted(i for i in authors if inp.text.lower() in i)
     if not results:
         return lexicon.not_found.author
     elif len(results) == 1:
@@ -44,56 +43,63 @@ def author_search(inp, func):
 
 
 @core.command
-def find_page_by_title(inp, pages=None):
-    """!s <words> ... -- Search for pages with words in title."""
+@parser.search
+def search(inp, *, partial, exclude, strict, tags, author, rating, pages=None):
     pages = pages or core.pages
 
-    req, exc, par = set(), set(), set()
-    for w in inp.text.split():
-        seq = req if w[0] == '+' else exc if w[0] == '-' else par
-        seq.add(w.lstrip('+-'))
+    if tags:
+        pages = pages.tags(tags)
+    if author:
+        pages = pages.related(author)
+    if rating:
+        pages = pages.rating(rating)
 
     results = []
     for p in pages:
-        words = {re.sub(r'[^\w-]', '', w) for w in p.title.lower().split()}
-        if (
-                words >= req and
-                not (words & exc) and
-                all(i in p.title.lower() for i in par)):
-            results.append(p)
+        words = p.title.lower().split()
+        words = {''.join(filter(str.isalnum, w)) for w in words}
+
+        if exclude and words & exclude:
+            continue
+        if strict and not words >= strict:
+            continue
+        if partial and not all(i in p.title.lower() for i in partial):
+            continue
+
+        results.append(p)
     return page_search(inp, results)
 
 
-@core.command
-def find_tale_by_title(inp):
-    """!s <words> ... -- Search for tale title."""
-    return find_page_by_title(inp, core.pages.tags('tale'))
+def tale(inp):
+    return search(inp, pages=core.pages.tags('tale'))
+
+
+def wanderers_library(inp):
+    wiki = pyscp.wikidot.Wiki('wanderers-library')
+    pages = wiki.list_pages(
+        body='title created_by created_at rating tags', category='*')
+    pages = ext.PageView(pages)
+    return search(inp, pages=pages)
 
 
 @core.command
-def find_page_by_tags(inp):
-    """!tags <tags> -- Display pages with the given tags."""
+def tags(inp):
     return page_search(inp, core.pages.tags(inp.text))
 
 
 @core.command
-@core.lower_input
-#@core.parse_input(r'(?P<url>[^/]+)?')
-def find_page_by_url(inp, url):
-    """Find the page with the given url."""
-    pages = [p for p in core.pages if p.url.split('/')[-1] == url]
+def name(inp):
+    pages = [p for p in core.pages if p.url.split('/')[-1] == inp.text.lower()]
     return page_search(inp, pages)
 
 
 @core.command
 def author(inp):
-    """!au <name> -- Get information about the author."""
     return author_search(inp, author_summary)
 
 
 @core.command
 def author_details(inp):
-    """!ad <name> -- Additional author statistics."""
     return author_search(inp, stats.update_user)
 
 
