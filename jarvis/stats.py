@@ -7,6 +7,8 @@
 import pyscp
 import textwrap
 
+from dominate import tags as dt
+
 from . import core
 
 
@@ -50,7 +52,6 @@ google.charts.load('current', {{'packages':['table', 'corechart']}});
 
 <div id="articles_chart"></div>
 <div style="clear: both;"></div>
-<h2>Articles</h2>
 <div id="articles_table"></div>
 
 [[/html]]
@@ -101,9 +102,26 @@ class ArticlesChart(Chart):
     def __init__(self, pages):
         self.name = 'articles_chart'
         self.class_name = 'ColumnChart'
-        self.data = [
-            ['Title', 'Rating', {'role': 'tooltip'}, {'role': 'style'}]]
-        self.options = {}
+        self.data = [[
+            'Title',
+            'Rating',
+            {'role': 'tooltip', 'p': {'html': 'true'}},
+            {'role': 'style'}]]
+        self.options = {
+            'backgroundColor': '#e7e9dc',
+            'chartArea': {
+                'left': 0,
+                'top': 0,
+                'width': '100%',
+                'height': '100%'},
+            'hAxis': {'textPosition': 'none'},
+            'vAxis': {
+                'textPosition': 'none',
+                'gridlines': {'color': '#e7e9dc'}},
+            'legend': {'position': 'none'},
+            'height': 450,
+            'tooltip': {'isHtml': 'True'}
+        }
         super().__init__(pages)
 
     def add_page(self, page):
@@ -114,10 +132,16 @@ class ArticlesChart(Chart):
         else:
             color = 'color: #f4b400'
 
+        tooltip = dt.table(
+            dt.tr(dt.td(page.title, colspan=2)),
+            dt.tr(dt.td('Rating:'), dt.td(page.rating)),
+            dt.tr(dt.td('Created:'), dt.td(page.created[:10])),
+            cls='articles_chart_tooltip')
+
         self.data.append([
             page.title,
             page.rating,
-            page.created[:10],
+            tooltip.render(pretty=False),
             color])
 
 
