@@ -10,6 +10,10 @@ Contains argument parsers for other commands.
 
 import arrow
 import functools
+import re
+import traceback
+
+from . import lexicon
 
 ###############################################################################
 # Generic Functionality
@@ -21,17 +25,19 @@ def parser(usage):
     def outer_decorator(par):
         @functools.wraps(par)
         def inner_decorator(command):
-            f_usage = '!{} {}'.format(command.__name__, usage)
-            command._usage = f_usage
+            command._usage = usage
 
             @functools.wraps(command)
             def wrapped(inp, *args, **kwargs):
                 if inp.text.endswith('--help'):
-                    return f_usage
+                    return usage
                 try:
                     parsed_args = par(inp.text)
                 except:
-                    return f_usage
+                    traceback.print_exc()
+                    if not inp.text:
+                        return usage
+                    return lexicon.input.incorrect
                 kwargs.update(parsed_args)
                 return command(inp, *args, **kwargs)
             return wrapped
@@ -58,7 +64,7 @@ def get_flags(inp, *flags):
 ###############################################################################
 
 
-@parser('(<user> | @<topic>) <message>')
+@parser('!tell (<user> | @<topic>) <message>')
 def tell(inp):
     """Argument parser for the notes.send_tell command."""
     uort, message = inp.split(maxsplit=1)
@@ -70,7 +76,7 @@ def tell(inp):
     return dict(user=user, topic=topic, message=message)
 
 
-@parser('[--count | --purge]')
+@parser('!outbound [--count | --purge]')
 def outbound(inp):
     """Argument parser for the notes.outbound command."""
     if not inp:
@@ -81,7 +87,7 @@ def outbound(inp):
     return args
 
 
-@parser('<user> [--first]')
+@parser('!seen <user> [--first]')
 def seen(inp):
     """Argument parser for the notes.seen command."""
     inp, args = get_flags(inp, 'first')
@@ -89,7 +95,7 @@ def seen(inp):
     return args
 
 
-@parser('[add|del] [<user>] [<index>]')
+@parser('!quote [add|del] [<user>] [<index>]')
 def quote(inp):
     """Argument parser for the notes.quote command."""
     if not inp or inp.split()[0].lower() not in ('add', 'del'):
@@ -99,7 +105,7 @@ def quote(inp):
     return dict(mode=mode)
 
 
-@parser('add [<date>] <user> <message>')
+@parser('!quote add [<date>] <user> <message>')
 def quote_add(inp):
     """Argument parser for the notes.quote_add command."""
     _, user, message = inp.split(maxsplit=2)
@@ -111,14 +117,14 @@ def quote_add(inp):
     return dict(date=date, user=user.lower(), message=message)
 
 
-@parser('del <user> <message>')
+@parser('!quote del <user> <message>')
 def quote_del(inp):
     """Argument parser for the notes.quote_del command."""
     _, user, message = inp.split(maxsplit=2)
     return dict(user=user, message=message)
 
 
-@parser('[<user>] [<index>]')
+@parser('!quote [<user>] [<index>]')
 def quote_get(inp):
     """Argument parser for the notes.quote_add command."""
     inp = inp.lower().split()
@@ -136,3 +142,42 @@ def quote_get(inp):
     if index is not None and index <= 0:
         raise ValueError
     return dict(user=user, index=index)
+
+
+@parser('!rem <user> <message>')
+def save_memo(inp):
+    user, message = inp.split(maxsplit=1)
+    return dict(user=user, message=message)
+
+
+@parser('!topic <topic> [-r][-f][-s][-u][-l]')
+def topic(inp):
+    inp, args = get_flags(
+        inp, 'restrict', 'free', 'subscribe', 'unsubscribe', 'list')
+    if len(inp.split()) != 1 or list(args.values()).count(True) != 1:
+        raise ValueError
+    action = [k for k, v in args.items() if v][0]
+    return dict(topic=inp.lstrip('@'), action=action)
+
+
+@parser('!alert [<date>|<delay>] <message>')
+def alert(inp):
+    date, message = inp.split(maxsplit=1)
+    try:
+        arrow.get(date, 'YYYY-MM-DD')
+        delay = None
+    except arrow.parser.ParserError:
+        delay = date
+        date = None
+    if not re.match(r'((\d+)([dhm]))+$', delay):
+        raise ValueError
+    return dict(date=date, delay=delay, message=message)
+
+###############################################################################
+# SCP
+###############################################################################
+
+
+@parser('!s <title> [-e][-s][-t][-a][-r]')
+def search(inp):
+    pass

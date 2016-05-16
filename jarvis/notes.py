@@ -228,7 +228,9 @@ def seen(inp, *, user, first):
 @core.command
 @parser.quote
 def quote(inp, *, mode):
-    """!quote [add|del] [<user>] [<index>] -- Access users' quotes."""
+    if inp.channel in core.config['irc']['quotes_disabled']:
+        return
+
     if mode == 'add':
         return quote_add(inp)
     elif mode == 'del':
@@ -298,7 +300,8 @@ def quote_get(inp, *, user, index):
 
 
 @core.command
-def remember_user(inp, *, user, message):
+@parser.save_memo
+def save_memo(inp, *, user, message):
     """!rem <user> <message> -- Make a memo about the user."""
     Rem.delete().where(
         peewee.fn.Lower(Rem.user) == user.lower(),
@@ -310,10 +313,10 @@ def remember_user(inp, *, user, message):
 
 
 @core.command
-def recall_user(inp, *, user):
+def load_memo(inp):
     """?<user> -- Display the user's memo."""
     rem = Rem.select().where(
-        Rem.user == user,
+        peewee.fn.Lower(Rem.user) == inp.text.lower(),
         Rem.channel == inp.channel)
 
     if rem.exists():
@@ -328,46 +331,29 @@ def recall_user(inp, *, user):
 
 
 @core.command
-@core.lower_input
-#@core.parse_input('{topic}')
-def subscribe_to_topic(inp, *, topic):
-    """!sub <topic> -- Subscribe to topic."""
-    if inp.channel != core.config['irc']['sssc']:
-        if Restricted.select().where(
-                Restricted.topic == topic).exists():
-            return lexicon.denied
+@parser.topic
+def topic(inp, *, topic, action):
 
-    if Subscriber.select().where(
-            Subscriber.user == inp.user,
-            Subscriber.topic == topic).exists():
-        return lexicon.topic.already_subscribed
+    if action == 'list':
+        return topic_list(inp)
 
-    Subscriber.create(user=inp.user, topic=topic)
-    return lexicon.topic.subscribed.format(topic=topic)
+    if action == 'unsubscribe':
+        return topic_sub(inp, topic, True)
 
+    if action == 'subscribe':
+        return topic_sub(inp, topic, False)
 
-@core.command
-@core.lower_input
-#@core.parse_input('{topic}')
-def unsubscribe_from_topic(inp, *, topic):
-    """!unsub <topic> -- Remove topic subscription."""
-    query = Subscriber.select().where(
-        Subscriber.user == inp.user,
-        Subscriber.topic == topic)
+    if action == 'restrict':
+        return topic_restrict(inp, topic, False)
 
-    if not query.exists():
-        return lexicon.topic.not_subscribed
-
-    query.get().delete_instance()
-    return lexicon.topic.unsubscribed.format(topic=topic)
+    if action == 'free':
+        return topic_restrict(inp, topic, True)
 
 
-@core.command
 @core.notice
-@core.lower_input
-def get_topics_count(inp):
-    """!topics -- Display the list of topics you're subscribed to."""
-    query = Subscriber.select().where(Subscriber.user == inp.user)
+def topic_list(inp):
+    query = Subscriber.select().where(
+        peewee.fn.Lower(Subscriber.user) == inp.user.lower())
 
     if not query.exists():
         return lexicon.topic.user_has_no_topics
@@ -376,36 +362,44 @@ def get_topics_count(inp):
     return lexicon.topic.count.format(topics=', '.join(topics))
 
 
-@core.command
-@core.lower_input
-#@core.parse_input('{topic}')
-def restrict_topic(inp, *, topic):
-    """!restrict <topic> -- Prevent users from subscribing to the topic."""
+def topic_sub(inp, topic, remove):
+    if (inp.channel != core.config['irc']['sssc'] and
+        Restricted.select().where(Restricted.topic == topic).exists() and
+            not remove):
+        return lexicon.denied
+
+    query = Subscriber.select().where(
+        peewee.fn.Lower(Subscriber.user) == inp.user.lower(),
+        Subscriber.topic == topic)
+
+    if remove:
+        if not query.exists():
+            return lexicon.topic.not_subscribed
+        query.get().delete_instance()
+        return lexicon.topic.unsubscribed.format(topic=topic)
+    else:
+        if query.exists():
+            return lexicon.topic.already_subscribed
+        Subscriber.create(user=inp.user, topic=topic)
+        return lexicon.topic.subscribed.format(topic=topic)
+
+
+def topic_restrict(inp, topic, remove):
     if inp.channel != core.config['irc']['sssc']:
         return lexicon.denied
 
-    if Restricted.select().where(Restricted.topic == topic).exists():
-        return lexicon.topic.already_restricted
-
-    Restricted.create(topic=topic)
-    return lexicon.topic.restricted
-
-
-@core.command
-@core.lower_input
-#@core.parse_input('{topic}')
-def unrestrict_topic(inp, *, topic):
-    """!restrict <topic> -- Lift restriction from the topic."""
-    if inp._channel != core.config['irc']['sssc']:
-        return lexicon.denied
-
     query = Restricted.select().where(Restricted.topic == topic)
-    if not query.exists():
-        return lexicon.topic.not_restricted
 
-    query.get().delete_instance()
-    return lexicon.topic.unrestricted
-
+    if remove:
+        if not query.exists():
+            return lexicon.topic.not_restricted
+        query.get().delete_instance()
+        return lexicon.topic.unrestricted
+    else:
+        if query.exists():
+            return lexicon.topic.already_restricted
+        Restricted.create(topic=topic)
+        return lexicon.topic.restricted
 
 ###############################################################################
 # Alerts
@@ -413,8 +407,8 @@ def unrestrict_topic(inp, *, topic):
 
 
 @core.command
-#@core.parse_input(r'{date}|(?P<delay>(\d+[dhm])+) {message}')
-def set_alert(inp, *, date, delay, message):
+@parser.alert
+def alert(inp, *, date, delay, message):
     """!alert [<date>|<delay>] <message> -- Remind your future self."""
     if date:
         alert = arrow.get(date)
@@ -434,11 +428,11 @@ def set_alert(inp, *, date, delay, message):
 @core.command
 @core.private
 @core.multiline
-@core.lower_input
 def get_alerts(inp):
     """Retrieve stored alerts."""
     now = arrow.utcnow()
-    for alert in Alert.select().where(Alert.user == inp.user):
+    for alert in Alert.select().where(
+            peewee.fn.Lower(Alert.user) == inp.user.lower()):
         if arrow.get(alert.time) < now:
             yield alert.text
             alert.delete_instance()

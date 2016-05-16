@@ -4,15 +4,12 @@
 # Module Imports
 ###############################################################################
 
-import argparse
 import configparser
 import funcy
 import functools
 import pyscp
-import re
-import shlex
 
-from . import ext, lexicon
+from . import ext
 
 ###############################################################################
 # Config and Cache
@@ -22,7 +19,6 @@ config = configparser.ConfigParser()
 config.read('jarvis.cfg')
 
 wiki = pyscp.wikidot.Wiki('www.scp-wiki.net')
-pages = None
 
 
 def refresh():
@@ -64,6 +60,7 @@ class Inp:
         text = text if self.multiline else [text]
         for line in text:
             self._send(line, private=self.private, notice=self.notice)
+
 
 def command(func):
     """Enable generic command functionality."""

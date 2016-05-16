@@ -10,7 +10,7 @@ import hypothesis.strategies as st
 
 from hypothesis.extra import datetime as hydt
 
-from jarvis import core, notes
+from jarvis import core, notes, parser
 
 ###############################################################################
 
@@ -34,16 +34,15 @@ class MockLexicon:
     def __repr__(self):
         return '{}({})'.format(self.__class__.__name__, self.route)
 
-notes.lexicon = lexicon = MockLexicon()
+notes.lexicon = parser.lexicon = lexicon = MockLexicon()
 
 ###############################################################################
 
 
-def run(fn, inp, *args, **kwargs):
+def run(fn, inp, *args, user='test-user', channel='test-channel', **kwargs):
     results = []
     inp = core.Inp(
-        inp, 'test-user', 'test-channel',
-        lambda x, private, notice: results.append(x))
+        inp, user, channel, lambda x, private, notice: results.append(x))
     fn(inp, *args, **kwargs)
     return results[0] if len(results) == 1 else results
 
@@ -52,6 +51,7 @@ def run(fn, inp, *args, **kwargs):
 
 def st_user():
     user = st.characters(blacklist_categories=['Cc', 'Cs', 'Zs', 'Zl', 'Zp'])
+    user = user.filter(lambda x: x.strip() == x)
     user = user.filter(lambda x: x.strip().rstrip(':,'))
     user = user.filter(lambda x: not x.strip().startswith('@'))
     user = user.filter(lambda x: not x.isdigit())
@@ -72,7 +72,7 @@ def test_tell_random_input(inp):
 
 
 @hy.given(st_user(), st_msg())
-def test_tell_send_user_successful(user, msg):
+def test_tell_send_user(user, msg):
     count = notes.Tell.select().count()
     inp = user + ' ' + msg
     assert run(notes.tell, inp) == lexicon.tell.send
@@ -80,13 +80,16 @@ def test_tell_send_user_successful(user, msg):
 
 
 @hy.given(st.none() | st_user())
-def test_tell_send_failed(inp):
+def test_tell_send_fail(inp):
     """Test notes.tell command."""
-    assert run(notes.tell, inp) == notes.tell._usage
+    if inp:
+        assert run(notes.tell, inp) == lexicon.input.incorrect
+    else:
+        assert run(notes.tell, inp) == notes.tell._usage
 
 
 @hy.given(st.lists(st.text()))
-def test_get_tells_successful(messages):
+def test_get_tells(messages):
     run(notes.get_tells, '')
     for m in messages:
         hy.assume(m.strip())
@@ -121,12 +124,12 @@ def test_outbound_options(inp):
     assert run(notes.outbound, inp).route.startswith('lexicon.tell.outbound')
 
 
-def test_outbound_count_successful():
+def test_outbound_count():
     run(notes.tell, 'test tell')
     assert run(notes.outbound, '--count') == lexicon.tell.outbound.count
 
 
-def test_outbound_purge_successful():
+def test_outbound_purge():
     run(notes.tell, 'test tell')
     assert run(notes.outbound, '--purge') == lexicon.tell.outbound.purged
     query = notes.Tell.select().where(notes.Tell.sender == 'test-user')
@@ -181,14 +184,8 @@ def test_quote_random_input(inp):
     run(notes.quote, inp)
 
 
-def test_quote_usage_messages():
-    assert run(notes.quote, '--help') == notes.quote._usage
-    assert run(notes.quote, 'add') == notes.quote_add._usage
-    assert run(notes.quote, 'del') == notes.quote_del._usage
-
-
 @hy.given(st_user(), st_msg())
-def test_quote_add_successful(user, msg):
+def test_quote_add(user, msg):
     inp = ' {} {}'.format(user, msg)
     run(notes.quote, 'del' + inp)
     assert run(notes.quote, 'add' + inp) == lexicon.quote.saved
@@ -225,8 +222,8 @@ def test_quote_get_index(index):
 
 
 @hy.given(st.integers().filter(lambda x: x <= 0))
-def test_quote_get_index_negative_fail(index):
-    assert run(notes.quote, str(index)) == notes.quote_get._usage
+def test_quote_get_index_negative(index):
+    assert run(notes.quote, str(index)) == lexicon.input.incorrect
 
 
 @hy.given(st.integers().filter(lambda x: x > 0))
@@ -256,3 +253,73 @@ def test_quote_get_user_and_index(user, index):
     assert quote.user.lower() == user.lower()
 
 ###############################################################################
+# Memos
+###############################################################################
+
+
+@hy.given(st.text())
+def test_save_memo_random_input(inp):
+    run(notes.save_memo, inp)
+
+
+@hy.given(st_user(), st_msg())
+def test_save_memo(user, msg):
+    assert run(notes.save_memo, user + ' ' + msg) == lexicon.quote.saved
+
+###############################################################################
+# Topics
+###############################################################################
+
+
+@hy.given(st.text())
+def test_topic_random_input(inp):
+    run(notes.topic, inp)
+
+
+@hy.given(st_user())
+def test_topic_subscribe(topic):
+    run(notes.topic, '{} -u'.format(topic))
+    r = run(notes.topic, '{} -s'.format(topic), channel='sssc-test')
+    assert r == lexicon.topic.subscribed
+
+
+@hy.given(st_user())
+def test_topic_already_subscribed(topic):
+    run(notes.topic, '-f {}'.format(topic), channel='sssc-test')
+    run(notes.topic, '-s {}'.format(topic))
+    r = run(notes.topic, '{} --subscribe'.format(topic))
+    assert r == lexicon.topic.already_subscribed
+
+
+@hy.given(st_user())
+def test_topic_restrict(topic):
+    run(notes.topic, '{} --free'.format(topic), channel='sssc-test')
+    r = run(notes.topic, '{} -r'.format(topic), channel='sssc-test')
+    assert r == lexicon.topic.restricted
+
+
+@hy.given(st_user())
+def test_topic_restrict_denied(topic):
+    run(notes.topic, '{} --free'.format(topic), channel='sssc-test')
+    r = run(notes.topic, '{} -r'.format(topic))
+    assert r == lexicon.denied
+
+
+@hy.given(st_user(), st_msg())
+def test_topic_send(topic, msg):
+    run(notes.topic, '{} -s'.format(topic), channel='sssc-test')
+    run(notes.get_tells, '')
+    run(notes.tell, '@{} {}'.format(topic, msg))
+    r = run(notes.get_tells, '')
+    assert r == lexicon.topic.get
+    assert r.text == msg.strip()
+    assert r.topic == topic
+
+###############################################################################
+# Alert
+###############################################################################
+
+
+@hy.given(st.text())
+def test_alert_random_input(inp):
+    run(notes.alert, inp)
