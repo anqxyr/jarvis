@@ -46,12 +46,15 @@ USER = """
 
 <script type="text/javascript">
 google.charts.load('current', {{'packages':['table', 'corechart']}});
+{summary_table}
 {articles_chart}
 {articles_table}
 </script>
 
+<div id="summary_table"></div>
 <div id="articles_chart"></div>
 <div style="clear: both;"></div>
+<h4>Articles</h4>
 <div id="articles_table"></div>
 
 [[/html]]
@@ -78,10 +81,6 @@ def html(tag, text, **kwargs):
 
 class Chart:
 
-    def __init__(self, pages):
-        for p in pages:
-            self.add_page(p)
-
     def format_row(self, row, indent):
         row = ',\n'.join(map(repr, row))
         row = textwrap.indent(row, '    ')
@@ -97,16 +96,35 @@ class Chart:
             options=self.options)
 
 
+class SummaryTable(Chart):
+
+    def __init__(self, pages, name):
+        self.name = 'summary_table'
+        self.class_name = 'Table'
+
+        self.populate(pages, name)
+
+        self.options = {
+            'sort': 'disable'}
+
+    def populate(self, pages, name):
+        self.data = [
+            ['Category', 'Page Count', 'Net Rating', 'Average'],
+            ['Total', pages.count, pages.rating, pages.average]]
+        for k, v in pages.split_page_type().items():
+            self.data.append([k, v.count, v.rating, v.average])
+        for k, v in pages.split_relation(name).items():
+            self.data.append([k, v.count, v.rating, v.average])
+
+
 class ArticlesChart(Chart):
 
     def __init__(self, pages):
         self.name = 'articles_chart'
         self.class_name = 'ColumnChart'
-        self.data = [[
-            'Title',
-            'Rating',
-            {'role': 'tooltip', 'p': {'html': 'true'}},
-            {'role': 'style'}]]
+
+        self.populate(pages)
+
         self.options = {
             'backgroundColor': '#e7e9dc',
             'chartArea': {
@@ -120,29 +138,34 @@ class ArticlesChart(Chart):
                 'gridlines': {'color': '#e7e9dc'}},
             'legend': {'position': 'none'},
             'height': 450,
-            'tooltip': {'isHtml': 'True'}
-        }
-        super().__init__(pages)
+            'tooltip': {'isHtml': 'True'}}
 
-    def add_page(self, page):
-        if 'scp' in page.tags:
-            color = 'color: #db4437'
-        elif 'tale' in page.tags:
-            color = 'color: #4285f4'
-        else:
-            color = 'color: #f4b400'
+    def populate(self, pages):
+        self.data = [[
+            'Title',
+            'Rating',
+            {'role': 'tooltip', 'p': {'html': 'true'}},
+            {'role': 'style'}]]
 
-        tooltip = dt.table(
-            dt.tr(dt.td(page.title, colspan=2)),
-            dt.tr(dt.td('Rating:'), dt.td(page.rating)),
-            dt.tr(dt.td('Created:'), dt.td(page.created[:10])),
-            cls='articles_chart_tooltip')
+        for p in pages:
+            if 'scp' in p.tags:
+                color = 'color: #db4437'
+            elif 'tale' in p.tags:
+                color = 'color: #4285f4'
+            else:
+                color = 'color: #f4b400'
 
-        self.data.append([
-            page.title,
-            page.rating,
-            tooltip.render(pretty=False),
-            color])
+            tooltip = dt.table(
+                dt.tr(dt.td(p.title, colspan=2)),
+                dt.tr(dt.td('Rating:'), dt.td(p.rating)),
+                dt.tr(dt.td('Created:'), dt.td(p.created[:10])),
+                cls='articles_chart_tooltip')
+
+            self.data.append([
+                p.title,
+                p.rating,
+                tooltip.render(pretty=False),
+                color])
 
 
 class ArticlesTable(Chart):
@@ -150,27 +173,31 @@ class ArticlesTable(Chart):
     def __init__(self, pages, user):
         self.name = 'articles_table'
         self.class_name = 'Table'
-        self.user = user
-        self.data = ['Title Rating Tags Link Created Relation'.split()]
+
+        self.populate(pages, user)
+
         self.options = {
             'showRowNumber': 'True',
             'allowHtml': 'True',
             'sortColumn': 1,
+            'sortAscending': 'false',
             'width': '100%'}
-        super().__init__(pages)
 
-    def add_page(self, page):
-        tags = [html('b', t) if t in 'scp tale hub admin author' else t
-                for t in page.tags]
-        tags = ', '.join(sorted(tags))
+    def populate(self, pages, user):
+        self.data = ['Title Rating Tags Link Created Relation'.split()]
 
-        link = html('a', page.url.split('/')[-1], href=page.url)
+        for p in pages:
+            tags = [html('b', t) if t in 'scp tale hub admin author' else t
+                    for t in p.tags]
+            tags = ', '.join(sorted(tags))
 
-        rel = page.metadata[self.user][0]
-        rel = html('span', rel, cls='rel-' + rel)
+            link = html('a', p.url.split('/')[-1], href=p.url)
 
-        self.data.append([
-            page.title, page.rating, tags, link, page.created[:10], rel])
+            rel = p.metadata[user][0]
+            rel = html('span', rel, cls='rel-' + rel)
+
+            self.data.append([
+                p.title, p.rating, tags, link, p.created[:10], rel])
 
 
 ###############################################################################
@@ -181,11 +208,12 @@ def update_user(name):
     wiki.auth(core.config['wiki']['name'], core.config['wiki']['pass'])
     p = wiki('user:' + name.lower())
 
-    pages = core.pages.related(name).articles
-    pages = sorted(pages, key=lambda x: x.created)
+    pages = core.pages.related(name).sorted('created')
     data = USER.format(
-        articles_chart=ArticlesChart(pages).render(),
-        articles_table=ArticlesTable(pages, name).render())
+        summary_table=SummaryTable(pages.articles, name).render(),
+        articles_chart=ArticlesChart(pages.articles).render(),
+        articles_table=ArticlesTable(
+            [p for p in pages if p.tags], name).render())
 
     p.create(data, title=name, comment='automated update')
     return p.url
