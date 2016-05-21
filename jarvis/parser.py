@@ -20,43 +20,193 @@ from . import lexicon
 ###############################################################################
 
 
-def parser(usage):
-    """Create Parser Decorator."""
-    def outer_decorator(par):
-        @functools.wraps(par)
-        def inner_decorator(command):
-            command._usage = usage
+def parser(fn):
+    parser = ArgumentParser()
+    fn(parser)
 
-            @functools.wraps(command)
-            def wrapped(inp, *args, **kwargs):
-                if inp.text.endswith('--help'):
-                    return usage
-                try:
-                    parsed_args = par(inp.text)
-                except:
-                    traceback.print_exc()
-                    if not inp.text:
-                        return usage
-                    return lexicon.input.incorrect
-                kwargs.update(parsed_args)
-                return command(inp, *args, **kwargs)
-            return wrapped
-        return inner_decorator
-    return outer_decorator
+    @functools.wraps(fn)
+    def deco(command):
+        @functools.wraps(command)
+        def wrapped(inp, *args, **kwargs):
+            try:
+                parsed_args = parser.parse_args(inp.text)
+            except ArgumentError:
+                traceback.print_exc()
+                return lexicon.input.incorrect
+            print(parsed_args)
+            return
+            kwargs.update(parsed_args)
+            return command(inp, *args, **kwargs)
+        return wrapped
+    return deco
 
 
-def get_flags(inp, *flags):
-    """Retrieve flags from input string."""
-    args = {f: False for f in flags}
-    inp = inp.split()
-    for i in inp:
-        if i[0] != '-':
-            continue
-        for f in flags:
-            if i == ('--' + f) or i == ('-' + f[0]):
-                args[f] = True
-                inp.remove(i)
-    return ' '.join(inp), args
+###############################################################################
+# ArgumentParser
+###############################################################################
+
+
+class Argument:
+
+    def __init__(self, *args, **kwargs):
+        self.name = args[0].lstrip('-')
+        self.is_opt = args[0].startswith('-')
+        self.flags = args if self.is_opt else []
+
+        self.nargs = kwargs.get('nargs', None)
+        if not self.nargs and self.is_opt:
+            self.nargs = 0
+        elif not self.nargs and not self.is_opt:
+            self.nargs = 1
+
+        self.action = kwargs.get('action', None)
+        if not self.action and not self.is_opt:
+            self.action = 'join'
+
+        self.re = kwargs.get('re', None)
+        self.type = kwargs.get('type', None)
+
+        self.values = []
+        self.open = True
+        self.marked = False
+
+    def __repr__(self):
+        return '<{} name={} values={}>'.format(
+            self.__class__.__name__, repr(self.name), repr(self.values))
+
+    def consume(self, value):
+        if self.max_consumed or not self.open:
+            return False
+
+        if self.re and not re.match(self.re, value):
+            return False
+
+        if self.type:
+            try:
+                value = self.type(value)
+            except:
+                return False
+
+        self.values.append(value)
+        return True
+
+    @property
+    def min_consumed(self):
+        if self.is_opt and not self.required:
+            return True
+        if self.nargs in ['?', '*']:
+            return True
+        if self.nargs == '+':
+            return len(self.values) > 0
+        return len(self.values) >= self.nargs
+
+    @property
+    def max_consumed(self):
+        if self.nargs == '?':
+            return len(self.values) > 0
+        if self.nargs in ['*', '+']:
+            return False
+        return len(self.values) >= self.nargs
+
+    def get_values(self):
+        if not self.nargs == 0 and self.is_opt:
+            return self.marked
+
+        if not self.values:
+            return None
+
+        if self.action == 'join':
+            return ' '.join(self.values)
+
+        return self.values
+
+
+class ArgumentParser:
+
+    def __init__(self):
+        self.pos = []
+        self.opt = []
+        self.exc = []
+
+    def add_argument(self, *args, **kwargs):
+        arg = Argument(*args, **kwargs)
+        (self.opt if arg.is_opt else self.pos).append(arg)
+
+    def exclusive(self, *args, required=False):
+        self.exc.append({'args': args, 'required': required})
+
+    def parse_args(self, input_string):
+        last = None
+        for value in input_string.split(' '):
+            known_flag = self._get_known_flag(value)
+            if known_flag:
+                self._close(last)
+                last = known_flag
+            elif last:
+                consumed = last.consume(value)
+                if not consumed:
+                    self._close(last)
+                    last = self._next_positional(value)
+            else:
+                last = self._next_positional(value)
+        self._check_constraints()
+        values = {i.name: i.get_values() for i in self.pos + self.opt}
+        self._reset()
+        return values
+
+    def _get_known_flag(self, value):
+        for arg in self.opt:
+            if value in arg.flags and arg.open:
+                arg.marked = True
+                return arg
+
+    def _next_positional(self, value):
+        for arg in self.pos:
+            if not arg.open:
+                continue
+            consumed = arg.consume(value)
+            if not consumed and not arg.min_consumed:
+                raise ArgumentError
+            elif not consumed:
+                self._close(arg)
+            else:
+                return arg
+        raise ArgumentError
+
+    def _close(self, arg):
+        if not arg.min_consumed:
+            raise ArgumentError
+        arg.open = False
+        if (arg.is_opt and not arg.marked) or not arg.values:
+            return
+        for exc in self.exc:
+            if arg.name not in exc['args']:
+                continue
+            for name in exc['args']:
+                arg = next(i for i in self.pos + self.opt if i.name == name)
+                arg.open = False
+
+    def _check_constraints(self):
+        if not all(i.min_consumed for i in self.pos + self.opt):
+            raise ArgumentError
+        for exc in self.exc:
+            if not exc['required']:
+                continue
+            args = [i for i in self.pos + self.opt if i.name in exc['args']]
+            if not any(i.marked if i.is_opt else i.values for i in args):
+                raise ArgumentError(
+                    'Required mutually exclusive arguments missing: {}'
+                    .format(self.pos + self.opt))
+
+    def _reset(self):
+        for arg in self.pos + self.opt:
+            arg.values = []
+            arg.open = True
+            arg.marked = False
+
+
+class ArgumentError(Exception):
+    pass
 
 
 ###############################################################################
@@ -64,120 +214,81 @@ def get_flags(inp, *flags):
 ###############################################################################
 
 
-@parser('!tell (<user> | @<topic>) <message>')
-def tell(inp):
-    """Argument parser for the notes.send_tell command."""
-    uort, message = inp.split(maxsplit=1)
-    user, topic = uort.lstrip('@').rstrip(':,'), None
-    if uort[0] == '@':
-        user, topic = topic, user
-    if not user and not topic:
-        raise ValueError
-    return dict(user=user, topic=topic, message=message)
+@parser
+def tell(pr):
+    pr.add_argument('topic', re='@.*', type=lambda x: x.lstrip('@'), nargs='?')
+    pr.add_argument('user', type=lambda x: x.rstrip(':,'), nargs='?')
+    pr.exclusive('user', 'topic', required=True)
+    pr.add_argument('message', nargs='+')
 
 
-@parser('!outbound [--count | --purge]')
-def outbound(inp):
-    """Argument parser for the notes.outbound command."""
-    if not inp:
-        raise ValueError
-    inp, args = get_flags(inp, 'count', 'purge')
-    if inp or (args['count'] and args['purge']):
-        raise ValueError
-    return args
+@parser
+def outbound(pr):
+    pr.add_argument('action', choices=['count', 'purge'])
 
 
-@parser('!seen <user> [--first]')
-def seen(inp):
-    """Argument parser for the notes.seen command."""
-    inp, args = get_flags(inp, 'first')
-    args.update(user=inp.lower())
-    return args
+@parser
+def seen(pr):
+    pr.add_argument('--first', '-f')
+    pr.add_argument('user')
 
 
-@parser('!quote [add|del] [<user>] [<index>]')
-def quote(inp):
-    """Argument parser for the notes.quote command."""
-    if not inp or inp.split()[0].lower() not in ('add', 'del'):
-        mode = None
-    else:
-        mode = inp.split()[0].lower()
-    return dict(mode=mode)
+@parser
+def quote(pr):
+    pr.add_argument('mode', nargs='?', choices=['add', 'del'])
+    pr.add_argument('_', nargs='*')
 
 
-@parser('!quote add [<date>] <user> <message>')
-def quote_add(inp):
-    """Argument parser for the notes.quote_add command."""
-    _, user, message = inp.split(maxsplit=2)
-    try:
-        date = arrow.get(user, 'YYYY-MM-DD').format('YYYY-MM-DD')
-        user, message = message.split(maxsplit=1)
-    except arrow.parser.ParserError:
-        date = None
-    return dict(date=date, user=user.lower(), message=message)
+@parser
+def quote_add(pr):
+    pr.add_argument('mode', choices=['add'])
+    pr.add_argument('date', nargs='?', type=arrow.get)
+    pr.add_argument('user')
+    pr.add_argument('message', nargs='+')
 
 
-@parser('!quote del <user> <message>')
-def quote_del(inp):
-    """Argument parser for the notes.quote_del command."""
-    _, user, message = inp.split(maxsplit=2)
-    return dict(user=user, message=message)
+@parser
+def quote_del(pr):
+    pr.add_argument('mode', choices=['del'])
+    pr.add_argument('user')
+    pr.add_argument('message', nargs='+')
 
 
-@parser('!quote [<user>] [<index>]')
-def quote_get(inp):
-    """Argument parser for the notes.quote_add command."""
-    inp = inp.lower().split()
-    user = index = None
-    if len(inp) == 1:
-        try:
-            index = int(inp[0])
-        except ValueError:
-            user = inp[0]
-    elif len(inp) == 2:
-        user = inp[0]
-        index = int(inp[1])
-    elif len(inp) > 2:
-        raise ValueError
-    if index is not None and index <= 0:
-        raise ValueError
-    return dict(user=user, index=index)
+@parser
+def quote_get(pr):
+    pr.add_argument('user', nargs='?')
+    pr.add_argument('index', type=int, nargs='?')
 
 
-@parser('!rem <user> <message>')
-def save_memo(inp):
-    user, message = inp.split(maxsplit=1)
-    return dict(user=user, message=message)
+@parser
+def save_memo(pr):
+    pr.add_argument('user')
+    pr.add_argument('message', nargs='+')
 
 
-@parser('!topic <topic> [-r][-f][-s][-u][-l]')
-def topic(inp):
-    inp, args = get_flags(
-        inp, 'restrict', 'free', 'subscribe', 'unsubscribe', 'list')
-    if len(inp.split()) != 1 or list(args.values()).count(True) != 1:
-        raise ValueError
-    action = [k for k, v in args.items() if v][0]
-    return dict(topic=inp.lstrip('@'), action=action)
+@parser
+def topic(pr):
+    pr.add_argument('--list', '-l')
+    pr.add_argument('topic')
+    pr.add_argument('--subscribe', '-s')
+    pr.add_argument('--unsubscribe', '-u')
+    pr.add_argument('--restrict', '-r')
+    pr.add_argument('--free', '-f')
 
 
-@parser('!alert [<date>|<delay>] <message>')
-def alert(inp):
-    date, message = inp.split(maxsplit=1)
-    try:
-        arrow.get(date, 'YYYY-MM-DD')
-        delay = None
-    except arrow.parser.ParserError:
-        delay = date
-        date = None
-    if not re.match(r'((\d+)([dhm]))+$', delay):
-        raise ValueError
-    return dict(date=date, delay=delay, message=message)
+@parser
+def alert(pr):
+    pr.add_argument('date', type=arrow.get)
+    pr.add_argument('delay')
+    #pr.exclusive('date', 'delay', required=True)
+    pr.add_argument('message', nargs='+')
+
 
 ###############################################################################
 # SCP
 ###############################################################################
 
 
-@parser('!s <title> [-e][-s][-t][-a][-r]')
-def search(inp):
+@parser
+def search(pr):
     pass
