@@ -148,8 +148,7 @@ def tell(inp, *, user, topic, message):
 @core.multiline
 def get_tells(inp):
     """Retrieve incoming messages."""
-    query = Tell.select().where(
-        peewee.fn.Lower(Tell.recipient) == inp.user.lower()).execute()
+    query = Tell.select().where(Tell.recipient == inp.user.lower()).execute()
     for tell in query:
 
         time = arrow.get(tell.time).humanize()
@@ -165,8 +164,18 @@ def get_tells(inp):
 
 @core.command
 @core.notice
+def show_tells(inp):
+    query = Tell.select().where(Tell.recipient == inp.user.lower())
+    if query.exists():
+        return get_tells(inp)
+    else:
+        return lexicon.tell.no_new
+
+
+@core.command
+@core.notice
 @parser.outbound
-def outbound(inp, *, count, purge):
+def outbound(inp, *, action):
     """
     Access outbound tells.
 
@@ -182,9 +191,9 @@ def outbound(inp, *, count, purge):
     if not query.exists():
         return lexicon.tell.outbound.empty
 
-    if count:
+    if action == 'count':
         msg = lexicon.tell.outbound.count
-    elif purge:
+    elif action == 'purge':
         Tell.delete().where(
             peewee.fn.Lower(Tell.sender) == inp.user.lower(),
             Tell.topic.is_null()).execute()
@@ -200,7 +209,6 @@ def outbound(inp, *, count, purge):
 
 
 @core.command
-@core.lower_input
 @parser.seen
 def seen(inp, *, user, first):
     """Retrieve the first or the last message said by the user."""
@@ -209,7 +217,7 @@ def seen(inp, *, user, first):
 
     order = Message.time if first else Message.time.desc()
     query = Message.select().where(
-        peewee.fn.Lower(Message.user) == user,
+        Message.user == user,
         Message.channel == inp.channel).order_by(order)
     if not query.exists():
         return lexicon.seen.never
@@ -250,7 +258,7 @@ def quote_add(inp, *, date, user, message):
     Quote.create(
         user=user,
         channel=inp.channel,
-        time=date or arrow.utcnow().format('YYYY-MM-DD'),
+        time=(date or arrow.utcnow()).format('YYYY-MM-DD'),
         text=message)
 
     return lexicon.quote.saved
@@ -260,7 +268,7 @@ def quote_add(inp, *, date, user, message):
 def quote_del(inp, *, user, message):
     """!quote del <user> <message> -- Delete the matching quote."""
     query = Quote.select().where(
-        peewee.fn.Lower(Quote.user) == user.lower(),
+        Quote.user == user,
         Quote.channel == inp.channel,
         Quote.text == message)
 
@@ -274,6 +282,9 @@ def quote_del(inp, *, user, message):
 @parser.quote_get
 def quote_get(inp, *, user, index):
     """Retrieve a quote."""
+    if index is not None and index <= 0:
+        return lexicon.input.bad_index
+
     query = Quote.select().where(Quote.channel == inp.channel)
     if user:
         query = query.where(Quote.user == user)
@@ -281,7 +292,7 @@ def quote_get(inp, *, user, index):
     if not query.exists():
         return lexicon.quote.none_saved
 
-    index = int(index or random.randint(1, query.count()))
+    index = index or random.randint(1, query.count())
     if index > query.count():
         return lexicon.input.bad_index
     quote = query.order_by(Quote.time).limit(1).offset(index - 1)[0]
@@ -304,7 +315,7 @@ def quote_get(inp, *, user, index):
 def save_memo(inp, *, user, message):
     """!rem <user> <message> -- Make a memo about the user."""
     Rem.delete().where(
-        peewee.fn.Lower(Rem.user) == user.lower(),
+        Rem.user == user,
         Rem.channel == inp.channel).execute()
 
     Rem.create(user=user, channel=inp.channel, text=message)
@@ -316,7 +327,7 @@ def save_memo(inp, *, user, message):
 def load_memo(inp):
     """?<user> -- Display the user's memo."""
     rem = Rem.select().where(
-        peewee.fn.Lower(Rem.user) == inp.text.lower(),
+        Rem.user == inp.text.lower(),
         Rem.channel == inp.channel)
 
     if rem.exists():
@@ -337,23 +348,23 @@ def topic(inp, *, topic, action):
     if action == 'list':
         return topic_list(inp)
 
-    if action == 'unsubscribe':
+    if action == 'unsub':
         return topic_sub(inp, topic, True)
 
-    if action == 'subscribe':
+    if action == 'sub':
         return topic_sub(inp, topic, False)
 
-    if action == 'restrict':
+    if action == 'res':
         return topic_restrict(inp, topic, False)
 
-    if action == 'free':
+    if action == 'unres':
         return topic_restrict(inp, topic, True)
 
 
 @core.notice
 def topic_list(inp):
     query = Subscriber.select().where(
-        peewee.fn.Lower(Subscriber.user) == inp.user.lower())
+        Subscriber.user == inp.user.lower())
 
     if not query.exists():
         return lexicon.topic.user_has_no_topics
@@ -369,7 +380,7 @@ def topic_sub(inp, topic, remove):
         return lexicon.denied
 
     query = Subscriber.select().where(
-        peewee.fn.Lower(Subscriber.user) == inp.user.lower(),
+        Subscriber.user == inp.user.lower(),
         Subscriber.topic == topic)
 
     if remove:
@@ -380,7 +391,7 @@ def topic_sub(inp, topic, remove):
     else:
         if query.exists():
             return lexicon.topic.already_subscribed
-        Subscriber.create(user=inp.user, topic=topic)
+        Subscriber.create(user=inp.user.lower(), topic=topic)
         return lexicon.topic.subscribed.format(topic=topic)
 
 
@@ -408,20 +419,18 @@ def topic_restrict(inp, topic, remove):
 
 @core.command
 @parser.alert
-def alert(inp, *, date, delay, message):
+def alert(inp, *, date, span, message):
     """!alert [<date>|<delay>] <message> -- Remind your future self."""
-    if date:
-        alert = arrow.get(date)
-        if alert < arrow.utcnow():
-            return lexicon.alert.past
+    if date and date < arrow.utcnow():
+        return lexicon.alert.past
 
-    elif delay:
-        alert = arrow.utcnow()
-        for length, unit in re.findall(r'(\d+)([dhm])', delay):
+    if span:
+        date = arrow.utcnow()
+        for length, unit in re.findall(r'(\d+)([dhm])', span):
             unit = dict(d='days', h='hours', m='minutes')[unit]
-            alert = alert.replace(**{unit: int(length)})
+            date = date.replace(**{unit: int(length)})
 
-    Alert.create(user=inp.user.lower(), time=alert.timestamp, text=message)
+    Alert.create(user=inp.user.lower(), time=date.timestamp, text=message)
     return lexicon.alert.set
 
 
@@ -432,7 +441,7 @@ def get_alerts(inp):
     """Retrieve stored alerts."""
     now = arrow.utcnow()
     for alert in Alert.select().where(
-            peewee.fn.Lower(Alert.user) == inp.user.lower()):
+            Alert.user == inp.user.lower()):
         if arrow.get(alert.time) < now:
             yield alert.text
             alert.delete_instance()

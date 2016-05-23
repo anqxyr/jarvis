@@ -9,6 +9,7 @@ Contains argument parsers for other commands.
 ###############################################################################
 
 import arrow
+import copy
 import functools
 import re
 import traceback
@@ -31,10 +32,9 @@ def parser(fn):
             try:
                 parsed_args = parser.parse_args(inp.text)
             except ArgumentError:
-                traceback.print_exc()
+                #traceback.print_exc()
                 return lexicon.input.incorrect
             print(parsed_args)
-            return
             kwargs.update(parsed_args)
             return command(inp, *args, **kwargs)
         return wrapped
@@ -60,11 +60,11 @@ class Argument:
             self.nargs = 1
 
         self.action = kwargs.get('action', None)
-        if not self.action and not self.is_opt:
-            self.action = 'join'
 
         self.re = kwargs.get('re', None)
         self.type = kwargs.get('type', None)
+        self.choices = kwargs.get('choices', None)
+        self.ignore = kwargs.get('ignore', None)
 
         self.values = []
         self.open = True
@@ -84,15 +84,19 @@ class Argument:
         if self.type:
             try:
                 value = self.type(value)
+                assert value is not None
             except:
                 return False
+
+        if self.choices and value not in self.choices:
+            return False
 
         self.values.append(value)
         return True
 
     @property
     def min_consumed(self):
-        if self.is_opt and not self.required:
+        if self.is_opt:
             return True
         if self.nargs in ['?', '*']:
             return True
@@ -109,35 +113,48 @@ class Argument:
         return len(self.values) >= self.nargs
 
     def get_values(self):
-        if not self.nargs == 0 and self.is_opt:
-            return self.marked
+        if self.ignore:
+            return {}
+
+        if self.nargs == 0 and self.is_opt:
+            return {self.name: self.marked}
 
         if not self.values:
-            return None
+            return {self.name: None}
 
         if self.action == 'join':
-            return ' '.join(self.values)
+            return {self.name: ' '.join(self.values)}
 
-        return self.values
+        if self.action:
+            return self.action(self.name, self.values)
+
+        if self.nargs in [1, '?']:
+            return {self.name: self.values[0]}
+
+        return {self.name: self.values}
 
 
 class ArgumentParser:
 
     def __init__(self):
-        self.pos = []
-        self.opt = []
+        self._pos = []
+        self._opt = []
         self.exc = []
 
     def add_argument(self, *args, **kwargs):
         arg = Argument(*args, **kwargs)
-        (self.opt if arg.is_opt else self.pos).append(arg)
+        (self._opt if arg.is_opt else self._pos).append(arg)
 
     def exclusive(self, *args, required=False):
         self.exc.append({'args': args, 'required': required})
 
     def parse_args(self, input_string):
+        self.pos = copy.deepcopy(self._pos)
+        self.opt = copy.deepcopy(self._opt)
         last = None
         for value in input_string.split(' '):
+            if not input_string:
+                break
             known_flag = self._get_known_flag(value)
             if known_flag:
                 self._close(last)
@@ -150,8 +167,9 @@ class ArgumentParser:
             else:
                 last = self._next_positional(value)
         self._check_constraints()
-        values = {i.name: i.get_values() for i in self.pos + self.opt}
-        self._reset()
+        values = {}
+        for arg in self.pos + self.opt:
+            values.update(arg.get_values())
         return values
 
     def _get_known_flag(self, value):
@@ -174,6 +192,8 @@ class ArgumentParser:
         raise ArgumentError
 
     def _close(self, arg):
+        if arg is None:
+            return
         if not arg.min_consumed:
             raise ArgumentError
         arg.open = False
@@ -198,12 +218,6 @@ class ArgumentParser:
                     'Required mutually exclusive arguments missing: {}'
                     .format(self.pos + self.opt))
 
-    def _reset(self):
-        for arg in self.pos + self.opt:
-            arg.values = []
-            arg.open = True
-            arg.marked = False
-
 
 class ArgumentError(Exception):
     pass
@@ -216,10 +230,10 @@ class ArgumentError(Exception):
 
 @parser
 def tell(pr):
-    pr.add_argument('topic', re='@.*', type=lambda x: x.lstrip('@'), nargs='?')
-    pr.add_argument('user', type=lambda x: x.rstrip(':,'), nargs='?')
+    pr.add_argument('topic', re='@.+', type=lambda x: x.lstrip('@'), nargs='?')
+    pr.add_argument('user', type=lambda x: x.lower().rstrip(':,'), nargs='?')
     pr.exclusive('user', 'topic', required=True)
-    pr.add_argument('message', nargs='+')
+    pr.add_argument('message', nargs='+', action='join')
 
 
 @parser
@@ -230,57 +244,53 @@ def outbound(pr):
 @parser
 def seen(pr):
     pr.add_argument('--first', '-f')
-    pr.add_argument('user')
+    pr.add_argument('user', type=str.lower)
 
 
 @parser
 def quote(pr):
     pr.add_argument('mode', nargs='?', choices=['add', 'del'])
-    pr.add_argument('_', nargs='*')
+    pr.add_argument('_', nargs='*', ignore=True)
 
 
 @parser
 def quote_add(pr):
-    pr.add_argument('mode', choices=['add'])
+    pr.add_argument('mode', choices=['add'], ignore=True)
     pr.add_argument('date', nargs='?', type=arrow.get)
-    pr.add_argument('user')
-    pr.add_argument('message', nargs='+')
+    pr.add_argument('user', type=str.lower)
+    pr.add_argument('message', nargs='+', action='join')
 
 
 @parser
 def quote_del(pr):
-    pr.add_argument('mode', choices=['del'])
-    pr.add_argument('user')
-    pr.add_argument('message', nargs='+')
+    pr.add_argument('mode', choices=['del'], ignore=True)
+    pr.add_argument('user', type=str.lower)
+    pr.add_argument('message', nargs='+', action='join')
 
 
 @parser
 def quote_get(pr):
-    pr.add_argument('user', nargs='?')
+    pr.add_argument('user', re='[^\d-].*', type=str.lower, nargs='?')
     pr.add_argument('index', type=int, nargs='?')
 
 
 @parser
 def save_memo(pr):
     pr.add_argument('user')
-    pr.add_argument('message', nargs='+')
+    pr.add_argument('message', nargs='+', action='join')
 
 
 @parser
 def topic(pr):
-    pr.add_argument('--list', '-l')
-    pr.add_argument('topic')
-    pr.add_argument('--subscribe', '-s')
-    pr.add_argument('--unsubscribe', '-u')
-    pr.add_argument('--restrict', '-r')
-    pr.add_argument('--free', '-f')
+    pr.add_argument('action', choices=['list', 'sub', 'unsub', 'res', 'unres'])
+    pr.add_argument('topic', nargs='?')
 
 
 @parser
 def alert(pr):
-    pr.add_argument('date', type=arrow.get)
-    pr.add_argument('delay')
-    #pr.exclusive('date', 'delay', required=True)
+    pr.add_argument('date', type=arrow.get, nargs='?')
+    pr.add_argument('span', re='(\d+[dhm])+', nargs='?')
+    pr.exclusive('date', 'span', required=True)
     pr.add_argument('message', nargs='+')
 
 

@@ -52,9 +52,9 @@ def run(fn, inp, *args, user='test-user', channel='test-channel', **kwargs):
 def st_user():
     user = st.characters(blacklist_categories=['Cc', 'Cs', 'Zs', 'Zl', 'Zp'])
     user = user.filter(lambda x: x.strip() == x)
-    user = user.filter(lambda x: x.strip().rstrip(':,'))
-    user = user.filter(lambda x: not x.strip().startswith('@'))
     user = user.filter(lambda x: not x.isdigit())
+    user = user.filter(lambda x: x[0].isalpha())
+
     return user
 
 
@@ -82,10 +82,7 @@ def test_tell_send_user(user, msg):
 @hy.given(st.none() | st_user())
 def test_tell_send_fail(inp):
     """Test notes.tell command."""
-    if inp:
-        assert run(notes.tell, inp) == lexicon.input.incorrect
-    else:
-        assert run(notes.tell, inp) == notes.tell._usage
+    assert run(notes.tell, inp) == lexicon.input.incorrect
 
 
 @hy.given(st.lists(st.text()))
@@ -107,7 +104,7 @@ def test_tell_case_insensitive(inp):
     hy.assume(inp.strip())
     run(notes.get_tells, '')
     run(notes.tell, 'TEst-UsER {}'.format(inp))
-    assert run(notes.get_tells, '').text == inp.strip()
+    assert run(notes.get_tells, '').text == inp.rstrip()
 
 ###############################################################################
 # Outbound
@@ -119,26 +116,26 @@ def test_outbound_random_input(inp):
     run(notes.outbound, inp)
 
 
-@hy.given(st.sampled_from(['-c', '--count', '-p', '--purge']))
+@hy.given(st.sampled_from(['count', 'purge']))
 def test_outbound_options(inp):
     assert run(notes.outbound, inp).route.startswith('lexicon.tell.outbound')
 
 
 def test_outbound_count():
     run(notes.tell, 'test tell')
-    assert run(notes.outbound, '--count') == lexicon.tell.outbound.count
+    assert run(notes.outbound, 'count') == lexicon.tell.outbound.count
 
 
 def test_outbound_purge():
     run(notes.tell, 'test tell')
-    assert run(notes.outbound, '--purge') == lexicon.tell.outbound.purged
+    assert run(notes.outbound, 'purge') == lexicon.tell.outbound.purged
     query = notes.Tell.select().where(notes.Tell.sender == 'test-user')
     assert query.count() == 0
 
 
 def test_outbound_count_empty():
-    run(notes.outbound, '--purge')
-    assert run(notes.outbound, '--count') == lexicon.tell.outbound.empty
+    run(notes.outbound, 'purge')
+    assert run(notes.outbound, 'count') == lexicon.tell.outbound.empty
 
 ###############################################################################
 # Seen
@@ -160,7 +157,7 @@ def test_seen_first():
 
 
 def test_seen_never():
-    assert run(notes.seen, '   ') == lexicon.seen.never
+    assert run(notes.seen, '----') == lexicon.seen.never
 
 
 @hy.given(st_user())
@@ -223,7 +220,8 @@ def test_quote_get_index(index):
 
 @hy.given(st.integers().filter(lambda x: x <= 0))
 def test_quote_get_index_negative(index):
-    assert run(notes.quote, str(index)) == lexicon.input.incorrect
+    r = run(notes.quote, str(index))
+    assert r == lexicon.input.bad_index
 
 
 @hy.given(st.integers().filter(lambda x: x > 0))
@@ -238,7 +236,7 @@ def test_quote_get_index_too_big(index):
 def test_quote_get_user(user):
     run(notes.quote, 'add {} test-quote'.format(user))
     quote = run(notes.quote, user)
-    assert quote.user.lower() == user.lower()
+    assert quote.user == user.lower()
 
 
 @hy.given(st_user(), st.integers().filter(lambda x: x > 0))
@@ -246,11 +244,11 @@ def test_quote_get_user_and_index(user, index):
     query = (
         notes.Quote.select()
         .where(notes.Quote.channel == 'test-channel')
-        .where(notes.peewee.fn.Lower(notes.Quote.user) == user.lower()))
+        .where(notes.Quote.user == user.lower()))
     hy.assume(index <= query.count())
     quote = run(notes.quote, user + ' ' + str(index))
     assert quote == lexicon.quote.get
-    assert quote.user.lower() == user.lower()
+    assert quote.user == user.lower()
 
 ###############################################################################
 # Memos
@@ -278,41 +276,41 @@ def test_topic_random_input(inp):
 
 @hy.given(st_user())
 def test_topic_subscribe(topic):
-    run(notes.topic, '{} -u'.format(topic))
-    r = run(notes.topic, '{} -s'.format(topic), channel='sssc-test')
+    run(notes.topic, 'unsub {}'.format(topic))
+    r = run(notes.topic, 'sub {}'.format(topic), channel='sssc-test')
     assert r == lexicon.topic.subscribed
 
 
 @hy.given(st_user())
 def test_topic_already_subscribed(topic):
-    run(notes.topic, '-f {}'.format(topic), channel='sssc-test')
-    run(notes.topic, '-s {}'.format(topic))
-    r = run(notes.topic, '{} --subscribe'.format(topic))
+    run(notes.topic, 'unres {}'.format(topic), channel='sssc-test')
+    run(notes.topic, 'sub {}'.format(topic))
+    r = run(notes.topic, 'sub {}'.format(topic))
     assert r == lexicon.topic.already_subscribed
 
 
 @hy.given(st_user())
 def test_topic_restrict(topic):
-    run(notes.topic, '{} --free'.format(topic), channel='sssc-test')
-    r = run(notes.topic, '{} -r'.format(topic), channel='sssc-test')
+    run(notes.topic, 'unres {}'.format(topic), channel='sssc-test')
+    r = run(notes.topic, 'res {}'.format(topic), channel='sssc-test')
     assert r == lexicon.topic.restricted
 
 
 @hy.given(st_user())
 def test_topic_restrict_denied(topic):
-    run(notes.topic, '{} --free'.format(topic), channel='sssc-test')
-    r = run(notes.topic, '{} -r'.format(topic))
+    run(notes.topic, 'unres {}'.format(topic), channel='sssc-test')
+    r = run(notes.topic, 'res {}'.format(topic))
     assert r == lexicon.denied
 
 
 @hy.given(st_user(), st_msg())
 def test_topic_send(topic, msg):
-    run(notes.topic, '{} -s'.format(topic), channel='sssc-test')
+    run(notes.topic, 'sub {}'.format(topic), channel='sssc-test')
     run(notes.get_tells, '')
     run(notes.tell, '@{} {}'.format(topic, msg))
     r = run(notes.get_tells, '')
     assert r == lexicon.topic.get
-    assert r.text == msg.strip()
+    assert r.text == msg.rstrip()
     assert r.topic == topic
 
 ###############################################################################
