@@ -52,13 +52,13 @@ def google_image_search(inp, *, query):
 
 @core.command
 @parser.websearch
-def youtube(inp):
+def youtube(inp, *, query):
     youtube = googleapi.build(
         'youtube',
         'v3',
         developerKey=core.config['google']['apikey'])
     results = youtube.search().list(
-        q=inp,
+        q=query,
         maxResults=1,
         part='id',
         type='video').execute()

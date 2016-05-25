@@ -46,6 +46,11 @@ def choose_input(options):
         msg = lexicon.input.cropped_options
     return msg.format(head=', '.join(head), tail=tail)
 
+
+@core.command
+def deprecate(inp, cmd):
+    return 'This command is deprecated. Use "{}" instead.'.format(cmd)
+
 ###############################################################################
 # Tools for users
 ###############################################################################
