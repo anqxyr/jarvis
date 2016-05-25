@@ -37,7 +37,6 @@ function {name}() {{
 USER = """
 [[html]]
 <base target="_parent" />
-
 <style type="text/css">
 @import url(http://scp-stats.wdfiles.com/local--theme/scp-stats/style.css);
 </style>
@@ -56,7 +55,6 @@ google.charts.load('current', {{'packages':['table', 'corechart']}});
 <div style="clear: both;"></div>
 <h4>Articles</h4>
 <div id="articles_table"></div>
-
 [[/html]]
 """
 
@@ -105,7 +103,8 @@ class SummaryTable(Chart):
         self.populate(pages, name)
 
         self.options = {
-            'sort': 'disable'}
+            'sort': 'disable',
+            'width': '100%'}
 
     def populate(self, pages, name):
         self.data = [
@@ -137,7 +136,7 @@ class ArticlesChart(Chart):
                 'textPosition': 'none',
                 'gridlines': {'color': '#e7e9dc'}},
             'legend': {'position': 'none'},
-            'height': 450,
+            'height': 350,
             'tooltip': {'isHtml': 'True'}}
 
     def populate(self, pages):

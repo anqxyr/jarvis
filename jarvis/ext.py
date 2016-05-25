@@ -66,6 +66,43 @@ class PageView:
             results.append(p)
         return self.__class__(results)
 
+    def with_rating(self, rating):
+        pages = self.pages
+        if rating.startswith('>'):
+            rating = int(rating[1:])
+            pages = [p for p in self.pages if p.rating > rating]
+        elif rating.startswith('<'):
+            rating = int(rating[1:])
+            pages = [p for p in self.pages if p.rating > rating]
+        elif '..' in rating:
+            minr, maxr = map(int, rating.split('..'))
+            pages = [p for p in self.pages if minr <= p.rating <= maxr]
+        else:
+            rating = int(rating.lstrip('='))
+            pages = [p for p in self.pages if p.rating == rating]
+        return self.__class__(pages)
+
+    def created(self, created):
+        pages = self.pages
+        if created.startswith('>'):
+            pages = [p for p in self.pages if p.created > created]
+        elif created.startswith('<'):
+            pages = [p for p in self.pages if p.created < created]
+        elif '..' in created:
+            mincr, maxcr = created.split('..')
+            pages = [
+                p for p in self.pages if
+                (mincr <= p.created[:len(mincr)]) and
+                (maxcr >= p.created[:len(maxcr)])]
+        else:
+            pages = [
+                p for p in self.pages if p.created.startswith(created)]
+        return self.__class__(pages)
+
+    def sorted(self, key):
+        pages = sorted(self.pages, key=lambda x: getattr(x, key))
+        return self.__class__(pages)
+
     @property
     def articles(self):
         return self.tags('scp tale goi-format artwork -_sys -hub')

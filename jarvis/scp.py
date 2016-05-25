@@ -25,7 +25,7 @@ def page_search(inp, results):
     elif len(results) == 1:
         return page_summary(results[0])
     else:
-        tools.remember(results, inp.channel, page_summary)
+        tools.save_results(inp, results, page_summary)
         return search_results(results)
 
 
@@ -38,21 +38,19 @@ def author_search(inp, func):
     elif len(results) == 1:
         return func(results[0])
     else:
-        tools.remember(results, inp.channel, func)
+        tools.save_results(inp, results, lambda x: func)
         return tools.choose_input(results)
 
 
-@core.command
-@parser.search
-def search(inp, *, partial, exclude, strict, tags, author, rating, pages=None):
-    pages = pages or core.pages
-
+def find_pages(pages, partial, exclude, strict, tags, author, rating, created):
     if tags:
         pages = pages.tags(tags)
     if author:
         pages = pages.related(author)
     if rating:
-        pages = pages.rating(rating)
+        pages = pages.with_rating(rating)
+    if created:
+        pages = pages.created(created)
 
     results = []
     for p in pages:
@@ -67,11 +65,23 @@ def search(inp, *, partial, exclude, strict, tags, author, rating, pages=None):
             continue
 
         results.append(p)
-    return page_search(inp, results)
+    return results
 
 
-def tale(inp):
-    return search(inp, pages=core.pages.tags('tale'))
+@core.command
+@parser.search
+def search(inp, **kwargs):
+    if not inp.text:
+        return lexicon.input.incorrect
+    return page_search(inp, find_pages(core.pages, **kwargs))
+
+
+@core.command
+@parser.search
+def tale(inp, **kwargs):
+    if not inp.text:
+        return lexicon.input.incorrect
+    return page_search(inp, find_pages(core.pages.tags('tale'), **kwargs))
 
 
 def wanderers_library(inp):
@@ -88,7 +98,7 @@ def tags(inp):
 
 
 @core.command
-def name(inp):
+def name_lookup(inp):
     pages = [p for p in core.pages if p.url.split('/')[-1] == inp.text.lower()]
     return page_search(inp, pages)
 
@@ -162,7 +172,7 @@ def author_summary(name):
 
 
 @core.command
-def get_error_report(inp):
+def errors(inp):
     """!errors -- Get error report."""
     pages = [p for p in core.pages if ':' not in p.url]
     output = ''
@@ -180,10 +190,9 @@ def get_error_report(inp):
 
 
 @core.command
-@core.lower_input
-def get_random_page(inp):
-    """!rand [<tags>] -- Get random page."""
-    pages = core.pages.tags(inp.text) if inp.text else core.pages.articles
+@parser.search
+def random_page(inp, **kwargs):
+    pages = core.pages if not inp.text else find_pages(core.pages, **kwargs)
     if pages:
         return page_summary(random.choice(pages))
     else:
@@ -192,13 +201,20 @@ def get_random_page(inp):
 
 @core.command
 @core.multiline
-def last_created(inp, cooldown={}):
-    """!lc -- Display recently created pages."""
-    now = arrow.now()
-    if inp.channel in cooldown and (now - cooldown[inp.channel]).seconds < 120:
-        yield lexicon.spam
-        return
-    cooldown[inp.channel] = now
-    yield from map(page_summary, core.wiki.list_pages(
-        body='title created_by created_at rating', limit=3,
-        order='created_at desc'))
+@parser.last_created
+def last_created(inp, *, limit, cooldown={}):
+    kwargs = {
+        'body': 'title created_by created_at rating',
+        'order': 'created_at desc'}
+    if limit and limit > 3:
+        kwargs['limit'] = limit
+        inp.notice = True
+    else:
+        kwargs['limit'] = 3
+        now = arrow.now()
+        if (inp.channel in cooldown and
+                (now - cooldown[inp.channel]).seconds < 120):
+            yield lexicon.spam
+            return
+        cooldown[inp.channel] = now
+    yield from map(page_summary, core.wiki.list_pages(**kwargs))

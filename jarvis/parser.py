@@ -12,7 +12,6 @@ import arrow
 import copy
 import functools
 import re
-import traceback
 
 from . import lexicon
 
@@ -32,11 +31,10 @@ def parser(fn):
             try:
                 parsed_args = parser.parse_args(inp.text)
             except ArgumentError:
-                #traceback.print_exc()
+                inp.multiline = False
                 return lexicon.input.incorrect
-            print(parsed_args)
-            kwargs.update(parsed_args)
-            return command(inp, *args, **kwargs)
+            parsed_args.update(kwargs)
+            return command(inp, *args, **parsed_args)
         return wrapped
     return deco
 
@@ -116,20 +114,17 @@ class Argument:
         if self.ignore:
             return {}
 
-        if self.nargs == 0 and self.is_opt:
-            return {self.name: self.marked}
-
-        if not self.values:
-            return {self.name: None}
-
         if self.action == 'join':
             return {self.name: ' '.join(self.values)}
 
         if self.action:
             return self.action(self.name, self.values)
 
+        if self.nargs == 0 and self.is_opt:
+            return {self.name: self.marked}
+
         if self.nargs in [1, '?']:
-            return {self.name: self.values[0]}
+            return {self.name: self.values[0] if self.values else None}
 
         return {self.name: self.values}
 
@@ -301,4 +296,35 @@ def alert(pr):
 
 @parser
 def search(pr):
-    pass
+    pr.add_argument('partial', nargs='*')
+    pr.add_argument('--exclude', '-e', nargs='+', type=set)
+    pr.add_argument('--strict', '-s', nargs='+', type=set)
+    pr.add_argument('--tags', '-t', nargs='+', action='join')
+    pr.add_argument('--author', '-a', nargs='+', action='join')
+    pr.add_argument('--rating', '-r', nargs=1)
+    pr.add_argument('--created', '-c', nargs=1)
+
+
+@parser
+def last_created(pr):
+    pr.add_argument('limit', nargs='?', type=int, choices=range(1, 11))
+
+
+###############################################################################
+# Tools
+###############################################################################
+
+
+@parser
+def showmore(pr):
+    pr.add_argument('index', nargs='?', type=int)
+
+
+###############################################################################
+# Websearch
+###############################################################################
+
+
+@parser
+def websearch(pr):
+    pr.add_argument('query', nargs='+', action='join')

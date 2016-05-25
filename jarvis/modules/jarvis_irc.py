@@ -14,7 +14,7 @@ connects jarvis functions to allow them to be called from irc.
 import functools
 import sopel
 
-from jarvis import core, notes, scp, tools
+from jarvis import core, notes, scp, websearch, tools
 
 ###############################################################################
 # Core Wrapper Functions
@@ -34,7 +34,7 @@ def autocomplete(bot, tr):
     if not funcs:
         return
     if len(funcs) > 1:
-        bot.send(tools.choose_input([f.commands[0] for f in funcs]))
+        send(bot, tools.choose_input([f.commands[0] for f in funcs]))
     else:
         wrapper = bot.SopelWrapper(bot, tr)
         bot.call(funcs[0], wrapper, tr)
@@ -43,8 +43,6 @@ def autocomplete(bot, tr):
 def send(bot, text, private=False, notice=False):
     """Send irc message."""
     tr = bot._trigger
-    if tr.sender in bot.config.core.channels:
-        text = '{}: {}'.format(tr.nick, text)
     mode = 'NOTICE' if notice else 'PRIVMSG'
     recipient = tr.nick if private or notice else tr.sender
     text = text[:400]
@@ -55,18 +53,26 @@ def send(bot, text, private=False, notice=False):
         bot.sending.release()
 
 
-def register(trtype, group, trigger, fn, *args, priority='medium', **kwargs):
-    """Register new callable."""
-    @trtype(*trigger.split())
-    @sopel.module.priority(priority)
+def wrapper(fn, group, *args, **kwargs):
+
     def inner(bot, tr):
         inp = core.Inp(
             tr.group(group), tr.nick, tr.sender, functools.partial(send, bot))
         return fn(inp, *args, **kwargs)
-    globals()[fn.__name__] = inner
+    return inner
 
-command = functools.partial(register, sopel.module.commands, 2)
-rule = functools.partial(register, sopel.module.rule, 1)
+
+def command(trigger, fn, *args, **kwargs):
+    globals()[fn.__name__] = sopel.module.commands(
+        *trigger.split())(wrapper(fn, 2, *args, **kwargs))
+
+
+def rule(trigger, fn, *args, priority='medium', **kwargs):
+    inner = wrapper(fn, 1, *args, **kwargs)
+    for tr in trigger:
+        inner = sopel.module.rule(tr)(inner)
+    inner = sopel.module.priority(priority)(inner)
+    globals()[fn.__name__] = inner
 
 
 ###############################################################################
@@ -78,17 +84,13 @@ command('tell', notes.tell)
 command('outbound', notes.outbound)
 command('seen', notes.seen)
 command('quote', notes.quote)
-command('remember', notes.remember_user)
-command('subscribe', notes.subscribe_to_topic)
-command('unsubscribe', notes.unsubscribe_from_topic)
-command('topics', notes.get_topics_count)
-command('restrict', notes.restrict_topic)
-command('unrestrict', notes.unrestrict_topic)
-command('alert', notes.set_alert)
+command('remember', notes.save_memo)
+command('topic', notes.topic)
+command('alert', notes.alert)
 
-rule('(.*)', notes.logevent, priority='low')
-rule('(.*)', notes.get_tells, priority='low')
-rule(r'(\?[\w\[\]{}^|-]+)$', notes.recall_user)
+rule(['(.*)'], notes.logevent, priority='low')
+rule(['(.*)'], notes.get_tells, priority='low')
+rule([r'(\?[\w\[\]{}^|-]+)$'], notes.load_memo)
 
 
 ###############################################################################
@@ -96,18 +98,44 @@ rule(r'(\?[\w\[\]{}^|-]+)$', notes.recall_user)
 ###############################################################################
 
 
-command('search s', scp.find_page_by_title)
-command('tale', scp.find_tale_by_title)
-command('tags', scp.find_page_by_tags)
+command('search s', scp.search)
+command('tale', scp.tale)
+command('tags', scp.tags)
+command('wandererslibrary wl', scp.wanderers_library)
 command('author', scp.author)
 command('ad', scp.author_details)
-command('author', scp.author)
 command('lastcreated lc', scp.last_created)
-command('random', scp.get_random_page)
-command('errors', scp.get_error_report)
+command('random', scp.random_page)
+command('errors', scp.errors)
 
-rule(r'(?i).*http[s]?://www\.scp-wiki\.net/([^/]+)', scp.find_page_by_url)
-rule(r'(?i)^(scp-[\d]+(?:-[\w]+)?)$', scp.find_page_by_url)
-rule(r'(?i).*!(scp-\d+(?:-[\w]+)?)', scp.find_page_by_url)
+rule([
+    r'(?i).*http[s]?://www\.scp-wiki\.net/([^/]+)',
+    r'(?i)^(scp-[\d]+(?:-[\w]+)?)$',
+    r'(?i).*!(scp-\d+(?:-[\w]+)?)'], scp.name_lookup)
+
 
 ###############################################################################
+# Tools
+###############################################################################
+
+
+command('showmore sm', tools.showmore)
+command('choose', tools.choose)
+command('roll dice', tools.roll_dice)
+
+
+###############################################################################
+# Websearch
+###############################################################################
+
+
+command('google g', websearch.google_search)
+command('gis', websearch.google_image_search)
+command('youtube yt', websearch.youtube)
+command('wikipedia', websearch.wikipedia)
+command('definition define dictionary', websearch.dictionary)
+command('urbandictionary', websearch.urbandictionary)
+
+rule([
+    r'.*youtube\.com/watch\?v=([-_a-z0-9]+)',
+    r'.*youtu\.be/([-_a-z0-9]+)'], websearch.youtube_lookup)

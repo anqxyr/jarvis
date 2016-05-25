@@ -8,30 +8,32 @@
 import random
 import re
 
-from . import lexicon
+from . import core, parser, lexicon
 
 ###############################################################################
-# Tools for functions
+# Internal Tools
 ###############################################################################
 
 MEMORY = {}
 
 
-def remember(items, key, func=None):
-    MEMORY[key] = items, func
+def save_results(inp, items, func=None):
+    MEMORY[inp.channel] = items, func
 
 
-def recall(index, key):
-    if key not in MEMORY:
+@core.command
+@parser.showmore
+def showmore(inp, *, index):
+    if index is None:
+        index = 1
+    if index <= 0:
+        return lexicon.input.bad_index
+    if inp.channel not in MEMORY:
         return lexicon.not_found.generic
-    items, func = MEMORY[key]
-    try:
-        index = int(str(index).strip()) - 1
-    except ValueError:
+    items, func = MEMORY[inp.channel]
+    if index > len(items):
         return lexicon.input.bad_index
-    if index not in range(len(items)):
-        return lexicon.input.bad_index
-    return func(items[index]) if func else items[index]
+    return func(items[index - 1]) if func else items[index - 1]
 
 
 def choose_input(options):
@@ -49,19 +51,21 @@ def choose_input(options):
 ###############################################################################
 
 
+@core.command
 def choose(inp):
     """Return one random comma-separated option."""
-    if not inp:
+    if not inp.text:
         return lexicon.input.missing
-    options = [i.strip() for i in inp.split(',') if i.strip()]
+    options = [i.strip() for i in inp.text.split(',') if i.strip()]
     return random.choice(options)
 
 
+@core.command
 def roll_dice(inp):
     """Return the result of rolling multiple dice."""
-    if not inp:
+    if not inp.text:
         return lexicon.input.missing
-    rolls = re.findall(r'([+-]?)([0-9]*)d([0-9]+|f)', inp)
+    rolls = re.findall(r'([+-]?)([0-9]*)d([0-9]+|f)', inp.text)
     total = 0
 
     def roll_die(sign, count, sides):
@@ -92,10 +96,10 @@ def roll_dice(inp):
     results = ', '.join(map(str, results))
     results = results.replace('+', '\x033+\x0F').replace('-', '\x034-\x0F')
 
-    bonus = re.search(r'[+-][0-9]+$', inp)
+    bonus = re.search(r'[+-][0-9]+$', inp.text)
     if bonus:
         total += int(bonus.group(0))
 
-    return '{} ({}={})'.format(total, inp, results)
+    return '{} ({}={})'.format(total, inp.text, results)
 
 ###############################################################################

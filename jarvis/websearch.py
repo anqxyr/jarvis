@@ -8,53 +8,81 @@ import bs4
 import googleapiclient.discovery as googleapi
 import requests
 import warnings
-import wikipedia
+import wikipedia as wiki
 
-from . import lexicon, tools
+from . import core, parser, lexicon, tools
 
 ###############################################################################
 
 
-def google_search(apikey, cseid, inp):
-    if not inp:
-        return lexicon.input.missing
-    google = googleapi.build('customsearch', 'v1', developerKey=apikey).cse()
-    results = google.list(q=inp, cx=cseid, num=1).execute()
+@core.command
+@parser.websearch
+def google_search(inp, *, query):
+    google = googleapi.build(
+        'customsearch',
+        'v1',
+        developerKey=core.config['google']['apikey']).cse()
+    results = google.list(
+        q=query,
+        cx=core.config['google']['cseid'],
+        num=1).execute()
     if not results.get('items'):
         return lexicon.not_found.generic
     return '\x02{title}\x02 ({link}) - {snippet}'.format(
         **results['items'][0])
 
 
-def google_image_search(apikey, cseid, inp):
-    if not inp:
-        return lexicon.input.missing
-    google = googleapi.build('customsearch', 'v1', developerKey=apikey).cse()
+@core.command
+@parser.websearch
+def google_image_search(inp, *, query):
+    google = googleapi.build(
+        'customsearch',
+        'v1',
+        developerKey=core.config['google']['apikey']).cse()
     results = google.list(
-        q=inp, cx=cseid, searchType='image', num=1, safe='high').execute()
+        q=query,
+        cx=core.config['google']['cseid'],
+        searchType='image',
+        num=1,
+        safe='high').execute()
     if not results.get('items'):
         return lexicon.not_found.generic
     return results['items'][0]['link']
 
 
-def youtube_search(apikey, inp):
-    if not inp:
-        return lexicon.input.missing
-    youtube = googleapi.build('youtube', 'v3', developerKey=apikey)
+@core.command
+@parser.websearch
+def youtube(inp):
+    youtube = googleapi.build(
+        'youtube',
+        'v3',
+        developerKey=core.config['google']['apikey'])
     results = youtube.search().list(
-        q=inp, maxResults=1, part='id', type='video').execute()
+        q=inp,
+        maxResults=1,
+        part='id',
+        type='video').execute()
     if not results.get('items'):
         return lexicon.not_found.generic
     vid = results['items'][0]['id']['videoId']
-    info = youtube_video_info(apikey, vid)
+    info = get_youtube_video_info(vid)
     return '{} - http://youtube.com/watch?v={}'.format(info, vid)
 
 
-def youtube_video_info(apikey, video_id):
-    youtube = googleapi.build('youtube', 'v3', developerKey=apikey)
+@core.command
+def youtube_lookup(inp):
+    return get_youtube_video_info(inp.text)
+
+
+def get_youtube_video_info(video_id=None):
+    youtube = googleapi.build(
+        'youtube',
+        'v3',
+        developerKey=core.config['google']['apikey'])
     vdata = youtube.videos().list(
         part='contentDetails,snippet,statistics',
-        id=video_id, maxResults=1).execute()
+        id=video_id,
+        maxResults=1).execute()
     if not vdata.get('items'):
         return lexicon.not_found.generic
     vdata = vdata['items'][0]
@@ -79,27 +107,30 @@ def youtube_video_info(apikey, video_id):
 ###############################################################################
 
 
-def wikipedia_search(inp, key='global'):
-    if not inp:
-        return lexicon.input.missing
+@core.command
+@parser.websearch
+def wikipedia(inp, *, query):
+    print(query)
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            url = wikipedia.page(inp).url
-            summary = wikipedia.summary(inp, sentences=1)
+            url = wiki.page(query).url
+            summary = wiki.summary(query, sentences=1)
             summary = summary[:360]
             return '{} - {}'.format(summary, url)
-    except wikipedia.exceptions.PageError:
+    except wiki.exceptions.PageError:
         return lexicon.not_found.generic
-    except wikipedia.exceptions.DisambiguationError as e:
-        tools.remember(e.options, key, lambda x: wikipedia_search(x, key))
+    except wiki.exceptions.DisambiguationError as e:
+        print(e.options)
+        tools.save_results(
+            inp, e.options, lambda x: wikipedia(inp, query=x))
         return tools.choose_input(e.options)
 
 
-def dictionary_search(inp, key):
-    if not inp:
-        return lexicon.input.missing
-    url = 'http://ninjawords.com/' + inp
+@core.command
+@parser.websearch
+def dictionary(inp, *, query):
+    url = 'http://ninjawords.com/' + query
     soup = bs4.BeautifulSoup(requests.get(url).text, 'lxml')
     word = soup.find(class_='word')
     if not word or not word.dl:
@@ -119,10 +150,10 @@ def dictionary_search(inp, key):
     return ' '.join(output)
 
 
-def urbandictionary_search(inp, key):
-    if not inp:
-        return lexicon.input.missing
-    url = 'http://api.urbandictionary.com/v0/define?term=' + inp.strip()
+@core.command
+@parser.websearch
+def urbandictionary(inp, *, query):
+    url = 'http://api.urbandictionary.com/v0/define?term=' + query
     data = requests.get(url).json()
     if not data['list']:
         return lexicon.not_found.generic
