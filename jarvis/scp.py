@@ -7,11 +7,10 @@
 
 import arrow
 import collections
-import pyscp
 import random
 import re
 
-from . import ext, core, parser, tools, lexicon, stats
+from . import core, parser, lexicon, stats, tools
 
 ###############################################################################
 # Find And Lookup Functions
@@ -84,12 +83,12 @@ def tale(inp, **kwargs):
     return page_search(inp, find_pages(core.pages.tags('tale'), **kwargs))
 
 
-def wanderers_library(inp):
-    wiki = pyscp.wikidot.Wiki('wanderers-library')
-    pages = wiki.list_pages(
-        body='title created_by created_at rating tags', category='*')
-    pages = ext.PageView(pages)
-    return search(inp, pages=pages)
+@core.command
+@parser.search
+def wanderers_library(inp, **kwargs):
+    if not inp.text:
+        return lexicon.input.incorrect
+    return page_search(inp, find_pages(core.wlpages, **kwargs))
 
 
 @core.command

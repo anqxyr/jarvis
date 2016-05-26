@@ -209,7 +209,7 @@ def update_user(name):
 
     pages = core.pages.related(name).sorted('created')
     data = USER.format(
-        summary_table=SummaryTable(pages.articles, name).render(),
+        summary_table=SummaryTable(pages.primary(name), name).render(),
         articles_chart=ArticlesChart(pages.articles).render(),
         articles_table=ArticlesTable(
             [p for p in pages if p.tags], name).render())

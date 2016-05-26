@@ -19,19 +19,24 @@ config = configparser.ConfigParser()
 config.read('jarvis.cfg')
 
 wiki = pyscp.wikidot.Wiki('www.scp-wiki.net')
+wlwiki = pyscp.wikidot.Wiki('wanderers-library')
 
 
 def refresh():
+    global pages
+    global wlpages
     kwargs = dict(body='title created_by created_at rating tags', category='*')
     if config['wiki'].getboolean('debug'):
         pyscp.utils.default_logging(True)
         data = wiki._list_pages_parsed(author='anqxyr', **kwargs)
     else:
         data = wiki.list_pages(**kwargs)
-    global pages
     pages = ext.PageView(data)
     wiki.titles.cache_clear()
     wiki.metadata.cache_clear()
+
+    if not config['wiki'].getboolean('debug'):
+        wlpages = ext.PageView(wlwiki.list_pages(**kwargs))
 
 
 refresh()

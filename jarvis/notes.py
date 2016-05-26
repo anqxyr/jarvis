@@ -198,6 +198,12 @@ def outbound(inp, *, action):
             peewee.fn.Lower(Tell.sender) == inp.user.lower(),
             Tell.topic.is_null()).execute()
         msg = lexicon.tell.outbound.purged
+    elif action == 'echo':
+        inp.multiline = True
+        msg = lexicon.tell.outbound.echo
+        return [msg.format(
+            time=arrow.get(t.time).humanize(),
+            user=t.recipient, message=t.text) for t in query]
 
     users = ', '.join(sorted({i.recipient for i in query}))
     return msg.format(count=query.count(), users=users)
@@ -210,22 +216,27 @@ def outbound(inp, *, action):
 
 @core.command
 @parser.seen
-def seen(inp, *, user, first):
+def seen(inp, *, user, first, total):
     """Retrieve the first or the last message said by the user."""
     if user == core.config['irc']['nick']:
         return lexicon.seen.self
 
-    order = Message.time if first else Message.time.desc()
     query = Message.select().where(
-        Message.user == user,
-        Message.channel == inp.channel).order_by(order)
+        Message.user == user, Message.channel == inp.channel)
     if not query.exists():
         return lexicon.seen.never
 
-    seen = query.get()
+    if total:
+        total = query.count()
+        time = arrow.get(arrow.now().format('YYYY-MM'), 'YYYY-MM')
+        this_month = query.where(Message.time > time.timestamp).count()
+        return lexicon.seen.total.format(
+            user=user, total=total, this_month=this_month)
+
+    seen = query.order_by(Message.time if first else Message.time.desc()).get()
     time = arrow.get(seen.time).humanize()
     msg = lexicon.seen.first if first else lexicon.seen.last
-    return msg.format(user=seen.user, time=time, text=seen.text)
+    return msg.format(user=user, time=time, text=seen.text)
 
 
 ###############################################################################
@@ -348,16 +359,16 @@ def topic(inp, *, topic, action):
     if action == 'list':
         return topic_list(inp)
 
-    if action == 'unsub':
+    if action in ['unsubscribe', 'unsub']:
         return topic_sub(inp, topic, True)
 
-    if action == 'sub':
+    if action in ['subscribe', 'sub']:
         return topic_sub(inp, topic, False)
 
-    if action == 'res':
+    if action in ['restrict', 'res']:
         return topic_restrict(inp, topic, False)
 
-    if action == 'unres':
+    if action in ['unrestrict', 'unres']:
         return topic_restrict(inp, topic, True)
 
 

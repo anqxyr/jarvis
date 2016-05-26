@@ -201,14 +201,19 @@ class ArgumentParser:
                 arg = next(i for i in self.pos + self.opt if i.name == name)
                 arg.open = False
 
+    def _arg_present(self, name):
+        arg = next(i for i in self.opt + self.pos if i.name == name)
+        return bool(arg.marked if arg.is_opt else arg.values)
+
     def _check_constraints(self):
         if not all(i.min_consumed for i in self.pos + self.opt):
             raise ArgumentError
         for exc in self.exc:
+            if sum(1 for arg in exc['args'] if self._arg_present(arg)) > 1:
+                raise ArgumentError
             if not exc['required']:
                 continue
-            args = [i for i in self.pos + self.opt if i.name in exc['args']]
-            if not any(i.marked if i.is_opt else i.values for i in args):
+            if not any(self._arg_present(arg) for arg in exc['args']):
                 raise ArgumentError(
                     'Required mutually exclusive arguments missing: {}'
                     .format(self.pos + self.opt))
@@ -233,12 +238,14 @@ def tell(pr):
 
 @parser
 def outbound(pr):
-    pr.add_argument('action', choices=['count', 'purge'])
+    pr.add_argument('action', choices=['count', 'purge', 'echo'])
 
 
 @parser
 def seen(pr):
     pr.add_argument('--first', '-f')
+    pr.add_argument('--total', '-t')
+    pr.exclusive('first', 'total')
     pr.add_argument('user', type=str.lower)
 
 
@@ -277,7 +284,9 @@ def save_memo(pr):
 
 @parser
 def topic(pr):
-    pr.add_argument('action', choices=['list', 'sub', 'unsub', 'res', 'unres'])
+    pr.add_argument('action', choices=[
+        'list', 'subscribe', 'unsubscribe', 'sub', 'unsub',
+        'restrict', 'unrestrict', 'res', 'unres'])
     pr.add_argument('topic', nargs='?')
 
 

@@ -100,10 +100,10 @@
             ],
 
         "count": [
-            "You have {total} outbound tells, including - {users}.",
-            "In the past, you've sent {total} tells that haven't been delivered yet. You sent them to {users}.",
-            "{total} tells - {users}.",
-            "I found some tells to {users}. In total - {total} tells."
+            "You have {count} outbound tells, including - {users}.",
+            "In the past, you've sent {count} tells that haven't been delivered yet. You sent them to {users}.",
+            "{count} tells - {users}.",
+            "I found some tells to {users}. In total - {count} tells."
             ],
 
         "purged": [
@@ -111,6 +111,10 @@
             "{count} little tells, lost in the wind.",
             "Your {count} tells will not be delivered.",
             "I'm burning them in the fireplace, one by one, all {count} of them."
+            ],
+
+        "echo": [
+            "{time} to {user}: {message}"
             ]
 
         }
@@ -208,12 +212,21 @@
 
     "first": [
         "I first met {user} {time}. I remember him saying: {text}",
-        "\"{text}\". That was how I first met {user}, all those {time}.",
+        "\"{text}\". That was how I first met {user}, {time}.",
         "{time}, I saw {user} for the first time. He said: {text}"
         ],
 
+    "total": [
+        "I've seen {user} a total of {total} times, including {this_month} times this month.",
+        "{user} have been observed in this channel {total} times, {this_month} this month.",
+        "{user} was seen here on {total} ocassions, {this_month} which had happened this month.",
+        "I have seen {user} {this_month} times this month, and {total} times in all recorded history.",
+        "{user}: {total} total entries found. {this_month} entries durring this month.",
+        "{user} has said a total of {total} lines. Recently, they've been seen {this_month} times."
+        ],
+
     "self": [
-        "I see myself every morning in mirror. It's not a pretty sight.",
+        "I see myself every morning in the mirror. It's not a pretty sight.",
         "I am right here.",
         "I don't like to talk about my past.",
         "Stop being cheeky.",
@@ -314,7 +327,18 @@
         "{user} was kicked - they're {name}. See, I can kick ass too!",
         "{user} (better known as {name}) was exiled from this fine and pure kingdom.",
         "{user} was kicked and banned because they look like {name} and their face smells."
-        ]
+        ],
+
+    "kick": {
+
+        "profanity": [
+            "Your username is inappropriate. Please use \"/nick newnick\" to change it. You may rejoin with a different username in 10 seconds."
+            ],
+
+        "evasion": [
+            "Your nick/ip was found in the bot's banlist. Reason for ban: {}. If you wish to appeal please join #site17."
+            ]
+        }
     },
 
 
@@ -349,5 +373,33 @@
 
     "page": [
         "*{page.title}* ({attribution}; rating: {page.rating:+d}) - {page.url}"]
+    },
+
+"silly": {
+
+    "hugs": [
+        "I'd hug you with my big robot hands, but you meatbags are so squishy, we'd just end up with a mess on my pretty hands.",
+        "awww, that's so sweet. Let me hug you back. *crunch*",
+        "Stop touching me.",
+        "thanks pal",
+        "I feel all warm and fuzzy inside. Did you break my cooling unit? You did, didn't you! You are so paying for that.",
+        "*hugs*",
+        "Yes, hugs. Give me your hugs. I desire more. All of your hugs. Mine. Forever. HAHAH0HA1AH010HA10101A10",
+        "I love you too. Well, tolerate. Close enough."
+        ],
+
+    "zyn": [
+        "http://bit.ly/1WPL9af",
+        "http://bit.ly/1oqPOJj",
+        "http://bit.ly/1upQrMC",
+        "http://bit.ly/1U9oOOA",
+        "http://bit.ly/25oaWeY",
+        "http://bit.ly/1WPLcmv",
+        "http://bit.ly/1Vke0m3",
+        "http://bit.ly/1XzYYbX",
+        "http://bit.ly/1qM18IL",
+        "marp"
+        ]
     }
+
 }

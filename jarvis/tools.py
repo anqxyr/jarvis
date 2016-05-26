@@ -107,4 +107,14 @@ def roll_dice(inp):
 
     return '{} ({}={})'.format(total, inp.text, results)
 
+
+@core.command
+def get_hugs(inp):
+    return lexicon.silly.hugs
+
+
+@core.command
+def zyn(inp):
+    return lexicon.silly.zyn
+
 ###############################################################################
