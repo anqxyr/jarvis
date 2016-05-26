@@ -14,7 +14,7 @@ connects jarvis functions to allow them to be called from irc.
 import functools
 import sopel
 
-from jarvis import core, notes, scp, websearch, tools
+from jarvis import autoban, core, notes, scp, tools, websearch
 
 ###############################################################################
 # Core Wrapper Functions
@@ -123,14 +123,19 @@ rule(r'(?i).*!(scp-\d+(?:-[\w]+)?)', scp.name_lookup)
 command('showmore sm', tools.showmore)
 command('choose', tools.choose)
 command('roll dice', tools.roll_dice)
+command('zyn', tools.zyn)
+
 command('notdelivered nd', tools.deprecate, '!outbound count')
 command('purgetells', tools.deprecate, '!outbound purge')
 command('restrict', tools.deprecate, '!topic res <topic>')
 command('unrestrict', tools.deprecate, '!topic unres <topic>')
 command('subscribe', tools.deprecate, '!topic sub <topic>')
 command('unsubscribe', tools.deprecate, '!topic unsub <topic>')
+command('firstseen', tools.deprecate, '!seen -f <name>')
+
 
 rule(r'(?i)(^(?:[+-]?[0-9]*d(?:[0-9]+|f))+(?:[+-][0-9]+)?$)', tools.roll_dice)
+rule(r'(?i)(^(?=.*\b$nickname)(?=.*\bhugs?\b).*)', tools.get_hugs)
 
 ###############################################################################
 # Websearch
@@ -146,3 +151,28 @@ command('urbandictionary', websearch.urbandictionary)
 
 rule(r'.*youtube\.com/watch\?v=([-_a-z0-9]+)', websearch.youtube_lookup)
 rule(r'.*youtu\.be/([-_a-z0-9]+)', websearch.youtube_lookup)
+
+###############################################################################
+# Autoban
+###############################################################################
+
+
+command('updatebans', autoban.update_bans)
+
+
+@sopel.module.event('JOIN')
+@sopel.module.rule('.*')
+def ban_on_join(bot, tr):
+    if tr.sender != '#site19':
+        return
+
+    def kick(message):
+        bot.write(['KICK', tr.sender, tr.user], message)
+
+    def ban(target, enable):
+        bot.write(['MODE', tr.sender, '+b' if enable else '-b', target])
+
+    send_ = functools.partial(send, bot)
+
+    if not autoban.ban_evasion(tr.user, tr.host, kick, ban, send_):
+        autoban.offensive_username(tr.user, tr.host, kick, ban, send_)
