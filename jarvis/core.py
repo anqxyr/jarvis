@@ -5,7 +5,6 @@
 ###############################################################################
 
 import configparser
-import funcy
 import functools
 import pyscp
 
@@ -28,7 +27,7 @@ def refresh():
     kwargs = dict(body='title created_by created_at rating tags', category='*')
     if config['wiki'].getboolean('debug'):
         pyscp.utils.default_logging(True)
-        data = wiki._list_pages_parsed(author='anqxyr', **kwargs)
+        data = wiki._list_pages_parsed(author='GreenWolf', **kwargs)
     else:
         data = wiki.list_pages(**kwargs)
     pages = ext.PageView(data)
@@ -79,28 +78,25 @@ def command(func):
     return inner
 
 
-@funcy.decorator
-def lower_input(call):
-    """Turn input into lowercase."""
-    inp = call._args[0]
-    inp.user = inp.user.lower()
-    inp.text = inp.text.lower()
-    return call()
+def private(func):
+    @functools.wraps(func)
+    def inner(inp, *args, **kwargs):
+        inp.private = True
+        return func(inp, *args, **kwargs)
+    return inner
 
 
-@funcy.decorator
-def private(call):
-    call._args[0].private = True
-    return call()
+def notice(func):
+    @functools.wraps(func)
+    def inner(inp, *args, **kwargs):
+        inp.notice = True
+        return func(inp, *args, **kwargs)
+    return inner
 
 
-@funcy.decorator
-def notice(call):
-    call._args[0].notice = True
-    return call()
-
-
-@funcy.decorator
-def multiline(call):
-    call._args[0].multiline = True
-    return call()
+def multiline(func):
+    @functools.wraps(func)
+    def inner(inp, *args, **kwargs):
+        inp.multiline = True
+        return func(inp, *args, **kwargs)
+    return inner

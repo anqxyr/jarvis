@@ -83,6 +83,7 @@ def rule(trigger, fn, *args, priority='medium', **kwargs):
 
 
 command('tell', notes.tell)
+command('showtells st', notes.show_tells)
 command('outbound', notes.outbound)
 command('seen', notes.seen)
 command('quote', notes.quote)
@@ -92,6 +93,7 @@ command('alert', notes.alert)
 
 rule('(.*)', notes.logevent, priority='low')
 rule('(.*)', notes.get_tells, priority='low')
+rule('(.*)', notes.get_alerts, priority='low')
 rule(r'(\?[\w\[\]{}^|-]+)$', notes.load_memo)
 
 

@@ -295,7 +295,7 @@ def alert(pr):
     pr.add_argument('date', type=arrow.get, nargs='?')
     pr.add_argument('span', re='(\d+[dhm])+', nargs='?')
     pr.exclusive('date', 'span', required=True)
-    pr.add_argument('message', nargs='+')
+    pr.add_argument('message', nargs='+', action='join')
 
 
 ###############################################################################
@@ -306,8 +306,8 @@ def alert(pr):
 @parser
 def search(pr):
     pr.add_argument('partial', nargs='*')
-    pr.add_argument('--exclude', '-e', nargs='+', type=set)
-    pr.add_argument('--strict', '-s', nargs='+', type=set)
+    pr.add_argument('--exclude', '-e', nargs='+')
+    pr.add_argument('--strict', '-s', nargs='+')
     pr.add_argument('--tags', '-t', nargs='+', action='join')
     pr.add_argument('--author', '-a', nargs='+', action='join')
     pr.add_argument('--rating', '-r', nargs=1)

@@ -30,8 +30,9 @@ def page_search(inp, results):
 
 def author_search(inp, func):
     """Find author via partial name, and process results."""
-    authors = {i.lower() for p in core.pages for i in p.metadata}
-    results = sorted(i for i in authors if inp.text.lower() in i)
+    text = (inp.text or inp.user).lower()
+    authors = {i for p in core.pages for i in p.metadata}
+    results = sorted(i for i in authors if text in i.lower())
     if not results:
         return lexicon.not_found.author
     elif len(results) == 1:
@@ -56,9 +57,9 @@ def find_pages(pages, partial, exclude, strict, tags, author, rating, created):
         words = p.title.lower().split()
         words = {''.join(filter(str.isalnum, w)) for w in words}
 
-        if exclude and words & exclude:
+        if exclude and words & set(exclude):
             continue
-        if strict and not words >= strict:
+        if strict and not words >= set(strict):
             continue
         if partial and not all(i in p.title.lower() for i in partial):
             continue
@@ -70,6 +71,7 @@ def find_pages(pages, partial, exclude, strict, tags, author, rating, created):
 @core.command
 @parser.search
 def search(inp, **kwargs):
+    print(kwargs)
     if not inp.text:
         return lexicon.input.incorrect
     return page_search(inp, find_pages(core.pages, **kwargs))

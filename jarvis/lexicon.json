@@ -90,6 +90,10 @@
         "I don't recall anyone sending you anything."
         ],
 
+    "new": [
+        "You have {count} new messages."
+        ],
+
     "outbound": {
 
         "empty": [
@@ -218,7 +222,7 @@
 
     "total": [
         "I've seen {user} a total of {total} times, including {this_month} times this month.",
-        "{user} have been observed in this channel {total} times, {this_month} this month.",
+        "{user} has been observed in this channel {total} times, {this_month} this month.",
         "{user} was seen here on {total} ocassions, {this_month} which had happened this month.",
         "I have seen {user} {this_month} times this month, and {total} times in all recorded history.",
         "{user}: {total} total entries found. {this_month} entries durring this month.",

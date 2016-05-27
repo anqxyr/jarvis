@@ -148,8 +148,9 @@ def tell(inp, *, user, topic, message):
 @core.multiline
 def get_tells(inp):
     """Retrieve incoming messages."""
-    query = Tell.select().where(Tell.recipient == inp.user.lower()).execute()
-    for tell in query:
+    tells = list(Tell.select().where(Tell.recipient == inp.user.lower()))
+    Tell.delete().where(Tell.recipient == inp.user.lower()).execute()
+    for tell in tells:
 
         time = arrow.get(tell.time).humanize()
         msg = lexicon.topic.get if tell.topic else lexicon.tell.get
@@ -159,7 +160,6 @@ def get_tells(inp):
             time=time,
             topic=tell.topic,
             text=tell.text)
-        tell.delete_instance()
 
 
 @core.command
@@ -167,6 +167,7 @@ def get_tells(inp):
 def show_tells(inp):
     query = Tell.select().where(Tell.recipient == inp.user.lower())
     if query.exists():
+        inp.send(lexicon.tell.new.format(count=query.count()))
         return get_tells(inp)
     else:
         return lexicon.tell.no_new
@@ -222,7 +223,7 @@ def seen(inp, *, user, first, total):
         return lexicon.seen.self
 
     query = Message.select().where(
-        Message.user == user, Message.channel == inp.channel)
+        peewee.fn.Lower(Message.user) == user, Message.channel == inp.channel)
     if not query.exists():
         return lexicon.seen.never
 

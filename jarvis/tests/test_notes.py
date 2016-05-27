@@ -39,7 +39,7 @@ notes.lexicon = parser.lexicon = lexicon = MockLexicon()
 ###############################################################################
 
 
-def run(fn, inp, *args, user='test-user', channel='test-channel', **kwargs):
+def run(fn, inp, *args, user='test-user', channel='test-user', **kwargs):
     results = []
     inp = core.Inp(
         inp, user, channel, lambda x, private, notice: results.append(x))
