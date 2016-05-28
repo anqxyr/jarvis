@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name='jarvis',
-    version='0.1',
+    version='0.9',
     description='Snarky bot for scp-wiki irc channels.',
     long_description='',
     url='https://github.com/anqxyr/jarvis/',
@@ -18,8 +18,8 @@ setuptools.setup(
     packages=['jarvis', 'jarvis/modules'],
     package_data={'jarvis': ['lexicon.json']},
     install_requires=[
-        'pyscp',
         'sopel',
         'wikipedia',
+        'dominate',
         'google-api-python-client'],
 )
