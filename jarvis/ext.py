@@ -73,7 +73,7 @@ class PageView:
             pages = [p for p in self.pages if p.rating > rating]
         elif rating.startswith('<'):
             rating = int(rating[1:])
-            pages = [p for p in self.pages if p.rating > rating]
+            pages = [p for p in self.pages if p.rating < rating]
         elif '..' in rating:
             minr, maxr = map(int, rating.split('..'))
             pages = [p for p in self.pages if minr <= p.rating <= maxr]
@@ -85,9 +85,9 @@ class PageView:
     def created(self, created):
         pages = self.pages
         if created.startswith('>'):
-            pages = [p for p in self.pages if p.created > created]
+            pages = [p for p in self.pages if p.created > created[1:]]
         elif created.startswith('<'):
-            pages = [p for p in self.pages if p.created < created]
+            pages = [p for p in self.pages if p.created < created[1:]]
         elif '..' in created:
             mincr, maxcr = created.split('..')
             pages = [

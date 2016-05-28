@@ -38,7 +38,7 @@ def author_search(inp, func):
     elif len(results) == 1:
         return func(results[0])
     else:
-        tools.save_results(inp, results, lambda x: func)
+        tools.save_results(inp, results, func)
         return tools.choose_input(results)
 
 
@@ -71,7 +71,6 @@ def find_pages(pages, partial, exclude, strict, tags, author, rating, created):
 @core.command
 @parser.search
 def search(inp, **kwargs):
-    print(kwargs)
     if not inp.text:
         return lexicon.input.incorrect
     return page_search(inp, find_pages(core.pages, **kwargs))

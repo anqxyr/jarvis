@@ -310,7 +310,7 @@ def search(pr):
     pr.add_argument('--strict', '-s', nargs='+')
     pr.add_argument('--tags', '-t', nargs='+', action='join')
     pr.add_argument('--author', '-a', nargs='+', action='join')
-    pr.add_argument('--rating', '-r', nargs=1)
+    pr.add_argument('--rating', '-r', re=r'([><=]?\d+)|(\d+\.\.\d+)', nargs=1)
     pr.add_argument('--created', '-c', nargs=1)
 
 

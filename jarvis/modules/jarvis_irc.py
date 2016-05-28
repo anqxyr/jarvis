@@ -91,15 +91,20 @@ command('remember', notes.save_memo)
 command('topic', notes.topic)
 command('alert', notes.alert)
 
-rule('(.*)', notes.logevent, priority='low')
-rule('(.*)', notes.get_tells, priority='low')
-rule('(.*)', notes.get_alerts, priority='low')
+rule(r'(.*)', notes.logevent, priority='low')
+rule(r'(.*)', notes.get_tells, priority='low')
+rule(r'(.*)', notes.get_alerts, priority='low')
 rule(r'(\?[\w\[\]{}^|-]+)$', notes.load_memo)
 
 
 ###############################################################################
 # SCP
 ###############################################################################
+
+
+@sopel.module.interval(3600)
+def refresh(bot, tr):
+    core.refresh()
 
 
 command('search s', scp.search)
@@ -112,7 +117,7 @@ command('lastcreated lc', scp.last_created)
 command('random', scp.random_page)
 command('errors', scp.errors)
 
-rule(r'(?i).*http[s]?://www\.scp-wiki\.net/([^/]+)', scp.name_lookup)
+rule(r'(?i).*http[s]?://www\.scp-wiki\.net/([^/]+)$', scp.name_lookup)
 rule(r'(?i)^(scp-[\d]+(?:-[\w]+)?)$', scp.name_lookup)
 rule(r'(?i).*!(scp-\d+(?:-[\w]+)?)', scp.name_lookup)
 
@@ -147,7 +152,7 @@ rule(r'(?i)(^(?=.*\b$nickname)(?=.*\bhugs?\b).*)', tools.get_hugs)
 command('google g', websearch.google_search)
 command('gis', websearch.google_image_search)
 command('youtube yt', websearch.youtube)
-command('wikipedia', websearch.wikipedia)
+command('wikipedia w', websearch.wikipedia)
 command('definition define dictionary', websearch.dictionary)
 command('urbandictionary', websearch.urbandictionary)
 

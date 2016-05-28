@@ -150,6 +150,12 @@ def get_tells(inp):
     """Retrieve incoming messages."""
     tells = list(Tell.select().where(Tell.recipient == inp.user.lower()))
     Tell.delete().where(Tell.recipient == inp.user.lower()).execute()
+
+    if tells:
+        inp._send(
+            lexicon.tell.new.format(count=len(tells)),
+            notice=True, private=False)
+
     for tell in tells:
 
         time = arrow.get(tell.time).humanize()
@@ -166,10 +172,7 @@ def get_tells(inp):
 @core.notice
 def show_tells(inp):
     query = Tell.select().where(Tell.recipient == inp.user.lower())
-    if query.exists():
-        inp.send(lexicon.tell.new.format(count=query.count()))
-        return get_tells(inp)
-    else:
+    if not query.exists():
         return lexicon.tell.no_new
 
 

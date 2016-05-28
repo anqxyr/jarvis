@@ -179,7 +179,7 @@ class ArticlesTable(Chart):
             'showRowNumber': 'True',
             'allowHtml': 'True',
             'sortColumn': 1,
-            'sortAscending': 'false',
+            'sortAscending': '',
             'width': '100%'}
 
     def populate(self, pages, user):
