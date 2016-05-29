@@ -103,7 +103,7 @@ rule(r'(\?[\w\[\]{}^|-]+)$', notes.load_memo)
 
 
 @sopel.module.interval(3600)
-def refresh(bot, tr):
+def refresh(bot):
     core.refresh()
 
 
@@ -114,7 +114,8 @@ command('wandererslibrary wl', scp.wanderers_library)
 command('author', scp.author)
 command('ad', scp.author_details)
 command('lastcreated lc', scp.last_created)
-command('random', scp.random_page)
+command('unused', scp.unused)
+command('random', scp.random)
 command('errors', scp.errors)
 
 rule(r'(?i).*http[s]?://www\.scp-wiki\.net/([^/]+)$', scp.name_lookup)
@@ -130,6 +131,7 @@ rule(r'(?i).*!(scp-\d+(?:-[\w]+)?)', scp.name_lookup)
 command('showmore sm', tools.showmore)
 command('choose', tools.choose)
 command('roll dice', tools.roll_dice)
+command('user', tools.user)
 command('zyn', tools.zyn)
 
 command('notdelivered nd', tools.deprecate, '!outbound count')

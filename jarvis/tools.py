@@ -117,4 +117,11 @@ def get_hugs(inp):
 def zyn(inp):
     return lexicon.silly.zyn
 
+
+@core.command
+def user(inp):
+    user = inp.text.lower().replace(' ', '-')
+    return 'http://www.wikidot.com/user:info/' + user
+
+
 ###############################################################################

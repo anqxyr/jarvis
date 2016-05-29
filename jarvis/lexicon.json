@@ -282,18 +282,26 @@
     "generic": [
         "I couldn't find anything like that.",
         "I have nothing for you.",
-        "There is nothing here. Null. Void. Nada."],
+        "There is nothing here. Null. Void. Nada."
+        ],
 
     "author": [
         "Your author is in another castle.",
         "There is nobody here by that name. Now go away.",
-        "That person has been retconned from existence."],
+        "That person has been retconned from existence."
+        ],
     
     "page": [
         "The future author of that page hasn't written it yet.",
         "You're better off reading something else.",
         "Yesterday, upon the wiki, I saw a page that wasn't there. It didn't rhyme again today.",
-        "Your search query does not match any existing pages."]
+        "Your search query does not match any existing pages."
+        ],
+
+    "unused": [
+        "I couldn't find any open slots matching your criteria.",
+        "Everything like that has already been taken."
+        ]
     },
 
 

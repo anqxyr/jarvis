@@ -319,6 +319,16 @@ def last_created(pr):
     pr.add_argument('limit', nargs='?', type=int, choices=range(1, 11))
 
 
+@parser
+def unused(pr):
+    pr.add_argument('--random', '-r')
+    pr.add_argument('--last', '-l')
+    pr.add_argument('--prime', '-p')
+    pr.add_argument('--palindrome', '-i')
+    pr.add_argument('--divisible', '-d', nargs=1, type=int)
+    pr.exclusive('random', 'last')
+
+
 ###############################################################################
 # Tools
 ###############################################################################

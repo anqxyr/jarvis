@@ -7,7 +7,7 @@
 
 import arrow
 import collections
-import random
+import random as rand
 import re
 
 from . import core, parser, lexicon, stats, tools
@@ -191,10 +191,10 @@ def errors(inp):
 
 @core.command
 @parser.search
-def random_page(inp, **kwargs):
+def random(inp, **kwargs):
     pages = core.pages if not inp.text else find_pages(core.pages, **kwargs)
     if pages:
-        return page_summary(random.choice(pages))
+        return page_summary(rand.choice(pages))
     else:
         return lexicon.not_found.page
 
@@ -218,3 +218,33 @@ def last_created(inp, *, limit, cooldown={}):
             return
         cooldown[inp.channel] = now
     yield from map(page_summary, core.wiki.list_pages(**kwargs))
+
+
+@core.command
+@parser.unused
+def unused(inp, *, random, last, prime, palindrome, divisible):
+    numbers = range(2, 3000)
+
+    if prime:
+        numbers = [i for i in numbers if all(i % k for k in range(2, i))]
+    if palindrome:
+        numbers = [
+            i for i in numbers if str(i).zfill(3) == str(i).zfill(3)[::-1]]
+    if divisible:
+        numbers = [i for i in numbers if i % divisible == 0]
+
+    slots = ['scp-{:03d}'.format(i) for i in numbers]
+    used_slots = {p._body['fullname'] for p in core.pages.tags('scp')}
+    unused_slots = [i for i in slots if i not in used_slots]
+
+    if not unused_slots:
+        return lexicon.not_found.unused
+
+    if random:
+        result = rand.choice(unused_slots)
+    elif last:
+        result = unused_slots[-1]
+    else:
+        result = unused_slots[0]
+
+    return 'http://www.scp-wiki.net/' + result
