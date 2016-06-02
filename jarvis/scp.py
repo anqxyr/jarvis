@@ -42,7 +42,9 @@ def author_search(inp, func):
         return tools.choose_input(results)
 
 
-def find_pages(pages, partial, exclude, strict, tags, author, rating, created):
+def find_pages(
+        pages, partial, exclude, strict,
+        tags, author, rating, created, fullname):
     if tags:
         pages = pages.tags(tags)
     if author:
@@ -51,6 +53,9 @@ def find_pages(pages, partial, exclude, strict, tags, author, rating, created):
         pages = pages.with_rating(rating)
     if created:
         pages = pages.created(created)
+
+    if fullname:
+        return next(p for p in pages if p.title.lower() == fullname)
 
     results = []
     for p in pages:
@@ -201,22 +206,21 @@ def random(inp, **kwargs):
 
 @core.command
 @core.multiline
-@parser.last_created
-def last_created(inp, *, limit, cooldown={}):
-    kwargs = {
-        'body': 'title created_by created_at rating',
-        'order': 'created_at desc'}
-    if limit and limit > 3:
-        kwargs['limit'] = limit
-        inp.notice = True
-    else:
-        kwargs['limit'] = 3
-        now = arrow.now()
-        if (inp.channel in cooldown and
-                (now - cooldown[inp.channel]).seconds < 120):
-            yield lexicon.spam
-            return
-        cooldown[inp.channel] = now
+def last_created(inp, cooldown={}, **kwargs):
+    kwargs = dict(
+        body='title created_by created_at rating',
+        order='created_at desc',
+        limit=3)
+    now = arrow.now()
+
+    if inp.channel not in cooldown:
+        pass
+    elif (now - cooldown[inp.channel]).seconds < 120:
+        yield lexicon.spam
+        return
+
+    cooldown[inp.channel] = now
+
     yield from map(page_summary, core.wiki.list_pages(**kwargs))
 
 

@@ -215,9 +215,9 @@
         ],
 
     "first": [
-        "I first met {user} {time}. I remember him saying: {text}",
+        "I first met {user} {time}. I remember them saying: {text}",
         "\"{text}\". That was how I first met {user}, {time}.",
-        "{time}, I saw {user} for the first time. He said: {text}"
+        "{time}, I saw {user} for the first time. They said: {text}"
         ],
 
     "total": [
@@ -410,6 +410,7 @@
         "http://bit.ly/1Vke0m3",
         "http://bit.ly/1XzYYbX",
         "http://bit.ly/1qM18IL",
+        "http://bit.ly/1Z7bi2z",
         "marp"
         ]
     }
