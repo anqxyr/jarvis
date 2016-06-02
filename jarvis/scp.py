@@ -55,7 +55,7 @@ def find_pages(
         pages = pages.created(created)
 
     if fullname:
-        return next(p for p in pages if p.title.lower() == fullname)
+        return [p for p in pages if p.title.lower() == fullname]
 
     results = []
     for p in pages:
