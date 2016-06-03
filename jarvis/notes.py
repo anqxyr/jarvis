@@ -327,11 +327,17 @@ def quote_get(inp, *, user, index):
 
 @core.command
 @parser.save_memo
-def save_memo(inp, *, user, message):
+def save_memo(inp, *, user, message, purge):
     """!rem <user> <message> -- Make a memo about the user."""
+    if inp.channel in core.config['irc']['quotes_disabled']:
+        return
+
     Rem.delete().where(
         Rem.user == user,
         Rem.channel == inp.channel).execute()
+
+    if purge:
+        return lexicon.quote.deleted
 
     Rem.create(user=user, channel=inp.channel, text=message)
 
@@ -341,8 +347,11 @@ def save_memo(inp, *, user, message):
 @core.command
 def load_memo(inp):
     """?<user> -- Display the user's memo."""
+    if inp.channel in core.config['irc']['quotes_disabled']:
+        return
+
     rem = Rem.select().where(
-        Rem.user == inp.text.lower(),
+        Rem.user == inp.text.lower()[1:],
         Rem.channel == inp.channel)
 
     if rem.exists():

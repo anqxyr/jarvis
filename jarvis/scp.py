@@ -226,7 +226,7 @@ def last_created(inp, cooldown={}, **kwargs):
 
 @core.command
 @parser.unused
-def unused(inp, *, random, last, prime, palindrome, divisible):
+def unused(inp, *, random, last, count, prime, palindrome, divisible):
     numbers = range(2, 3000)
 
     if prime:
@@ -243,6 +243,9 @@ def unused(inp, *, random, last, prime, palindrome, divisible):
 
     if not unused_slots:
         return lexicon.not_found.unused
+
+    if count:
+        return lexicon.unused.count.format(count=len(unused_slots))
 
     if random:
         result = rand.choice(unused_slots)

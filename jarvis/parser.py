@@ -280,6 +280,8 @@ def quote_get(pr):
 def save_memo(pr):
     pr.add_argument('user')
     pr.add_argument('message', nargs='+', action='join')
+    pr.add_argument('--purge', '-p', '--forget', '-f')
+    pr.exclusive('message', 'purge')
 
 
 @parser
@@ -320,10 +322,11 @@ def search(pr):
 def unused(pr):
     pr.add_argument('--random', '-r')
     pr.add_argument('--last', '-l')
+    pr.add_argument('--count', '-c')
     pr.add_argument('--prime', '-p')
     pr.add_argument('--palindrome', '-i')
     pr.add_argument('--divisible', '-d', nargs=1, type=int)
-    pr.exclusive('random', 'last')
+    pr.exclusive('random', 'last', 'count')
 
 
 ###############################################################################

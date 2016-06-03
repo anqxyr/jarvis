@@ -369,6 +369,7 @@
 "denied": [
     "You are not allowed to do that."],
 
+
 "spam": [
     "Don't spam the bot.",
     "I did this literally less than two minutes ago. Can't I get some rest?",
@@ -376,6 +377,7 @@
     "Come back later, maybe then I'll do it.",
     "Do you need your memory checked or something?"
     ],
+
 
 "summary": {
     
@@ -385,6 +387,16 @@
 
     "page": [
         "*{page.title}* ({attribution}; rating: {page.rating:+d}) - {page.url}"]
+    },
+
+"unused": {
+
+    "count": [
+        "There are {count} empty slots matching your criteria.",
+        "I know of {count} unused slots.",
+        "{count} slots remain unclaimed."
+        ]
+
     },
 
 "silly": {
