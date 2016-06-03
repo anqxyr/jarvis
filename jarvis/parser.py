@@ -279,9 +279,9 @@ def quote_get(pr):
 @parser
 def save_memo(pr):
     pr.add_argument('user')
-    pr.add_argument('message', nargs='+', action='join')
+    pr.add_argument('message', nargs='*', action='join')
     pr.add_argument('--purge', '-p', '--forget', '-f')
-    pr.exclusive('message', 'purge')
+    pr.exclusive('message', 'purge', required=True)
 
 
 @parser
