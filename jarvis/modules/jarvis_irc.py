@@ -94,7 +94,7 @@ command('alert', notes.alert)
 rule(r'(.*)', notes.logevent, priority='low')
 rule(r'(.*)', notes.get_tells, priority='low')
 rule(r'(.*)', notes.get_alerts, priority='low')
-rule(r'(\?[\w\[\]{}^|-]+)$', notes.load_memo)
+rule(r'(\?[^ ]+)$', notes.load_memo)
 
 
 ###############################################################################
