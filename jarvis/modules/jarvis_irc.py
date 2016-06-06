@@ -118,7 +118,7 @@ command('unused', scp.unused)
 command('random', scp.random)
 command('errors', scp.errors)
 
-rule(r'(?i).*http[s]?://www\.scp-wiki\.net/([^/\s]+)\s', scp.name_lookup)
+rule(r'(?i).*http[s]?://www\.scp-wiki\.net/([^/\s]+)(?:\s|$)', scp.name_lookup)
 rule(r'(?i)^(scp-[\d]+(?:-[\w]+)?)$', scp.name_lookup)
 rule(r'(?i).*!(scp-\d+(?:-[\w]+)?)', scp.name_lookup)
 
