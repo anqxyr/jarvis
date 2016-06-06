@@ -333,7 +333,7 @@ def save_memo(inp, *, user, message, purge):
         return
 
     Rem.delete().where(
-        Rem.user == user,
+        peewee.fn.Lower(Rem.user) == user,
         Rem.channel == inp.channel).execute()
 
     if purge:

@@ -47,13 +47,14 @@ def find_pages(
         tags, author, rating, created, fullname):
     if tags:
         pages = pages.tags(tags)
-    if author:
-        pages = pages.related(author)
     if rating:
         pages = pages.with_rating(rating)
     if created:
         pages = pages.created(created)
 
+    if author:
+        pages = [
+            p for p in pages if any(author in a.lower() for a in p.metadata)]
     if fullname:
         return [p for p in pages if p.title.lower() == fullname]
 

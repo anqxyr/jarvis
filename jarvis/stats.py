@@ -134,10 +134,11 @@ class ArticlesChart(Chart):
             'hAxis': {'textPosition': 'none'},
             'vAxis': {
                 'textPosition': 'none',
-                'gridlines': {'color': '#e7e9dc'}},
+                'gridlines': {'color': '#e7e9dc'},
+                'minValue': 0},
             'legend': {'position': 'none'},
             'height': 350,
-            'tooltip': {'isHtml': 'True'}}
+            'tooltip': {'isHtml': 1}}
 
     def populate(self, pages):
         self.data = [[
@@ -176,10 +177,10 @@ class ArticlesTable(Chart):
         self.populate(pages, user)
 
         self.options = {
-            'showRowNumber': 'True',
-            'allowHtml': 'True',
+            'showRowNumber': 1,
+            'allowHtml': 1,
             'sortColumn': 1,
-            'sortAscending': '',
+            'sortAscending': 0,
             'width': '100%'}
 
     def populate(self, pages, user):
