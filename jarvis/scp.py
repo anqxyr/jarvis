@@ -10,14 +10,14 @@ import collections
 import random as rand
 import re
 
-from . import core, parser, lexicon, stats, tools
+from . import core, ext, parser, lexicon, stats, tools
 
 ###############################################################################
 # Find And Lookup Functions
 ###############################################################################
 
 
-def page_search(inp, results):
+def show_search_results(inp, results):
     """Process page search results."""
     if not results:
         return lexicon.not_found.page
@@ -25,7 +25,25 @@ def page_search(inp, results):
         return page_summary(results[0])
     else:
         tools.save_results(inp, results, page_summary)
-        return search_results(results)
+        results = [p.title for p in results]
+        head, tail = results[:3], results[3:]
+        output = ', '.join('\x02{}\x02'.format(i) for i in head)
+        if tail:
+            output += ' and {} more...'.format(len(tail))
+        return output
+
+
+def show_search_summary(inp, results):
+    pages = ext.PageView(results).sorted('created')
+    return lexicon.summary.search.format(
+        count=pages.count,
+        authors=len(pages.authors),
+        rating=pages.rating,
+        average=pages.average,
+        first=arrow.get(pages[0].created).humanize(),
+        last=arrow.get(pages[-1].created).humanize(),
+        top_title=pages.sorted('rating')[-1].title,
+        top_rating=pages.sorted('rating')[-1].rating)
 
 
 def author_search(inp, func):
@@ -43,8 +61,8 @@ def author_search(inp, func):
 
 
 def find_pages(
-        pages, partial, exclude, strict,
-        tags, author, rating, created, fullname):
+        inp, pages, partial, exclude, strict,
+        tags, author, rating, created, fullname, summary):
     if tags:
         pages = pages.tags(tags)
     if rating:
@@ -71,7 +89,9 @@ def find_pages(
             continue
 
         results.append(p)
-    return results
+
+    func = show_search_summary if summary else show_search_results
+    return func(inp, results)
 
 
 @core.command
@@ -79,7 +99,7 @@ def find_pages(
 def search(inp, **kwargs):
     if not inp.text:
         return lexicon.input.incorrect
-    return page_search(inp, find_pages(core.pages, **kwargs))
+    return find_pages(inp, core.pages, **kwargs)
 
 
 @core.command
@@ -87,7 +107,7 @@ def search(inp, **kwargs):
 def tale(inp, **kwargs):
     if not inp.text:
         return lexicon.input.incorrect
-    return page_search(inp, find_pages(core.pages.tags('tale'), **kwargs))
+    return find_pages(inp, core.pages.tags('tale'), **kwargs)
 
 
 @core.command
@@ -95,18 +115,18 @@ def tale(inp, **kwargs):
 def wanderers_library(inp, **kwargs):
     if not inp.text:
         return lexicon.input.incorrect
-    return page_search(inp, find_pages(core.wlpages, **kwargs))
+    return find_pages(inp, core.wlpages, **kwargs)
 
 
 @core.command
 def tags(inp):
-    return page_search(inp, core.pages.tags(inp.text))
+    return show_search_results(inp, core.pages.tags(inp.text))
 
 
 @core.command
 def name_lookup(inp):
     pages = [p for p in core.pages if p.url.split('/')[-1] == inp.text.lower()]
-    return page_search(inp, pages)
+    return show_search_results(inp, pages)
 
 
 @core.command

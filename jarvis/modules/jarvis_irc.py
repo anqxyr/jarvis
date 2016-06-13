@@ -98,7 +98,7 @@ rule(r'(\?[^\s]+)\s*$', notes.load_memo)
 
 
 ###############################################################################
-# SCP
+# scp
 ###############################################################################
 
 
@@ -133,6 +133,7 @@ command('choose', tools.choose)
 command('roll dice', tools.roll_dice)
 command('user', tools.user)
 command('zyn', tools.zyn)
+command('help', tools.help)
 
 command('notdelivered nd', tools.deprecate, '!outbound count')
 command('purgetells', tools.deprecate, '!outbound purge')

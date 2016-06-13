@@ -386,7 +386,13 @@
         ],
 
     "page": [
-        "*{page.title}* ({attribution}; rating: {page.rating:+d}) - {page.url}"]
+        "*{page.title}* ({attribution}; rating: {page.rating:+d}) - {page.url}"
+        ],
+
+    "search": [
+        "I've found *{count}* pages by *{authors}* authors. They have a total rating of *{rating}*, with an average of *{average}*. The pages were created between {first} and {last}. The highest rated page is *{top_title}* at *{top_rating:+d}*."
+        ]
+
     },
 
 "unused": {

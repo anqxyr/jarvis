@@ -149,6 +149,10 @@ class PageView:
         return sum(p.rating for p in self.pages)
 
     @property
+    def authors(self):
+        return list(sorted({i for p in self.pages for i in p.metadata}))
+
+    @property
     def average(self):
         if not self.pages:
             return 0

@@ -316,6 +316,7 @@ def search(pr):
     pr.add_argument('--created', '-c', nargs=1)
     pr.add_argument(
         '--fullname', '-f', nargs='+', action='join', type=str.lower)
+    pr.add_argument('--summary', '-u')
 
 
 @parser

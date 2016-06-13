@@ -124,4 +124,9 @@ def user(inp):
     return 'http://www.wikidot.com/user:info/' + user
 
 
+@core.command
+def help(inp):
+    url = 'http://scp-stats.wikidot.com/jarvis'
+    return url if not inp.text else url + '#' + inp.text
+
 ###############################################################################
