@@ -11,8 +11,10 @@ connects jarvis functions to allow them to be called from irc.
 # Module Imports
 ###############################################################################
 
+import arrow
 import functools
 import sopel
+import textwrap
 
 from jarvis import autoban, core, notes, scp, tools, websearch
 
@@ -43,12 +45,17 @@ def autocomplete(bot, tr):
 def send(bot, text, private=False, notice=False):
     """Send irc message."""
     tr = bot._trigger
+    notes.Message.create(
+        user=bot.config.core.nick,
+        channel=tr.sender,
+        time=arrow.utcnow().timestamp,
+        text=text)
     mode = 'NOTICE' if notice else 'PRIVMSG'
     recipient = tr.nick if private or notice else tr.sender
-    text = text[:400]
     try:
         bot.sending.acquire()
-        bot.write((mode, recipient), text)
+        for line in textwrap.wrap(text, width=420):
+            bot.write((mode, recipient), line)
     finally:
         bot.sending.release()
 
@@ -90,6 +97,7 @@ command('quote', notes.quote)
 command('remember', notes.save_memo)
 command('topic', notes.topic)
 command('alert', notes.alert)
+command('backport', notes.backport)
 
 rule(r'(.*)', notes.logevent, priority='low')
 rule(r'(.*)', notes.get_tells, priority='low')
@@ -117,9 +125,10 @@ command('lastcreated lc', scp.last_created)
 command('unused', scp.unused)
 command('random', scp.random)
 command('errors', scp.errors)
+command('staff', scp.staff)
 
 rule(r'(?i).*http[s]?://www\.scp-wiki\.net/([^/\s]+)(?:\s|$)', scp.name_lookup)
-rule(r'(?i)^(scp-[\d]+(?:-[\w]+)?)$', scp.name_lookup)
+rule(r'(?i)^(scp-[\d]+(?:-[\w]+)?)\s*$', scp.name_lookup)
 rule(r'(?i).*!(scp-\d+(?:-[\w]+)?)', scp.name_lookup)
 
 

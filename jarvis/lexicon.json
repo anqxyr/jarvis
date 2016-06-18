@@ -301,6 +301,12 @@
     "unused": [
         "I couldn't find any open slots matching your criteria.",
         "Everything like that has already been taken."
+        ],
+
+    "staff": [
+        "There aren't any staff by that name. Here are the staff: http://www.scp-wiki.net/meet-the-staff",
+        "I don't know them. The only staff I know are listed here: http://www.scp-wiki.net/meet-the-staff",
+        "You may want to read this: http://www.scp-wiki.net/meet-the-staff"
         ]
     },
 

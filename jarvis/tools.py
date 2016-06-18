@@ -62,6 +62,8 @@ def choose(inp):
     if not inp.text:
         return lexicon.input.missing
     options = [i.strip() for i in inp.text.split(',') if i.strip()]
+    if not options:
+        return lexicon.input.incorrect
     return random.choice(options)
 
 

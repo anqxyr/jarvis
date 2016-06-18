@@ -14,6 +14,8 @@ import random
 import re
 import peewee
 import playhouse.sqlite_ext
+import playhouse.migrate
+import itertools
 
 from . import core, lexicon, parser
 
@@ -48,8 +50,8 @@ class Tell(BaseModel):
 class Message(BaseModel):
     """Database Message Table."""
 
-    user = peewee.CharField(index=True)
-    channel = peewee.CharField()
+    user = peewee.CharField(index=True, null=True)
+    channel = peewee.CharField(index=True)
     time = peewee.DateTimeField()
     text = peewee.TextField()
 
@@ -96,9 +98,20 @@ class Alert(BaseModel):
 
 def init():
     """Initialize the database, create missing tables."""
+    migrator = playhouse.migrate.SqliteMigrator(db)
+    try:
+        playhouse.migrate.migrate(
+            migrator.drop_not_null('Message', 'user'),
+            migrator.add_index('Message', ('channel', ), False))
+    except:
+        pass
+
     db.connect()
     db.create_tables(
         [Tell, Message, Quote, Rem, Subscriber, Restricted, Alert], safe=True)
+
+
+init()
 
 
 def logevent(inp):
@@ -469,3 +482,38 @@ def get_alerts(inp):
         if arrow.get(alert.time) < now:
             yield alert.text
             alert.delete_instance()
+
+
+def backport(name):
+    start = arrow.now()
+
+    def parse_line(line):
+        line = line.split()
+        time = arrow.get(line[0]).timestamp
+        if line[1].startswith('<') and line[1].endswith('>'):
+            user = line[1][1:-1]
+            text = line[2:]
+        else:
+            user = None
+            text = line[1:]
+        text = ' '.join(text)
+        return time, user, text
+
+    with open(name) as file:
+        lines = (parse_line(i) for i in file)
+        lines = (
+            {'time': a, 'user': b, 'text': c, 'channel': name}
+            for a, b, c in lines)
+
+        idx = 0
+        chunk = list(itertools.islice(lines, 500))
+        with db.atomic():
+            while chunk:
+                print(idx)
+                idx += 500
+                Message.insert_many(chunk).execute()
+                chunk = list(itertools.islice(lines, 500))
+            print(arrow.now() - start)
+
+    print('Done!')
+    print(arrow.now() - start)
