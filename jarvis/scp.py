@@ -34,6 +34,8 @@ def show_search_results(inp, results):
 
 
 def show_search_summary(inp, results):
+    if not results:
+        return lexicon.not_found.page
     pages = ext.PageView(results).sorted('created')
     return lexicon.summary.search.format(
         count=pages.count,
@@ -74,7 +76,8 @@ def find_pages(
         pages = [
             p for p in pages if any(author in a.lower() for a in p.metadata)]
     if fullname:
-        return [p for p in pages if p.title.lower() == fullname]
+        pages = [p for p in pages if p.title.lower() == fullname]
+        return page_summary(pages[0])
 
     results = []
     for p in pages:
@@ -276,3 +279,27 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible):
         result = unused_slots[0]
 
     return 'http://www.scp-wiki.net/' + result
+
+
+@core.command
+def staff(inp, staff={}):
+    if not inp.text:
+        return 'http://www.scp-wiki.net/meet-the-staff'
+
+    cats = {'Admin': 1, 'Mod': 2, 'Op-Staff': 3}
+
+    if not staff:
+        for key in cats:
+            staff[key] = {}
+
+        soup = core.wiki('meet-the-staff')._soup
+        for k, v in cats.items():
+            for i in soup(class_='content-panel')[v]('p'):
+                staff[k][i.strong.text.lower()] = i.text
+
+    for cat in cats:
+        for k, v in staff[cat].items():
+            if inp.text.lower() in k:
+                return '[{}] {}'.format(cat, v)
+
+    return lexicon.not_found.staff
