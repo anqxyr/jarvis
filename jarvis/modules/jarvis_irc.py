@@ -186,12 +186,12 @@ def ban_on_join(bot, tr):
         return
 
     def kick(message):
-        bot.write(['KICK', tr.sender, tr.user], message)
+        bot.write(['KICK', tr.sender, tr.nick], message)
 
     def ban(target, enable):
         bot.write(['MODE', tr.sender, '+b' if enable else '-b', target])
 
     send_ = functools.partial(send, bot)
 
-    if not autoban.ban_evasion(tr.user, tr.host, kick, ban, send_):
-        autoban.offensive_username(tr.user, tr.host, kick, ban, send_)
+    if not autoban.ban_evasion(tr.nick, tr.host, kick, ban, send_):
+        autoban.offensive_username(tr.nick, tr.host, kick, ban, send_)
