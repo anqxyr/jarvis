@@ -100,6 +100,7 @@ def init():
     db.connect()
     db.create_tables(
         [Tell, Message, Quote, Rem, Subscriber, Restricted, Alert], safe=True)
+    Message.update(user=peewee.fn.Lower(Message.user)).execute()
 
 
 init()
@@ -108,7 +109,7 @@ init()
 def logevent(inp):
     """Log input into the database."""
     Message.create(
-        user=inp.user, channel=inp.channel,
+        user=inp.user.lower(), channel=inp.channel,
         time=arrow.utcnow().timestamp, text=inp.text)
 
 
@@ -230,7 +231,7 @@ def seen(inp, *, user, first, total):
         return lexicon.seen.self
 
     query = Message.select().where(
-        peewee.fn.Lower(Message.user) == user, Message.channel == inp.channel)
+        Message.user == user, Message.channel == inp.channel)
     if not query.exists():
         return lexicon.seen.never
 

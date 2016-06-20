@@ -187,6 +187,8 @@ def author_summary(name):
     url = pages.tags('author')[0].url if pages.tags('author') else None
     url = ' ({})'.format(url) if url else ''
     pages = pages.articles
+    if not pages:
+        return lexicon.not_found.author
     template = '\x02{1.count}\x02 {0}'.format
     tags = ', '.join(template(*i) for i in pages.split_page_type().items())
     rels = ', '.join(template(*i) for i in pages.split_relation(name).items())
@@ -286,7 +288,7 @@ def staff(inp, staff={}):
     if not inp.text:
         return 'http://www.scp-wiki.net/meet-the-staff'
 
-    cats = {'Admin': 1, 'Mod': 2, 'Op-Staff': 3}
+    cats = {'Admin': 1, 'Mod': 2, 'Staff': 3}
 
     if not staff:
         for key in cats:

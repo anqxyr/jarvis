@@ -9,7 +9,7 @@ import textwrap
 
 from dominate import tags as dt
 
-from . import core
+from . import core, lexicon
 
 
 ###############################################################################
@@ -209,6 +209,8 @@ def update_user(name):
     p = wiki('user:' + name.lower())
 
     pages = core.pages.related(name).sorted('created')
+    if not pages.articles:
+        return lexicon.not_found.author
     data = USER.format(
         summary_table=SummaryTable(pages.primary(name), name).render(),
         articles_chart=ArticlesChart(pages.articles).render(),
