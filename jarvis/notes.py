@@ -100,7 +100,6 @@ def init():
     db.connect()
     db.create_tables(
         [Tell, Message, Quote, Rem, Subscriber, Restricted, Alert], safe=True)
-    Message.update(user=peewee.fn.Lower(Message.user)).execute()
 
 
 init()
