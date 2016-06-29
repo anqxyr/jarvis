@@ -16,7 +16,7 @@ import functools
 import sopel
 import textwrap
 
-from jarvis import autoban, core, notes, scp, tools, websearch
+from jarvis import autoban, core, notes, scp, tools, websearch, images
 
 ###############################################################################
 # Core Wrapper Functions
@@ -170,6 +170,13 @@ command('urbandictionary', websearch.urbandictionary)
 
 rule(r'.*youtube\.com/watch\?v=([-_a-z0-9]+)', websearch.youtube_lookup)
 rule(r'.*youtu\.be/([-_a-z0-9]+)', websearch.youtube_lookup)
+
+
+###############################################################################
+# Images
+###############################################################################
+
+command('images img', images.images)
 
 ###############################################################################
 # Autoban

@@ -19,6 +19,16 @@ wiki = pyscp.wikidot.Wiki('scp-stats')
 wiki.auth(core.config['wiki']['name'], core.config['wiki']['pass'])
 
 IMAGES = collections.defaultdict(list)
+STATUS = {
+    'PUBLIC DOMAIN': 3,
+    'BY-SA CC': 3,
+    'PERMISSION GRANTED': 3,
+    'BY-NC-SA CC': 2,
+    'AWAITING REPLY': 2,
+    'SOURCE UNKNOWN': 4,
+    'UNABLE TO CONTACT': 4,
+    'PERMANENTLY REMOVED': 4}
+
 
 ###############################################################################
 # Internal Functions
@@ -33,6 +43,12 @@ class Image:
         self.source = source
         self.status = status
         self.notes = notes
+
+    @property
+    def colstatus(self):
+        if self.status:
+            return'\x03{}{}\x03'.format(STATUS[self.status], self.status)
+        return ''
 
 
 def load_images():
@@ -110,6 +126,17 @@ def get_page_category(page):
         return '001'
 
 
+def find_target(target, index):
+    for cat in IMAGES:
+        for img in IMAGES[cat]:
+            if img.page == target or img.page.split('/')[-1] == target:
+                if not index or index == 1:
+                    return cat, img
+                else:
+                    index -= 1
+            if img.url == target:
+                return cat, img
+
 ###############################################################################
 # Bot Commands
 ###############################################################################
@@ -118,7 +145,7 @@ def get_page_category(page):
 @core.command
 @parser.images
 def images(inp, mode):
-    funcs = [images_scan]
+    funcs = [images_scan, images_update, images_list]
     funcs = {f.__name__.split('_')[-1]: f for f in funcs}
     return funcs[mode](inp)
 
@@ -132,7 +159,6 @@ def images_scan(inp, *, page):
 
     counter = 0
     for img in page._soup.find(id='page-content')('img'):
-        print(img)
         if any(i.url == img['src'] for i in IMAGES[cat]):
             continue
         img = Image(img['src'], page.url, '', '', '')
@@ -147,6 +173,47 @@ def images_scan(inp, *, page):
     else:
         return lexicon.images.scan.added_none
 
+
+@parser.images_update
+def images_update(inp, *, target, index, url, page, source, status, notes):
+    img = find_target(target, index)
+    if not img:
+        return lexicon.images.not_found
+    cat, img = img
+
+    if url:
+        img.url = url
+    if page:
+        img.page = page
+    if source:
+        img.source = source
+    if status:
+        if status not in STATUS:
+            return lexicon.images.update.bad_status
+        img.status = status
+
+    save_images(cat)
+    return lexicon.images.update.done
+
+
+@parser.images_list
+def images_list(inp, *, page, index):
+    if not page:
+        return lexicon.images.list.all
+
+    images = [i for k in IMAGES for i in IMAGES[k]]
+    images = [i for i in images if i.page.split('/')[-1] == page]
+
+    if index:
+        if index < 0 or index > len(images):
+            return lexicon.input.bad_index
+        return lexicon.images.list.image.format(image=images[index])
+
+    if len(images) > 5:
+        return lexicon.images.list.too_many.format(count=len(images))
+
+    inp.multiline = True
+    return [lexicon.images.list.image.format(image=i) for i in images]
 
 ###############################################################################
 

@@ -13,7 +13,7 @@ import copy
 import functools
 import re
 
-from . import lexicon
+from . import core, lexicon
 
 ###############################################################################
 # Generic Functionality
@@ -348,3 +348,46 @@ def showmore(pr):
 @parser
 def websearch(pr):
     pr.add_argument('query', nargs='+', action='join')
+
+
+###############################################################################
+# Images
+###############################################################################
+
+
+def pagename(page):
+    if page.startswith(core.wiki.site):
+        page = page[len(core.wiki.site) + 1:]
+    if '/' in page:
+        raise ValueError('Incorrect Page Name.')
+    return page
+
+
+@parser
+def images(pr):
+    pr.add_argument('mode', choices=['scan', 'update', 'list'])
+    pr.add_argument('_', nargs='*', ignore=True)
+
+
+@parser
+def images_scan(pr):
+    pr.add_argument('mode', choices=['scan'], ignore=True)
+    pr.add_argument('page', type=pagename)
+
+
+@parser
+def images_update(pr):
+    pr.add_argument('mode', choices=['update'], ignore=True)
+    pr.add_argument('target')
+    pr.add_argument('index', nargs='?', type=int)
+    pr.add_argument('--url', '-u', nargs=1)
+    pr.add_argument('--page', '-p', nargs=1)
+    pr.add_argument('--source', '-o', nargs=1)
+    pr.add_argument('--status', '-s', nargs='+', type=str.upper, action='join')
+
+
+@parser
+def images_list(pr):
+    pr.add_argument('mode', choices=['list'], ignore=True)
+    pr.add_argument('page', nargs='?', type=pagename)
+    pr.add_argument('index', nargs='?', type=int)
