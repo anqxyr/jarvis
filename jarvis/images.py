@@ -6,6 +6,7 @@
 ###############################################################################
 
 import collections
+import functools
 import pyscp
 import re
 
@@ -22,7 +23,7 @@ IMAGES = collections.defaultdict(list)
 STATUS = {
     'PUBLIC DOMAIN': 3,
     'BY-SA CC': 3,
-    'PERMISSION GRANTED': 3,
+    'PERMISSION GRANTED': 2,
     'BY-NC-SA CC': 2,
     'AWAITING REPLY': 2,
     'SOURCE UNKNOWN': 4,
@@ -46,10 +47,23 @@ class Image:
         self.category = category
 
     @property
-    def colstatus(self):
+    def status_col(self):
         if self.status:
             return'\x030,{} {} \x03'.format(STATUS[self.status], self.status)
         return ''
+
+    @property
+    def url_t(self):
+        return self.url.split('/')[-1]
+
+    @property
+    def page_t(self):
+        return self.page.split('/')[-1]
+
+    @property
+    def source_t(self):
+        source = re.match(r'https*://(?:www\.)?([^/]+)', self.source)
+        return source.group(1) if source else ''
 
 
 def load_images():
@@ -85,12 +99,9 @@ def save_images(category, comment, user):
         img = '[[image {0.url} width="100px"]]'.format(image)
         img = wtag('cell', img, rowspan=2)
 
-        page = image.page.split('/')[-1]
-        page = '[{} {}]'.format(image.page, page)
-        page = wtag('cell', page)
+        page = wtag('cell', '[{} {}]'.format(image.page, image.page_t))
 
-        source = re.match(r'https*://(?:www\.)?([^/]+)', image.source)
-        source = source.group(1) if source else ''
+        source = image.source_t
         source = source and '[{} {}]'.format(image.source, source)
         source = wtag('cell', source)
 
@@ -98,28 +109,42 @@ def save_images(category, comment, user):
         status = '[[span class="{}"]]{}[[/span]]'.format(status, image.status)
         status = wtag('cell', status)
 
+        notes = wtag('cell', ' _\n'.join(image.notes), colspan=4)
+
         rows.append(wtag('row', img, page, source, status))
-        rows.append(
-            wtag('row', wtag('cell', ' _\n'.join(image.notes), colspan=4)))
+        rows.append(wtag('row', notes))
 
     wiki('images:' + category).create(
         wtag('table', *rows), category,
         comment='{} [{}]'.format(comment, user))
 
 
-def find_images(target, index):
-    images = [i for cat in IMAGES for i in IMAGES[cat]]
-    matches = []
-    for img in images:
-        if img.page == target or img.page.split('/')[-1] == target:
-            matches.append(img)
-        if img.url == target:
-            return [img]
-    if not index:
-        return matches
-    if index < 1 or index > len(matches):
-        return
-    return [matches[index - 1]]
+def targeted(maxres):
+
+    def deco(fn):
+
+        @functools.wraps(fn)
+        def inner(inp, *args, target, index, **kwargs):
+            images = [i for cat in IMAGES for i in IMAGES[cat]]
+            matches = []
+            for img in images:
+                if target in [img.page, img.page_t]:
+                    matches.append(img)
+                if img.url == target:
+                    return fn(inp, *args, images=[img], **kwargs)
+            if not matches:
+                return lexicon.images.not_found
+            if not index and maxres != 'all' and maxres < len(matches):
+                return lexicon.images.too_many.format(count=len(matches))
+            if index:
+                if index < 1 or index > len(matches):
+                    return lexicon.input.bad_index
+                matches = [matches[index - 1]]
+            return fn(inp, *args, images=matches, **kwargs)
+
+        return inner
+
+    return deco
 
 
 def get_page_category(page):
@@ -169,7 +194,7 @@ def images_scan(inp, *, page):
     for img in page._soup.find(id='page-content')('img'):
         if any(i.url == img['src'] for i in IMAGES[cat]):
             continue
-        img = Image(img['src'], page.url, '', '', '')
+        img = Image(img['src'], page.url, '', '', [], cat)
         IMAGES[cat].append(img)
         counter += 1
     save_images(cat, 'add images via page scan', inp.user)
@@ -183,13 +208,8 @@ def images_scan(inp, *, page):
 
 
 @parser.images_update
-def images_update(inp, *, target, index, url, page, source, status):
-    images = find_images(target, index)
-    if not images:
-        return lexicon.images.not_found
-    if len(images) > 1:
-        return lexicon.images.too_many.format(len(images))
-
+@targeted(1)
+def images_update(inp, *, images, url, page, source, status):
     image = images[0]
     if url:
         image.url = url
@@ -198,7 +218,7 @@ def images_update(inp, *, target, index, url, page, source, status):
     if source:
         image.source = source
     if status:
-        if status not in STATUS:
+        if status not in STATUS and status != '-':
             return lexicon.images.update.bad_status
         image.status = status
 
@@ -206,38 +226,29 @@ def images_update(inp, *, target, index, url, page, source, status):
     return lexicon.images.update.done
 
 
+@core.multiline
 @parser.images_list
-def images_list(inp, *, target, index):
-    if not target and not index:
-        return lexicon.images.list.all
-
-    images = find_images(target, index)
-    if not images:
-        return lexicon.images.not_found
-    if len(images) > 5:
-        return lexicon.images.too_many.format(count=len(images))
-
-    inp.multiline = True
-    return [lexicon.images.list.image.format(image=i) for i in images]
+@targeted(5)
+def images_list(inp, *, images, terse):
+    out = lexicon.images.list.terse if terse else lexicon.images.list.verbose
+    return [out.format(image=i) for i in images]
 
 
 @parser.images_notes
-def images_notes(inp, *, target, index, append, purge, list):
-    images = find_images(target, index)
-    if not images:
-        return lexicon.images.not_found
-    if len(images) > 1:
-        return lexicon.images.too_many.format(count=len(images))
+@targeted(1)
+def images_notes(inp, *, images, append, purge, list):
     image = images[0]
 
     if append:
         image.notes.append(append)
         save_images(image.category, 'append image notes', inp.user)
         return lexicon.images.notes.append
+
     if purge:
         image.notes = []
         save_images(image.category, 'purge image notes', inp.user)
         return lexicon.images.notes.purge
+
     if list:
         if not image.notes:
             return lexicon.images.notes.empty

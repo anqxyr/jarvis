@@ -427,7 +427,8 @@
 
     "list": {
         "all": ["The list of all currently indexed images is available here: http://scp-stats.wikidot.com/images"],
-        "image": ["{image.url} - {image.page} - {image.source} - *{image.colstatus}*"]
+        "terse": ["{image.url_t} - {image.source_t} - *{image.status_col}*"],
+        "verbose": ["{image.url} - {image.page} - {image.source} - *{image.status_col}*"]
         },
 
     "notes": {

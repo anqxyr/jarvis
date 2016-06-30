@@ -374,15 +374,16 @@ def images_update(pr):
     pr.add_argument('index', nargs='?', type=int)
     pr.add_argument('--url', '-u', nargs=1)
     pr.add_argument('--page', '-p', nargs=1)
-    pr.add_argument('--source', '-o', nargs=1)
+    pr.add_argument('--source', '--origin', '-o', nargs=1)
     pr.add_argument('--status', '-s', nargs='+', type=str.upper, action='join')
 
 
 @parser
 def images_list(pr):
     pr.add_argument('mode', choices=['list'], ignore=True)
-    pr.add_argument('target', nargs='?')
+    pr.add_argument('target')
     pr.add_argument('index', nargs='?', type=int)
+    pr.add_argument('--terse', '-t')
 
 
 @parser
