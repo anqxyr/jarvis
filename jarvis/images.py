@@ -37,17 +37,18 @@ STATUS = {
 
 class Image:
 
-    def __init__(self, url, page, source, status, notes):
+    def __init__(self, url, page, source, status, notes, category):
         self.url = url
         self.page = page
         self.source = source
         self.status = status
         self.notes = notes
+        self.category = category
 
     @property
     def colstatus(self):
         if self.status:
-            return'\x03{}{}\x03'.format(STATUS[self.status], self.status)
+            return'\x030,{} {} \x03'.format(STATUS[self.status], self.status)
         return ''
 
 
@@ -62,8 +63,9 @@ def load_images():
             page = page.a['href']
             source = source.a['href'] if source('a') else ''
             status = status.text
-            notes = notes.find('td').text
-            IMAGES[name].append(Image(url, page, source, status, notes))
+            notes = notes.find('td').text.split('\n')
+            notes = [i for i in notes if i]
+            IMAGES[name].append(Image(url, page, source, status, notes, name))
 
 
 def save_images(category):
@@ -97,9 +99,25 @@ def save_images(category):
         status = wtag('cell', status)
 
         rows.append(wtag('row', img, page, source, status))
-        rows.append(wtag('row', wtag('cell', image.notes, colspan=4)))
+        rows.append(
+            wtag('row', wtag('cell', ' _\n'.join(image.notes), colspan=4)))
 
     wiki('images:' + category).create(wtag('table', *rows), category)
+
+
+def find_images(target, index):
+    images = [i for cat in IMAGES for i in IMAGES[cat]]
+    matches = []
+    for img in images:
+        if img.page == target or img.page.split('/')[-1] == target:
+            matches.append(img)
+        if img.url == target:
+            return [img]
+    if not index:
+        return matches
+    if index < 1 or index > len(matches):
+        return
+    return [matches[index - 1]]
 
 
 def get_page_category(page):
@@ -125,18 +143,6 @@ def get_page_category(page):
     if page.url in core.wiki('001').links:
         return '001'
 
-
-def find_target(target, index):
-    for cat in IMAGES:
-        for img in IMAGES[cat]:
-            if img.page == target or img.page.split('/')[-1] == target:
-                if not index or index == 1:
-                    return cat, img
-                else:
-                    index -= 1
-            if img.url == target:
-                return cat, img
-
 ###############################################################################
 # Bot Commands
 ###############################################################################
@@ -145,7 +151,7 @@ def find_target(target, index):
 @core.command
 @parser.images
 def images(inp, mode):
-    funcs = [images_scan, images_update, images_list]
+    funcs = [images_scan, images_update, images_list, images_notes]
     funcs = {f.__name__.split('_')[-1]: f for f in funcs}
     return funcs[mode](inp)
 
@@ -175,45 +181,69 @@ def images_scan(inp, *, page):
 
 
 @parser.images_update
-def images_update(inp, *, target, index, url, page, source, status, notes):
-    img = find_target(target, index)
-    if not img:
+def images_update(inp, *, target, index, url, page, source, status):
+    images = find_images(target, index)
+    if not images:
         return lexicon.images.not_found
-    cat, img = img
+    if len(images) > 1:
+        return lexicon.images.too_many.format(len(images))
 
+    image = images[0]
     if url:
-        img.url = url
+        image.url = url
     if page:
-        img.page = page
+        image.page = page
     if source:
-        img.source = source
+        image.source = source
     if status:
         if status not in STATUS:
             return lexicon.images.update.bad_status
-        img.status = status
+        image.status = status
 
-    save_images(cat)
+    save_images(image.category)
     return lexicon.images.update.done
 
 
 @parser.images_list
-def images_list(inp, *, page, index):
-    if not page:
+def images_list(inp, *, target, index):
+    if not target and not index:
         return lexicon.images.list.all
 
-    images = [i for k in IMAGES for i in IMAGES[k]]
-    images = [i for i in images if i.page.split('/')[-1] == page]
-
-    if index:
-        if index < 0 or index > len(images):
-            return lexicon.input.bad_index
-        return lexicon.images.list.image.format(image=images[index])
-
+    images = find_images(target, index)
+    if not images:
+        return lexicon.images.not_found
     if len(images) > 5:
-        return lexicon.images.list.too_many.format(count=len(images))
+        return lexicon.images.too_many.format(count=len(images))
 
     inp.multiline = True
     return [lexicon.images.list.image.format(image=i) for i in images]
+
+
+@parser.images_notes
+def images_notes(inp, *, target, index, append, purge, list):
+    images = find_images(target, index)
+    if not images:
+        return lexicon.images.not_found
+    if len(images) > 1:
+        return lexicon.images.too_many.format(count=len(images))
+    image = images[0]
+
+    if append:
+        image.notes.append(append)
+        save_images(image.category)
+        return lexicon.images.notes.append
+    if purge:
+        image.notes = []
+        save_images(image.category)
+        return lexicon.images.notes.purge
+    if list:
+        if not image.notes:
+            return lexicon.images.notes.empty
+        inp.multiline = True
+        print(image.notes)
+        return image.notes
+
+
 
 ###############################################################################
 

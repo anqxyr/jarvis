@@ -355,24 +355,16 @@ def websearch(pr):
 ###############################################################################
 
 
-def pagename(page):
-    if page.startswith(core.wiki.site):
-        page = page[len(core.wiki.site) + 1:]
-    if '/' in page:
-        raise ValueError('Incorrect Page Name.')
-    return page
-
-
 @parser
 def images(pr):
-    pr.add_argument('mode', choices=['scan', 'update', 'list'])
+    pr.add_argument('mode', choices=['scan', 'update', 'list', 'notes'])
     pr.add_argument('_', nargs='*', ignore=True)
 
 
 @parser
 def images_scan(pr):
     pr.add_argument('mode', choices=['scan'], ignore=True)
-    pr.add_argument('page', type=pagename)
+    pr.add_argument('page')
 
 
 @parser
@@ -389,5 +381,16 @@ def images_update(pr):
 @parser
 def images_list(pr):
     pr.add_argument('mode', choices=['list'], ignore=True)
-    pr.add_argument('page', nargs='?', type=pagename)
+    pr.add_argument('target', nargs='?')
     pr.add_argument('index', nargs='?', type=int)
+
+
+@parser
+def images_notes(pr):
+    pr.add_argument('mode', choices=['notes'], ignore=True)
+    pr.add_argument('target')
+    pr.add_argument('index', nargs='?', type=int)
+    pr.add_argument('--append', '-a', nargs='+', action='join')
+    pr.add_argument('--purge', '-p')
+    pr.add_argument('--list', '-l')
+    pr.exclusive('append', 'purge', 'list')

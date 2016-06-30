@@ -414,28 +414,11 @@
 "images": {
 
     "scan": {
-
-        "unknown_category": [
-            "Scan aborted. Could not determine page category."
-            ],
-
-        "added_one": [
-            "Image have been added to the index."
-            ],
-
-        "added_several": [
-            "{count} images have been added to the index."
-            ],
-
-        "added_none": [
-            "That page doesn't contain any unknown images."
-            ]
-
+        "unknown_category": ["Scan aborted. Could not determine page category."],
+        "added_one": ["Image have been added to the index."],
+        "added_several": ["{count} images have been added to the index."],
+        "added_none": ["That page doesn't contain any unknown images."]
         },
-
-    "not_found": [
-        "The image is not found in the index."
-        ],
 
     "update": {
         "done": ["Index updated."],
@@ -444,9 +427,17 @@
 
     "list": {
         "all": ["The list of all currently indexed images is available here: http://scp-stats.wikidot.com/images"],
-        "too_many": ["Specified page includes {count} images. Please specify which image you wish to see."],
-        "image": ["{image.url} - {image.page} - {image.source} - {image.colstatus}"]
-        }
+        "image": ["{image.url} - {image.page} - {image.source} - *{image.colstatus}*"]
+        },
+
+    "notes": {
+        "append": ["Note appended."],
+        "purge": ["All notes have been purged."],
+        "empty": ["There are no notes about this image."]
+        },
+
+    "too_many": ["Specified page includes {count} images. Please specify which image you wish to see."],
+    "not_found": ["The image is not found in the index."]
 
     },
 
