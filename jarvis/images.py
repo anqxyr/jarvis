@@ -68,7 +68,7 @@ def load_images():
             IMAGES[name].append(Image(url, page, source, status, notes, name))
 
 
-def save_images(category):
+def save_images(category, comment, user):
 
     def wtag(name, *data, **kwargs):
         args = []
@@ -102,7 +102,9 @@ def save_images(category):
         rows.append(
             wtag('row', wtag('cell', ' _\n'.join(image.notes), colspan=4)))
 
-    wiki('images:' + category).create(wtag('table', *rows), category)
+    wiki('images:' + category).create(
+        wtag('table', *rows), category,
+        comment='{} [{}]'.format(comment, user))
 
 
 def find_images(target, index):
@@ -170,7 +172,7 @@ def images_scan(inp, *, page):
         img = Image(img['src'], page.url, '', '', '')
         IMAGES[cat].append(img)
         counter += 1
-    save_images(cat)
+    save_images(cat, 'add images via page scan', inp.user)
 
     if counter == 1:
         return lexicon.images.scan.added_one
@@ -200,7 +202,7 @@ def images_update(inp, *, target, index, url, page, source, status):
             return lexicon.images.update.bad_status
         image.status = status
 
-    save_images(image.category)
+    save_images(image.category, 'update image', inp.user)
     return lexicon.images.update.done
 
 
@@ -230,19 +232,17 @@ def images_notes(inp, *, target, index, append, purge, list):
 
     if append:
         image.notes.append(append)
-        save_images(image.category)
+        save_images(image.category, 'append image notes', inp.user)
         return lexicon.images.notes.append
     if purge:
         image.notes = []
-        save_images(image.category)
+        save_images(image.category, 'purge image notes', inp.user)
         return lexicon.images.notes.purge
     if list:
         if not image.notes:
             return lexicon.images.notes.empty
         inp.multiline = True
-        print(image.notes)
         return image.notes
-
 
 
 ###############################################################################
