@@ -13,7 +13,7 @@ import copy
 import functools
 import re
 
-from . import core, lexicon
+from . import lexicon
 
 ###############################################################################
 # Generic Functionality
@@ -357,7 +357,8 @@ def websearch(pr):
 
 @parser
 def images(pr):
-    pr.add_argument('mode', choices=['scan', 'update', 'list', 'notes'])
+    pr.add_argument('mode', choices=[
+        'scan', 'update', 'list', 'notes', 'purge', 'search', 'stats'])
     pr.add_argument('_', nargs='*', ignore=True)
 
 
@@ -395,3 +396,23 @@ def images_notes(pr):
     pr.add_argument('--purge', '-p')
     pr.add_argument('--list', '-l')
     pr.exclusive('append', 'purge', 'list')
+
+
+@parser
+def images_purge(pr):
+    pr.add_argument('mode', choices=['purge'], ignore=True)
+    pr.add_argument('target')
+    pr.add_argument('index', nargs='?', type=int)
+
+
+@parser
+def images_search(pr):
+    pr.add_argument('mode', choices=['search'], ignore=True)
+    pr.add_argument('target')
+    pr.add_argument('index', nargs='?', type=int)
+
+
+@parser
+def images_stats(pr):
+    pr.add_argument('mode', choices=['stats'], ignore=True)
+    pr.add_argument('category')

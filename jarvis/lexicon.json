@@ -427,8 +427,8 @@
 
     "list": {
         "all": ["The list of all currently indexed images is available here: http://scp-stats.wikidot.com/images"],
-        "terse": ["{image.url_t} - {image.source_t} - *{image.status_col}*"],
-        "verbose": ["{image.url} - {image.page} - {image.source} - *{image.status_col}*"]
+        "terse": ["{image.url_t} - {image.source_t} - {image.status_col}"],
+        "verbose": ["{image.url} - {image.page} - {image.source} - {image.status_col}"]
         },
 
     "notes": {
@@ -438,7 +438,9 @@
         },
 
     "too_many": ["Specified page includes {count} images. Please specify which image you wish to see."],
-    "not_found": ["The image is not found in the index."]
+    "not_found": ["The image is not found in the index."],
+    "purge": ["Purged {count} record(s)."],
+    "stats": ["{count} indexed images in this category ({per_status}). Not reviewed - {not_reviewed}."]
 
     },
 

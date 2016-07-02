@@ -5,7 +5,6 @@
 # Module Imports
 ###############################################################################
 
-import collections
 import functools
 import pyscp
 import re
@@ -19,16 +18,16 @@ from . import core, parser, lexicon
 wiki = pyscp.wikidot.Wiki('scp-stats')
 wiki.auth(core.config['wiki']['name'], core.config['wiki']['pass'])
 
-IMAGES = collections.defaultdict(list)
-STATUS = {
-    'PUBLIC DOMAIN': 3,
-    'BY-SA CC': 3,
-    'PERMISSION GRANTED': 2,
-    'BY-NC-SA CC': 2,
-    'AWAITING REPLY': 2,
-    'SOURCE UNKNOWN': 4,
-    'UNABLE TO CONTACT': 4,
-    'PERMANENTLY REMOVED': 4}
+IMAGES = []
+STATUS = [
+    'PUBLIC DOMAIN',
+    'BY-SA CC',
+    'PERMISSION GRANTED',
+    'BY-NC-SA CC',
+    'AWAITING REPLY',
+    'SOURCE UNKNOWN',
+    'UNABLE TO CONTACT',
+    'PERMANENTLY REMOVED']
 
 
 ###############################################################################
@@ -49,7 +48,10 @@ class Image:
     @property
     def status_col(self):
         if self.status:
-            return'\x030,{} {} \x03'.format(STATUS[self.status], self.status)
+            colors = '33222444'
+            colors = {a: b for a, b in zip(range(len(colors)), colors)}
+            color = colors[STATUS.index(self.status)]
+            return'\x02\x030,{} {} \x03\x02'.format(color, self.status)
         return ''
 
     @property
@@ -79,7 +81,7 @@ def load_images():
             status = status.text
             notes = notes.find('td').text.split('\n')
             notes = [i for i in notes if i]
-            IMAGES[name].append(Image(url, page, source, status, notes, name))
+            IMAGES.append(Image(url, page, source, status, notes, name))
 
 
 def save_images(category, comment, user):
@@ -93,8 +95,9 @@ def save_images(category, comment, user):
         result.append('[[/{}]]'.format(name))
         return '\n'.join(result)
 
+    images = [i for i in IMAGES if i.category == category]
     rows = []
-    for image in sorted(IMAGES[category], key=lambda x: x.page):
+    for image in sorted(images, key=lambda x: x.page):
 
         img = '[[image {0.url} width="100px"]]'.format(image)
         img = wtag('cell', img, rowspan=2)
@@ -119,22 +122,21 @@ def save_images(category, comment, user):
         comment='{} [{}]'.format(comment, user))
 
 
-def targeted(maxres):
+def targeted(maxres=None):
 
     def deco(fn):
 
         @functools.wraps(fn)
         def inner(inp, *args, target, index, **kwargs):
-            images = [i for cat in IMAGES for i in IMAGES[cat]]
             matches = []
-            for img in images:
+            for img in IMAGES:
                 if target in [img.page, img.page_t]:
                     matches.append(img)
                 if img.url == target:
                     return fn(inp, *args, images=[img], **kwargs)
             if not matches:
                 return lexicon.images.not_found
-            if not index and maxres != 'all' and maxres < len(matches):
+            if not index and maxres and maxres < len(matches):
                 return lexicon.images.too_many.format(count=len(matches))
             if index:
                 if index < 1 or index > len(matches):
@@ -178,8 +180,8 @@ def get_page_category(page):
 @core.command
 @parser.images
 def images(inp, mode):
-    funcs = [images_scan, images_update, images_list, images_notes]
-    funcs = {f.__name__.split('_')[-1]: f for f in funcs}
+    funcs = ['scan', 'update', 'list', 'notes', 'purge', 'search', 'stats']
+    funcs = {f: eval('images_' + f) for f in funcs}
     return funcs[mode](inp)
 
 
@@ -195,9 +197,9 @@ def images_scan(inp, *, page):
         if any(i.url == img['src'] for i in IMAGES[cat]):
             continue
         img = Image(img['src'], page.url, '', '', [], cat)
-        IMAGES[cat].append(img)
+        IMAGES.append(img)
         counter += 1
-    save_images(cat, 'add images via page scan', inp.user)
+    save_images(cat, 'new page indexed', inp.user)
 
     if counter == 1:
         return lexicon.images.scan.added_one
@@ -222,7 +224,7 @@ def images_update(inp, *, images, url, page, source, status):
             return lexicon.images.update.bad_status
         image.status = status
 
-    save_images(image.category, 'update image', inp.user)
+    save_images(image.category, 'image updated', inp.user)
     return lexicon.images.update.done
 
 
@@ -241,12 +243,12 @@ def images_notes(inp, *, images, append, purge, list):
 
     if append:
         image.notes.append(append)
-        save_images(image.category, 'append image notes', inp.user)
+        save_images(image.category, 'image notes appended', inp.user)
         return lexicon.images.notes.append
 
     if purge:
         image.notes = []
-        save_images(image.category, 'purge image notes', inp.user)
+        save_images(image.category, 'image notes purged', inp.user)
         return lexicon.images.notes.purge
 
     if list:
@@ -254,6 +256,39 @@ def images_notes(inp, *, images, append, purge, list):
             return lexicon.images.notes.empty
         inp.multiline = True
         return image.notes
+
+
+@parser.images_purge
+@targeted()
+def images_purge(inp, *, images):
+    global IMAGES
+    IMAGES = [i for i in IMAGES if i not in images]
+    save_images(images[0].category, 'records purged', inp.user)
+    return lexicon.images.purge.format(count=len(images))
+
+
+@core.multiline
+@parser.images_search
+@targeted(1)
+def images_search(inp, *, images):
+    image = images[0]
+    yield 'http://tineye.com/search?url=' + image.url
+    yield 'http://www.google.com/searchbyimage?image_url=' + image.url
+
+
+@parser.images_stats
+def images_stats(inp, *, category):
+    images = [i for i in IMAGES if i.category == category]
+    per_status = []
+    for s in STATUS:
+        img = [i for i in images if i.status == s]
+        if not img:
+            continue
+        per_status.append('{} - {}'.format(img[0].status_col, len(img)))
+    per_status = ', '.join(per_status)
+    not_reviewed = len([i for i in images if not i.status])
+    return lexicon.images.stats.format(
+        count=len(images), per_status=per_status, not_reviewed=not_reviewed)
 
 
 ###############################################################################
