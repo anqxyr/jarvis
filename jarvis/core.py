@@ -48,12 +48,13 @@ refresh()
 class Inp:
     """Wrap input data."""
 
-    def __init__(self, text, user, channel, send):
+    def __init__(self, text, user, channel, send, privileges):
         """Clean input values."""
         self.text = text.strip() if text else ''
         self.user = str(user).strip()
         self.channel = str(channel).strip()
         self._send = send
+        self._priv = privileges
 
         self.private = False
         self.notice = False
@@ -66,6 +67,10 @@ class Inp:
             if self.user != self.channel and not (self.notice or self.private):
                 line = '{}: {}'.format(self.user, line)
             self._send(line, private=self.private, notice=self.notice)
+
+    @property
+    def privileges(self):
+        return self._priv()
 
 
 def command(func):

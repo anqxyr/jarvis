@@ -60,11 +60,20 @@ def send(bot, text, private=False, notice=False):
         bot.sending.release()
 
 
+def privileges(bot, nick):
+    channels = bot.privileges.items()
+    return {str(k): v[nick] for k, v in channels}
+
+
 def wrapper(fn, group, *args, **kwargs):
 
     def inner(bot, tr):
         inp = core.Inp(
-            tr.group(group), tr.nick, tr.sender, functools.partial(send, bot))
+            tr.group(group),
+            tr.nick,
+            tr.sender,
+            functools.partial(send, bot),
+            functools.partial(privileges, bot, tr.nick))
         return fn(inp, *args, **kwargs)
     return inner
 

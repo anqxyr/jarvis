@@ -119,7 +119,7 @@ def save_images(category, comment, user):
 
     wiki('images:' + category).create(
         wtag('table', *rows), category,
-        comment='{} [{}]'.format(comment, user))
+        comment='{}. -{}'.format(comment, user))
 
 
 def targeted(maxres=None):
@@ -180,6 +180,11 @@ def get_page_category(page):
 @core.command
 @parser.images
 def images(inp, mode):
+    print(inp.privileges)
+    if (
+            mode not in ['list', 'search', 'stats'] and
+            inp.privileges.get('#site77', 0) < 4):
+        return lexicon.denied
     funcs = ['scan', 'update', 'list', 'notes', 'purge', 'search', 'stats']
     funcs = {f: eval('images_' + f) for f in funcs}
     return funcs[mode](inp)
@@ -194,7 +199,7 @@ def images_scan(inp, *, page):
 
     counter = 0
     for img in page._soup.find(id='page-content')('img'):
-        if any(i.url == img['src'] for i in IMAGES[cat]):
+        if any(i.url == img['src'] for i in IMAGES):
             continue
         img = Image(img['src'], page.url, '', '', [], cat)
         IMAGES.append(img)
