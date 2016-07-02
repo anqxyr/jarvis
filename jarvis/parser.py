@@ -246,17 +246,20 @@ def seen(pr):
     pr.add_argument('--first', '-f')
     pr.add_argument('--total', '-t')
     pr.exclusive('first', 'total')
+    pr.add_argument('channel', re='#', nargs='?')
     pr.add_argument('user', type=str.lower)
 
 
 @parser
 def quote(pr):
+    pr.add_argument('channel', re='#', nargs='?')
     pr.add_argument('mode', nargs='?', choices=['add', 'del'])
     pr.add_argument('_', nargs='*', ignore=True)
 
 
 @parser
 def quote_add(pr):
+    pr.add_argument('channel', re='#', nargs='?', ignore=True)
     pr.add_argument('mode', choices=['add'], ignore=True)
     pr.add_argument('date', nargs='?', type=arrow.get)
     pr.add_argument('user', type=str.lower)
@@ -265,6 +268,7 @@ def quote_add(pr):
 
 @parser
 def quote_del(pr):
+    pr.add_argument('channel', re='#', nargs='?', ignore=True)
     pr.add_argument('mode', choices=['del'], ignore=True)
     pr.add_argument('user', type=str.lower)
     pr.add_argument('message', nargs='+', action='join')
@@ -272,6 +276,7 @@ def quote_del(pr):
 
 @parser
 def quote_get(pr):
+    pr.add_argument('channel', re='#', nargs='?', ignore=True)
     pr.add_argument('user', re='[^\d-].*', type=str.lower, nargs='?')
     pr.add_argument('index', type=int, nargs='?')
 

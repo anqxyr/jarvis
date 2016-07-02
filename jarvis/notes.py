@@ -224,10 +224,16 @@ def outbound(inp, *, action):
 
 @core.command
 @parser.seen
-def seen(inp, *, user, first, total):
+def seen(inp, *, channel, user, first, total):
     """Retrieve the first or the last message said by the user."""
     if user == core.config['irc']['nick']:
         return lexicon.seen.self
+
+    if channel:
+        if channel not in inp.privileges:
+            return lexicon.denied
+        inp.channel = channel
+        inp.notice = True
 
     query = Message.select().where(
         Message.user == user, Message.channel == inp.channel)
@@ -254,9 +260,15 @@ def seen(inp, *, user, first, total):
 
 @core.command
 @parser.quote
-def quote(inp, *, mode):
+def quote(inp, *, channel, mode):
     if inp.channel in core.config['irc']['quotes_disabled']:
         return
+
+    if channel:
+        if channel not in inp.privileges:
+            return lexicon.denied
+        inp.channel = channel
+        inp.notice = True
 
     if mode == 'add':
         return quote_add(inp)
