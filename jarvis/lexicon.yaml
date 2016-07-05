@@ -2,7 +2,7 @@
 # Global
 ###############################################################################
 input:
-    incorrect: |
+    incorrect: |-
         Repeat that again. Carefully this time.
         You're talking nonsense.
         I'm sorry Dave, I'm afraid I can't do that.
@@ -17,14 +17,14 @@ input:
         A more reasonable index value would be nice.
         This index is no good. Try another one.
         I think maybe this index is not within the range of my abilities.
-    options: |
+    options: |-
         Did you mean {head} or {tail}?
         {head} or {tail}. Pick one.
         Ambiguous input. Possible variants: {head}, {tail}.
         I'm not sure whether you meant {head} or {tail}.
         Not quite sure what you wanted here. Was it {head} or {tail}?
         Let me guess. Did you want {head}? Or perhaps {tail}?
-    cropped_options: |
+    cropped_options: |-
         I have so many choices for you: {head} and another {tail}! Isn't it wonderful?
         Unclear. Clarify. Options: {head}. Number of additional options: {tail}
         Did you mean {head}? You can use !showmore to check another {tail} matches.
@@ -52,7 +52,7 @@ not_found:
     unused:
         I couldn't find any open slots matching your criteria.
         Everything like that has already been taken.
-    staff: |
+    staff: |-
         There aren't any staff by that name. Here are the staff: http://www.scp-wiki.net/meet-the-staff
         I don't know them. The only staff I know are listed here: http://www.scp-wiki.net/meet-the-staff
         You may want to read this: http://www.scp-wiki.net/meet-the-staff
@@ -93,7 +93,7 @@ tell:
         Just let me call USPS real quick, and it'll be on its way.
         I have a trained pigeon I've been saving just for such occasion.
         Initiating Comm Array startup sequence in 3, 2, 1...
-    get: |
+    get: |-
         {name} said {time}: {text}
     no_new:
         You have no pending tells.
@@ -109,27 +109,27 @@ tell:
             Everything you've sent, has been delivered
             I've already delivered everything.
             This place is empty.
-        count: |
+        count: |-
             You have {count} outbound tells, including - {users}.
             In the past, you've sent {count} tells that haven't been delivered yet. You sent them to {users}.
             {count} tells - {users}.
             I found some tells to {users}. In total - {count} tells.
-        purged: |
+        purged: |-
             You had {count} outbound tells, and now you have none.
             {count} little tells, lost in the wind.
             Your {count} tells will not be delivered.
             I'm burning them in the fireplace, one by one, all {count} of them.
-        echo: |
+        echo: |-
             {time} to {user}: {message}
 topic:
-    send: |
+    send: |-
         I will pass it on to {count} users who are interested in that kind of stuff.
         Did you know there are {count} meatbags here who are into this? I'll be sending it to all of them.
         Sending to {count} users.
         I will let each of the {count} subscribers know.
         Great, now I'll have to buy {count} envelopes to send your message to everyone.
         {count} whispers, watch as they fly.
-    get: |
+    get: |-
         {name} said {time} via @{topic}: {text}
     no_subscribers:
         No one wants to hear about this, so there's really no point in me doing anything.
@@ -137,7 +137,7 @@ topic:
         The topic you chose has zero subscribers. Such a shame.
         Someone has to subscribe to that topic first.
         Oh sure, I'll just pretend I'm sending this into a void where no one will ever hear it..      
-    subscribed: |
+    subscribed: |-
         You've subscribed to @{topic}. Good for you.
         @{topic} has 1 new subscriber - you!
         Another nerd joining the @{topic} club.
@@ -152,13 +152,13 @@ topic:
         Sorry pal, can't unsubscribe from something you're not subscribed to.
         Can't do that, nope. Try subscribing to it first.
         That would be an interesting trick to pull of. But I'm not doing it.
-    unsubscribed: |
+    unsubscribed: |-
         You're no longer subscribed to @{topic}. Good riddance.
         And so @{topic} loses another brave soldier this day.
         @{topic} just lost another one.
         Fine, I'll stop pestering you about @{topic}.
         Forgetting your subscription to @{topic}.
-    count: |
+    count: |-
         You are subscribed to the following topics: {topics}
         Your subscriptions: {topics}.
     user_has_no_topics:
@@ -174,14 +174,14 @@ topic:
     unrestricted:
         The topic is no longer restricted.
 seen:
-    last: |
+    last: |-
         I last saw {user} {time} saying: {text}
     never: I've never seen anyone by that name here.
-    first: |
+    first: |-
         I first met {user} {time}. I remember them saying: {text}
         {text}. That was how I first met {user}, {time}.
         {time}, I saw {user} for the first time. They said: {text}
-    total: |
+    total: |-
         I've seen {user} a total of {total} times, including {this_month} times this month.
         {user} has been observed in this channel {total} times, {this_month} this month.
         {user} was seen here on {total} ocassions, {this_month} which had happened this month.
@@ -206,7 +206,7 @@ quote:
         Yeah, yeah, okay, I'll do it.
         Hahahahaha yeah alright I'll do it.
         I will remember it untils the stars themselves turn cold and die.
-    get: |
+    get: |-
         [{index}/{total}] {time} {user}: {text}
     already_exists: Thanks, but I already have one of those.
     none_saved: It looks like they haven't said anything worth remembering yet.
@@ -219,20 +219,23 @@ alert:
 # SCP
 ###############################################################################
 summary:
-    author: |
+    author: |-
         *{name}*{url} has *{pages.count}* pages ({rels}) ({tags}). They have *{primary.rating}* net upvotes with an average of *{primary.average}*. Their latest page is *{last.title}* at *{last.rating:+d}*.
-    page: |
+    page: |-
         *{page.title}* ({attribution}; rating: {page.rating:+d}) - {page.url}
     search: I've found *{count}* pages by *{authors}* authors. They have a total rating of *{rating}*, with an average of *{average}*. The pages were created between {first} and {last}. The highest rated page is *{top_title}* at *{top_rating:+d}*.
 unused:
-    count: |
+    count: |-
         There are {count} empty slots matching your criteria.
         I know of {count} unused slots.
         {count} slots remain unclaimed.
 errors:
-    no_tags: No tags - {pages}
-    no_tags_many: No tags - {pages} and another {tail}.
+    tags: No tags - {pages}
+    title: No titles - {pages}
+    deleted: Improperly deleted - {pages}
+    zombie: Meet requirements for deletion - {pages}
     none: I was unable to find any errors. I am so sorry.
+    done: These are all the errors I could find.
 ###############################################################################
 # Tools
 ###############################################################################
@@ -273,35 +276,35 @@ bans:
         Banlist updated, boss.
     failed:
         Your banlist is broken, mate. You should into fixing it.
-    profanity: |
+    profanity: |-
         OP Alert: Kicking {user}: they have a filty mouth that could use some soap.
         OP Alert: {user} is just untasteful, and I don't want their ilk here.
         OP Alert: Was {user} a troll? It was probably a troll.
-    evasion: |
+    evasion: |-
         OP Alert: {user} was kicked - they're {name}. See, I can kick ass too!
         OP Alert: {user} (better known as {name}) was exiled from this fine and pure kingdom.
         Hey OPs: {user} was kicked and banned because they look like {name} and their face smells.
     kick:
         profanity:
             Your username is inappropriate. Please use \/nick newnick\ to change it. You may rejoin with a different username in 10 seconds.
-        evasion: |
+        evasion: |-
             Your nick/ip was found in the bot's banlist. Reason for ban: {}. If you wish to appeal please join #site17.
 images:
     scan:
         unknown_category: Scan aborted. Could not determine page category.
         added_one: New image have been added to the index.
-        added_several: |
+        added_several: |-
             {count} new images have been added to the index.
         added_none: That page doesn't contain any unknown images.
     update:
         done: Index updated.
         bad_status: Incorrect status. Action aborted.
     list:
-        all: |
+        all: |-
             The list of all currently indexed images is available here: http://scp-stats.wikidot.com/images
-        terse: |
+        terse: |-
             {image.url_t} - {image.source_t} - {image.status_col}
-        verbose: |
+        verbose: |-
             {image.url} - {image.page} - {image.source} - {image.status_col}
     notes:
         append: Note appended.
@@ -310,6 +313,6 @@ images:
     too_many: Specified page includes {count} images. Please specify which image you wish to see.
     not_found: The image is not found in the index.
     purge: Purged {count} record(s).
-    stats: |
+    stats: |-
         {count} indexed images in this category ({per_status}). Not reviewed - {not_reviewed}.
 

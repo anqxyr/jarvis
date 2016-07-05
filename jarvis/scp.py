@@ -8,7 +8,6 @@
 import arrow
 import collections
 import random as rand
-import re
 
 from . import core, ext, parser, lex, stats, tools
 
@@ -205,16 +204,37 @@ def author_summary(name):
 @core.multiline
 @core.command
 def errors(inp):
-    errors = False
+    pages = []
+    lp = lambda **kw: list(core.wiki.list_pages(**kw))
 
-    no_tags = list(core.wiki.list_pages(tags='-'))
-    if no_tags:
-        pages = ', '.join([p.title for p in no_tags])
-        yield lex.errors.no_tags(pages=pages)
-        errors = True
+    def report(errp, msg):
+        if not errp:
+            return
+        pages.extend(errp)
+        errp = [p.url.split('/')[-1] for p in errp]
+        errp = map('\x02{}\x02'.format, errp)
+        yield msg(pages=', '.join(errp))
 
-    if not errors:
+    yield from report(lp(tags='-'), lex.errors.tags)
+
+    title = core.pages.tags('scp').pages
+    title.extend(lp(tags='scp', created_at='last 3 hours'))
+    title = [
+        i for i in title if
+        core.wiki.titles().get(i.url) == '[ACCESS DENIED]']
+    yield from report(title, lex.errors.title)
+
+    yield from report(lp(category='deleted'), lex.errors.deleted)
+
+    yield from report(lp(
+        tags='-in-deletion -archived -author',
+        rating='<-10', created_at='older than 1 day'), lex.errors.zombie)
+
+    if not pages:
         yield lex.errors.none
+    else:
+        tools.save_results(inp, pages, page_summary)
+        yield lex.errors.done
 
 
 @core.command

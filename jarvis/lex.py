@@ -38,8 +38,7 @@ class Lexicon:
             out = out.split('\n')
         except AttributeError:
             pass
-        print(out)
-        return random.choice(out).format(**self.kwargs)
+        return random.choice(out).replace('*', '\x02').format(**self.kwargs)
 
 
 sys.modules[__name__] = Lexicon()
