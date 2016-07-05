@@ -13,7 +13,7 @@ import copy
 import functools
 import re
 
-from . import lexicon
+from . import lex
 
 ###############################################################################
 # Generic Functionality
@@ -32,7 +32,7 @@ def parser(fn):
                 parsed_args = parser.parse_args(inp.text)
             except ArgumentError:
                 inp.multiline = False
-                return lexicon.input.incorrect
+                return lex.input.incorrect
             parsed_args.update(kwargs)
             return command(inp, *args, **parsed_args)
         return wrapped

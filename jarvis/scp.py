@@ -10,7 +10,7 @@ import collections
 import random as rand
 import re
 
-from . import core, ext, parser, lexicon, stats, tools
+from . import core, ext, parser, lex, stats, tools
 
 ###############################################################################
 # Find And Lookup Functions
@@ -20,7 +20,7 @@ from . import core, ext, parser, lexicon, stats, tools
 def show_search_results(inp, results):
     """Process page search results."""
     if not results:
-        return lexicon.not_found.page
+        return lex.not_found.page
     elif len(results) == 1:
         return page_summary(results[0])
     else:
@@ -35,9 +35,9 @@ def show_search_results(inp, results):
 
 def show_search_summary(inp, results):
     if not results:
-        return lexicon.not_found.page
+        return lex.not_found.page
     pages = ext.PageView(results).sorted('created')
-    return lexicon.summary.search.format(
+    return lex.summary.search(
         count=pages.count,
         authors=len(pages.authors),
         rating=pages.rating,
@@ -54,7 +54,7 @@ def author_search(inp, func):
     authors = {i for p in core.pages for i in p.metadata}
     results = sorted(i for i in authors if text in i.lower())
     if not results:
-        return lexicon.not_found.author
+        return lex.not_found.author
     elif len(results) == 1:
         return func(results[0])
     else:
@@ -77,7 +77,7 @@ def find_pages(
             p for p in pages if any(author in a.lower() for a in p.metadata)]
     if fullname:
         pages = [p for p in pages if p.title.lower() == fullname]
-        return page_summary(pages[0])
+        return page_summary(pages[0]) if pages else lex.not_found.page
 
     results = []
     for p in pages:
@@ -101,7 +101,7 @@ def find_pages(
 @parser.search
 def search(inp, **kwargs):
     if not inp.text:
-        return lexicon.input.incorrect
+        return lex.input.incorrect
     return find_pages(inp, core.pages, **kwargs)
 
 
@@ -109,7 +109,7 @@ def search(inp, **kwargs):
 @parser.search
 def tale(inp, **kwargs):
     if not inp.text:
-        return lexicon.input.incorrect
+        return lex.input.incorrect
     return find_pages(inp, core.pages.tags('tale'), **kwargs)
 
 
@@ -117,7 +117,7 @@ def tale(inp, **kwargs):
 @parser.search
 def wanderers_library(inp, **kwargs):
     if not inp.text:
-        return lexicon.input.incorrect
+        return lex.input.incorrect
     return find_pages(inp, core.wlpages, **kwargs)
 
 
@@ -178,7 +178,7 @@ def page_summary(page):
         .split().index(x[0][0]), x[0][1]))
 
     attribution = '; '.join(get_segment(r, d, u) for (r, d), u in items)
-    return lexicon.summary.page.format(page=page, attribution=attribution)
+    return lex.summary.page(page=page, attribution=attribution)
 
 
 def author_summary(name):
@@ -188,12 +188,12 @@ def author_summary(name):
     url = ' ({})'.format(url) if url else ''
     pages = pages.articles
     if not pages:
-        return lexicon.not_found.author
+        return lex.not_found.author
     template = '\x02{1.count}\x02 {0}'.format
     tags = ', '.join(template(*i) for i in pages.split_page_type().items())
     rels = ', '.join(template(*i) for i in pages.split_relation(name).items())
     last = sorted(pages, key=lambda x: x.created, reverse=True)[0]
-    return lexicon.summary.author.format(
+    return lex.summary.author(
         name=name, url=url, pages=pages, rels=rels, tags=tags,
         primary=pages.primary(name), last=last)
 
@@ -202,22 +202,19 @@ def author_summary(name):
 ###############################################################################
 
 
+@core.multiline
 @core.command
 def errors(inp):
-    """!errors -- Get error report."""
-    pages = [p for p in core.pages if ':' not in p.url]
-    output = ''
-    no_tags = ['\x02{}\x02'.format(p.title) for p in pages if not p.tags]
+    errors = False
+
+    no_tags = list(core.wiki.list_pages(tags='-'))
     if no_tags:
-        output += 'Pages without tags: {}. '.format(', '.join(no_tags))
-    no_title = ['\x02{}\x02'.format(p.title) for p in pages
-                if re.search(r'/scp-[0-9]+$', p.url) and
-                p._raw_title == p.title]
-    if no_title:
-        output += 'Pages without titles: {}.'.format(', '.join(no_title))
-    if output:
-        return output
-    return 'I found no errors.'
+        pages = ', '.join([p.title for p in no_tags])
+        yield lex.errors.no_tags(pages=pages)
+        errors = True
+
+    if not errors:
+        yield lex.errors.none
 
 
 @core.command
@@ -227,7 +224,7 @@ def random(inp, **kwargs):
     if pages:
         return page_summary(rand.choice(pages))
     else:
-        return lexicon.not_found.page
+        return lex.not_found.page
 
 
 @core.command
@@ -242,7 +239,7 @@ def last_created(inp, cooldown={}, **kwargs):
     if inp.channel not in cooldown:
         pass
     elif (now - cooldown[inp.channel]).seconds < 120:
-        yield lexicon.spam
+        yield lex.spam
         return
 
     cooldown[inp.channel] = now
@@ -268,10 +265,10 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible):
     unused_slots = [i for i in slots if i not in used_slots]
 
     if not unused_slots:
-        return lexicon.not_found.unused
+        return lex.not_found.unused
 
     if count:
-        return lexicon.unused.count.format(count=len(unused_slots))
+        return lex.unused.count(count=len(unused_slots))
 
     if random:
         result = rand.choice(unused_slots)
@@ -304,4 +301,4 @@ def staff(inp, staff={}):
             if inp.text.lower() in k:
                 return '[{}] {}'.format(cat, v)
 
-    return lexicon.not_found.staff
+    return lex.not_found.staff

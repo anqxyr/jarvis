@@ -10,7 +10,7 @@ import requests
 import warnings
 import wikipedia as wiki
 
-from . import core, parser, lexicon, tools
+from . import core, parser, lex, tools
 
 ###############################################################################
 
@@ -27,7 +27,7 @@ def google_search(inp, *, query):
         cx=core.config['google']['cseid'],
         num=1).execute()
     if not results.get('items'):
-        return lexicon.not_found.generic
+        return lex.not_found.generic
     return '\x02{title}\x02 ({link}) - {snippet}'.format(
         **results['items'][0])
 
@@ -46,7 +46,7 @@ def google_image_search(inp, *, query):
         num=1,
         safe='high').execute()
     if not results.get('items'):
-        return lexicon.not_found.generic
+        return lex.not_found.generic
     return results['items'][0]['link']
 
 
@@ -63,7 +63,7 @@ def youtube(inp, *, query):
         part='id',
         type='video').execute()
     if not results.get('items'):
-        return lexicon.not_found.generic
+        return lex.not_found.generic
     vid = results['items'][0]['id']['videoId']
     info = get_youtube_video_info(vid)
     return '{} - http://youtube.com/watch?v={}'.format(info, vid)
@@ -84,7 +84,7 @@ def get_youtube_video_info(video_id=None):
         id=video_id,
         maxResults=1).execute()
     if not vdata.get('items'):
-        return lexicon.not_found.generic
+        return lex.not_found.generic
     vdata = vdata['items'][0]
 
     template = ' '.join("""
@@ -119,7 +119,7 @@ def wikipedia(inp, *, query):
             summary = summary[:360]
             return '{} - {}'.format(summary, url)
     except wiki.exceptions.PageError:
-        return lexicon.not_found.generic
+        return lex.not_found.generic
     except wiki.exceptions.DisambiguationError as e:
         print(e.options)
         tools.save_results(
@@ -134,7 +134,7 @@ def dictionary(inp, *, query):
     soup = bs4.BeautifulSoup(requests.get(url).text, 'lxml')
     word = soup.find(class_='word')
     if not word or not word.dl:
-        return lexicon.not_found.generic
+        return lex.not_found.generic
     output = ['\x02{}\x02 - '.format(word.dt.text)]
     for line in word.dl('dd'):
         if 'article' in line['class']:
@@ -156,6 +156,6 @@ def urbandictionary(inp, *, query):
     url = 'http://api.urbandictionary.com/v0/define?term=' + query
     data = requests.get(url).json()
     if not data['list']:
-        return lexicon.not_found.generic
+        return lex.not_found.generic
     result = data['list'][0]
     return '{word}: {definition}'.format(**result)

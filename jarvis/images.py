@@ -9,7 +9,7 @@ import functools
 import pyscp
 import re
 
-from . import core, parser, lexicon
+from . import core, parser, lex
 
 ###############################################################################
 # Global Variables
@@ -135,12 +135,12 @@ def targeted(maxres=None):
                 if img.url == target:
                     return fn(inp, *args, images=[img], **kwargs)
             if not matches:
-                return lexicon.images.not_found
+                return lex.images.not_found
             if not index and maxres and maxres < len(matches):
-                return lexicon.images.too_many.format(count=len(matches))
+                return lex.images.too_many(count=len(matches))
             if index:
                 if index < 1 or index > len(matches):
-                    return lexicon.input.bad_index
+                    return lex.input.bad_index
                 matches = [matches[index - 1]]
             return fn(inp, *args, images=matches, **kwargs)
 
@@ -184,7 +184,7 @@ def images(inp, mode):
     if (
             mode not in ['list', 'search', 'stats'] and
             inp.privileges.get('#site77', 0) < 4):
-        return lexicon.denied
+        return lex.denied
     funcs = ['scan', 'update', 'list', 'notes', 'purge', 'search', 'stats']
     funcs = {f: eval('images_' + f) for f in funcs}
     return funcs[mode](inp)
@@ -195,7 +195,7 @@ def images_scan(inp, *, page):
     page = core.wiki(page)
     cat = get_page_category(page)
     if not cat:
-        return lexicon.images.scan.unknown_category
+        return lex.images.scan.unknown_category
 
     counter = 0
     for img in page._soup.find(id='page-content')('img'):
@@ -207,11 +207,11 @@ def images_scan(inp, *, page):
     save_images(cat, 'new page indexed', inp.user)
 
     if counter == 1:
-        return lexicon.images.scan.added_one
+        return lex.images.scan.added_one
     elif counter > 1:
-        return lexicon.images.scan.added_several.format(count=counter)
+        return lex.images.scan.added_several(count=counter)
     else:
-        return lexicon.images.scan.added_none
+        return lex.images.scan.added_none
 
 
 @parser.images_update
@@ -226,19 +226,19 @@ def images_update(inp, *, images, url, page, source, status):
         image.source = source
     if status:
         if status not in STATUS and status != '-':
-            return lexicon.images.update.bad_status
+            return lex.images.update.bad_status
         image.status = status
 
     save_images(image.category, 'image updated', inp.user)
-    return lexicon.images.update.done
+    return lex.images.update.done
 
 
 @core.multiline
 @parser.images_list
 @targeted(5)
 def images_list(inp, *, images, terse):
-    out = lexicon.images.list.terse if terse else lexicon.images.list.verbose
-    return [out.format(image=i) for i in images]
+    out = lex.images.list.terse if terse else lex.images.list.verbose
+    return [out(image=i) for i in images]
 
 
 @parser.images_notes
@@ -249,16 +249,16 @@ def images_notes(inp, *, images, append, purge, list):
     if append:
         image.notes.append(append)
         save_images(image.category, 'image notes appended', inp.user)
-        return lexicon.images.notes.append
+        return lex.images.notes.append
 
     if purge:
         image.notes = []
         save_images(image.category, 'image notes purged', inp.user)
-        return lexicon.images.notes.purge
+        return lex.images.notes.purge
 
     if list:
         if not image.notes:
-            return lexicon.images.notes.empty
+            return lex.images.notes.empty
         inp.multiline = True
         return image.notes
 
@@ -269,7 +269,7 @@ def images_purge(inp, *, images):
     global IMAGES
     IMAGES = [i for i in IMAGES if i not in images]
     save_images(images[0].category, 'records purged', inp.user)
-    return lexicon.images.purge.format(count=len(images))
+    return lex.images.purge(count=len(images))
 
 
 @core.multiline
@@ -292,7 +292,7 @@ def images_stats(inp, *, category):
         per_status.append('{} - {}'.format(img[0].status_col, len(img)))
     per_status = ', '.join(per_status)
     not_reviewed = len([i for i in images if not i.status])
-    return lexicon.images.stats.format(
+    return lex.images.stats(
         count=len(images), per_status=per_status, not_reviewed=not_reviewed)
 
 

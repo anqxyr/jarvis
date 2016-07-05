@@ -9,7 +9,7 @@ import collections
 import pyscp
 import time
 
-from . import core, lexicon
+from . import core, lex
 
 ###############################################################################
 
@@ -46,9 +46,9 @@ def update_bans(inp):
         return
     try:
         BANS = get_ban_list()
-        return lexicon.bans.updated
+        return lex.bans.updated
     except:
-        return lexicon.bans.failed
+        return lex.bans.failed
 
 
 def offensive_username(name, host, kick, ban, send):
@@ -56,10 +56,10 @@ def offensive_username(name, host, kick, ban, send):
         'bitch', 'fuck', 'asshole', 'penis', 'vagina', 'nigger', 'retard',
         'faggot', 'chink', 'shit', 'hitler', 'douche']
     if any(word in name.lower() for word in banned_words):
-        kick(lexicon.bans.kick.profanity)
+        kick(lex.bans.kick.profanity)
         ban(host, True)
         ban(name, True)
-        send(lexicon.bans.profanity.format(user=name))
+        send(lex.bans.profanity(user=name))
         time.sleep(10)
         ban(host, False)
         time.sleep(890)
@@ -70,9 +70,9 @@ def offensive_username(name, host, kick, ban, send):
 def ban_evasion(name, host, kick, ban, send):
     for b in BANS:
         if name.lower() in b.names or host in b.hosts:
-            kick(lexicon.bans.kick.evasion.format(b.reason))
+            kick(lex.bans.kick.evasion(b.reason))
             ban(host, True)
-            send(lexicon.bans.evasion.format(user=name, name=b.names[0]))
+            send(lex.bans.evasion(user=name, name=b.names[0]))
             time.sleep(900)
             ban(host, False)
             return True

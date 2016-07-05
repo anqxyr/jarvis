@@ -16,7 +16,7 @@ import peewee
 import playhouse.sqlite_ext
 import itertools
 
-from . import core, lexicon, parser
+from . import core, lex, parser
 
 
 ###############################################################################
@@ -132,7 +132,7 @@ def tell(inp, *, user, topic, message):
         users = Subscriber.select().where(Subscriber.topic == topic)
         users = [i.user for i in users]
         if not users:
-            return lexicon.topic.no_subscribers
+            return lex.topic.no_subscribers
     else:
         users = [user]
 
@@ -143,8 +143,8 @@ def tell(inp, *, user, topic, message):
         topic=topic)
     Tell.insert_many(dict(recipient=i, **data) for i in users).execute()
 
-    msg = lexicon.topic.send if topic else lexicon.tell.send
-    return msg.format(count=len(users))
+    msg = lex.topic.send if topic else lex.tell.send
+    return msg(count=len(users))
 
 
 @core.command
@@ -157,15 +157,15 @@ def get_tells(inp):
 
     if tells:
         inp._send(
-            lexicon.tell.new.format(count=len(tells)),
+            lex.tell.new(count=len(tells)),
             notice=True, private=False)
 
     for tell in tells:
 
         time = arrow.get(tell.time).humanize()
-        msg = lexicon.topic.get if tell.topic else lexicon.tell.get
+        msg = lex.topic.get if tell.topic else lex.tell.get
 
-        yield msg.format(
+        yield msg(
             name=tell.sender,
             time=time,
             topic=tell.topic,
@@ -177,7 +177,7 @@ def get_tells(inp):
 def show_tells(inp):
     query = Tell.select().where(Tell.recipient == inp.user.lower())
     if not query.exists():
-        return lexicon.tell.no_new
+        return lex.tell.no_new
 
 
 @core.command
@@ -197,19 +197,19 @@ def outbound(inp, *, action):
         Tell.topic.is_null())
 
     if not query.exists():
-        return lexicon.tell.outbound.empty
+        return lex.tell.outbound.empty
 
     if action == 'count':
-        msg = lexicon.tell.outbound.count
+        msg = lex.tell.outbound.count
     elif action == 'purge':
         Tell.delete().where(
             peewee.fn.Lower(Tell.sender) == inp.user.lower(),
             Tell.topic.is_null()).execute()
-        msg = lexicon.tell.outbound.purged
+        msg = lex.tell.outbound.purged
     elif action == 'echo':
         inp.multiline = True
-        msg = lexicon.tell.outbound.echo
-        return [msg.format(
+        msg = lex.tell.outbound.echo
+        return [msg(
             time=arrow.get(t.time).humanize(),
             user=t.recipient, message=t.text) for t in query]
 
@@ -227,30 +227,30 @@ def outbound(inp, *, action):
 def seen(inp, *, channel, user, first, total):
     """Retrieve the first or the last message said by the user."""
     if user == core.config['irc']['nick']:
-        return lexicon.seen.self
+        return lex.seen.self
 
     if channel:
         if channel not in inp.privileges:
-            return lexicon.denied
+            return lex.denied
         inp.channel = channel
         inp.notice = True
 
     query = Message.select().where(
         Message.user == user, Message.channel == inp.channel)
     if not query.exists():
-        return lexicon.seen.never
+        return lex.seen.never
 
     if total:
         total = query.count()
         time = arrow.get(arrow.now().format('YYYY-MM'), 'YYYY-MM')
         this_month = query.where(Message.time > time.timestamp).count()
-        return lexicon.seen.total.format(
+        return lex.seen.total(
             user=user, total=total, this_month=this_month)
 
     seen = query.order_by(Message.time if first else Message.time.desc()).get()
     time = arrow.get(seen.time).humanize()
-    msg = lexicon.seen.first if first else lexicon.seen.last
-    return msg.format(user=user, time=time, text=seen.text)
+    msg = lex.seen.first if first else lex.seen.last
+    return msg(user=user, time=time, text=seen.text)
 
 
 ###############################################################################
@@ -266,7 +266,7 @@ def quote(inp, *, channel, mode):
 
     if channel:
         if channel not in inp.privileges:
-            return lexicon.denied
+            return lex.denied
         inp.channel = channel
         inp.notice = True
 
@@ -284,7 +284,7 @@ def quote_add(inp, *, date, user, message):
             Quote.user == user,
             Quote.channel == inp.channel,
             Quote.text == message).exists():
-        return lexicon.quote.already_exists
+        return lex.quote.already_exists
 
     Quote.create(
         user=user,
@@ -292,7 +292,7 @@ def quote_add(inp, *, date, user, message):
         time=(date or arrow.utcnow()).format('YYYY-MM-DD'),
         text=message)
 
-    return lexicon.quote.saved
+    return lex.quote.saved
 
 
 @parser.quote_del
@@ -304,31 +304,31 @@ def quote_del(inp, *, user, message):
         Quote.text == message)
 
     if not query.exists():
-        return lexicon.quote.not_found
+        return lex.quote.not_found
 
     query.get().delete_instance()
-    return lexicon.quote.deleted
+    return lex.quote.deleted
 
 
 @parser.quote_get
 def quote_get(inp, *, user, index):
     """Retrieve a quote."""
     if index is not None and index <= 0:
-        return lexicon.input.bad_index
+        return lex.input.bad_index
 
     query = Quote.select().where(Quote.channel == inp.channel)
     if user:
         query = query.where(Quote.user == user)
 
     if not query.exists():
-        return lexicon.quote.none_saved
+        return lex.quote.none_saved
 
     index = index or random.randint(1, query.count())
     if index > query.count():
-        return lexicon.input.bad_index
+        return lex.input.bad_index
     quote = query.order_by(Quote.time).limit(1).offset(index - 1)[0]
 
-    return lexicon.quote.get.format(
+    return lex.quote.get(
         index=index,
         total=query.count(),
         time=str(quote.time)[:10],
@@ -353,11 +353,11 @@ def save_memo(inp, *, user, message, purge):
         Rem.channel == inp.channel).execute()
 
     if purge:
-        return lexicon.quote.deleted
+        return lex.quote.deleted
 
     Rem.create(user=user, channel=inp.channel, text=message)
 
-    return lexicon.quote.saved
+    return lex.quote.saved
 
 
 @core.command
@@ -373,7 +373,7 @@ def load_memo(inp):
     if rem.exists():
         return rem.get().text
     else:
-        return lexicon.not_found.generic
+        return lex.not_found.generic
 
 
 ###############################################################################
@@ -407,17 +407,17 @@ def topic_list(inp):
         Subscriber.user == inp.user.lower())
 
     if not query.exists():
-        return lexicon.topic.user_has_no_topics
+        return lex.topic.user_has_no_topics
 
     topics = [i.topic for i in query]
-    return lexicon.topic.count.format(topics=', '.join(topics))
+    return lex.topic.count(topics=', '.join(topics))
 
 
 def topic_sub(inp, topic, remove):
     if (inp.channel != core.config['irc']['sssc'] and
         Restricted.select().where(Restricted.topic == topic).exists() and
             not remove):
-        return lexicon.denied
+        return lex.denied
 
     query = Subscriber.select().where(
         Subscriber.user == inp.user.lower(),
@@ -425,32 +425,32 @@ def topic_sub(inp, topic, remove):
 
     if remove:
         if not query.exists():
-            return lexicon.topic.not_subscribed
+            return lex.topic.not_subscribed
         query.get().delete_instance()
-        return lexicon.topic.unsubscribed.format(topic=topic)
+        return lex.topic.unsubscribed(topic=topic)
     else:
         if query.exists():
-            return lexicon.topic.already_subscribed
+            return lex.topic.already_subscribed
         Subscriber.create(user=inp.user.lower(), topic=topic)
-        return lexicon.topic.subscribed.format(topic=topic)
+        return lex.topic.subscribed(topic=topic)
 
 
 def topic_restrict(inp, topic, remove):
     if inp.channel != core.config['irc']['sssc']:
-        return lexicon.denied
+        return lex.denied
 
     query = Restricted.select().where(Restricted.topic == topic)
 
     if remove:
         if not query.exists():
-            return lexicon.topic.not_restricted
+            return lex.topic.not_restricted
         query.get().delete_instance()
-        return lexicon.topic.unrestricted
+        return lex.topic.unrestricted
     else:
         if query.exists():
-            return lexicon.topic.already_restricted
+            return lex.topic.already_restricted
         Restricted.create(topic=topic)
-        return lexicon.topic.restricted
+        return lex.topic.restricted
 
 ###############################################################################
 # Alerts
@@ -462,7 +462,7 @@ def topic_restrict(inp, topic, remove):
 def alert(inp, *, date, span, message):
     """!alert [<date>|<delay>] <message> -- Remind your future self."""
     if date and date < arrow.utcnow():
-        return lexicon.alert.past
+        return lex.alert.past
 
     if span:
         date = arrow.utcnow()
@@ -471,7 +471,7 @@ def alert(inp, *, date, span, message):
             date = date.replace(**{unit: int(length)})
 
     Alert.create(user=inp.user.lower(), time=date.timestamp, text=message)
-    return lexicon.alert.set
+    return lex.alert.set
 
 
 @core.command

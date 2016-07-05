@@ -64,6 +64,7 @@ class Inp:
         """Send output data."""
         text = text if self.multiline else [text]
         for line in text:
+            line = line.format(inp=self)
             if self.user != self.channel and not (self.notice or self.private):
                 line = '{}: {}'.format(self.user, line)
             self._send(line, private=self.private, notice=self.notice)
