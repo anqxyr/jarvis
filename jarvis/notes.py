@@ -14,6 +14,7 @@ import random
 import re
 import peewee
 import playhouse.sqlite_ext
+import playhouse.migrate
 import itertools
 
 from . import core, lex, parser
@@ -97,6 +98,12 @@ class Alert(BaseModel):
 
 def init():
     """Initialize the database, create missing tables."""
+    try:
+        migrator = playhouse.migrate.SqliteMigrator(db)
+        playhouse.migrate.migrate(
+            migrator.add_index('message', ('user', ), False))
+    except:
+        pass
     db.connect()
     db.create_tables(
         [Tell, Message, Quote, Rem, Subscriber, Restricted, Alert], safe=True)
