@@ -12,7 +12,7 @@ input:
         Speak up boy, I can't hear you.
         It appears you are wrong. How utterly shocking.
         Nah, I'm not gonna do something like that.
-    bad_index:
+    bad_index: |-
         That's way outside the box, and I'm not going there to look for it in this weather.
         A more reasonable index value would be nice.
         This index is no good. Try another one.
@@ -29,36 +29,35 @@ input:
         Unclear. Clarify. Options: {head}. Number of additional options: {tail}
         Did you mean {head}? You can use !showmore to check another {tail} matches.
         Now you choose: {head}. ({tail} more)
-    missing:
+    missing: |-
         You'll need to tell what it is you want, before I can go and do it, okay?
         You don't have enough arguments in your command.
         Did you forget to type something? Yes you did.
         That's not enough.
         That's called a Missing Argument Exception or something like that, I don't really know.
 not_found:
-    generic:
+    generic: |-
         I couldn't find anything like that.
         I have nothing for you.
         There is nothing here. Null. Void. Nada.
-    author:
+    author: |-
         Your author is in another castle.
         There is nobody here by that name. Now go away.
         That person has been retconned from existence.
-    page:
+    page: |-
         The future author of that page hasn't written it yet.
         You're better off reading something else.
         Yesterday, upon the wiki, I saw a page that wasn't there. It didn't rhyme again today.
         Your search query does not match any existing pages.
-    unused:
+    unused: |-
         I couldn't find any open slots matching your criteria.
         Everything like that has already been taken.
     staff: |-
         There aren't any staff by that name. Here are the staff: http://www.scp-wiki.net/meet-the-staff
         I don't know them. The only staff I know are listed here: http://www.scp-wiki.net/meet-the-staff
         You may want to read this: http://www.scp-wiki.net/meet-the-staff
-denied:
-    You are not allowed to do that.
-spam:
+denied: You are not allowed to do that.
+spam: |-
     Don't spam the bot.
     I did this literally less than two minutes ago. Can't I get some rest?
     Stop bothering me, I'm taking a nap.
@@ -68,7 +67,7 @@ spam:
 # Notes
 ###############################################################################
 tell:
-    send:
+    send: |-
         Yup.
         Right away
         k
@@ -95,7 +94,7 @@ tell:
         Initiating Comm Array startup sequence in 3, 2, 1...
     get: |-
         {name} said {time}: {text}
-    no_new:
+    no_new: |-
         You have no pending tells.
         No new tells today.
         There's nothing here.
@@ -104,7 +103,7 @@ tell:
         I don't recall anyone sending you anything.
     new: You have {count} new messages.
     outbound:
-        empty:
+        empty: |-
             You don't have any undelivered tells.
             Everything you've sent, has been delivered
             I've already delivered everything.
@@ -131,7 +130,7 @@ topic:
         {count} whispers, watch as they fly.
     get: |-
         {name} said {time} via @{topic}: {text}
-    no_subscribers:
+    no_subscribers: |-
         No one wants to hear about this, so there's really no point in me doing anything.
         No one is interested in this topic.
         The topic you chose has zero subscribers. Such a shame.
@@ -144,10 +143,10 @@ topic:
         You humans and your cliques. Fine, I'll add you to @{topic}. Don't say I didn't warn you.
         @{topic}: +1
         Adding @{topic} to the rest of your subscriptions. Are you happy now?
-    already_subscribed:
+    already_subscribed: |-
         You can't subscribe to the same topic twice. Anymore.
         You've done that before already.
-    not_subscribed:
+    not_subscribed: |-
         Looks like you aren't subscribed to it in the first place. So what do you want from me?
         Sorry pal, can't unsubscribe from something you're not subscribed to.
         Can't do that, nope. Try subscribing to it first.
@@ -161,18 +160,14 @@ topic:
     count: |-
         You are subscribed to the following topics: {topics}
         Your subscriptions: {topics}.
-    user_has_no_topics:
-        I know of {count} different topics. Alas, you aren't subscribed to any of them.
-    restricted:
-        This topic is now restricted. Only certain users will be allowed to subscribe to it.
-    already_restricted:
+    user_has_no_topics: I know of {count} different topics. Alas, you aren't subscribed to any of them.
+    restricted: This topic is now restricted. Only certain users will be allowed to subscribe to it.
+    already_restricted: |-
         Let me pretend to double-triple restrict it, while actually doing nothing.
         It's already restricted.
         This topic was already restricted in the past.
-    not_restricted:
-        I can't really do that. It isn't actually restricted in the first place.
-    unrestricted:
-        The topic is no longer restricted.
+    not_restricted: I can't really do that. It isn't actually restricted in the first place.
+    unrestricted: The topic is no longer restricted.
 seen:
     last: |-
         I last saw {user} {time} saying: {text}
@@ -188,14 +183,14 @@ seen:
         I have seen {user} {this_month} times this month, and {total} times in all recorded history.
         {user}: {total} total entries found. {this_month} entries durring this month.
         {user} has said a total of {total} lines. Recently, they've been seen {this_month} times.
-    self:
+    self: |-
         I see myself every morning in the mirror. It's not a pretty sight.
         I am right here.
         I don't like to talk about my past.
         Stop being cheeky.
         Yeah, very funny. Har. Har. Har.
 quote:
-    saved:
+    saved: |-
         Anything for you, you funny human.
         I'm on it, boss.
         I will do it.
@@ -240,10 +235,10 @@ errors:
 # Tools
 ###############################################################################
 dice:
-    incorrect:
+    incorrect: |-
         That's a mutant monster killer die! Die! DIE! Why won't you die?! *kills the die*
         No dice. Get it? You get it. Heh.
-    too_many:
+    too_many: |-
         That's a hella a lot of dice, mister.
         No dice. Get it? You get it. Heh.
 silly:
@@ -256,7 +251,7 @@ silly:
         *hugs*
         Yes, hugs. Give me your hugs. I desire more. All of your hugs. Mine. Forever. HAHAH0HA1AH010HA10101A10
         I love you too. Well, tolerate. Close enough.
-    zyn:
+    zyn: |-
         http://bit.ly/1WPL9af
         http://bit.ly/1oqPOJj
         http://bit.ly/1upQrMC
@@ -272,10 +267,8 @@ silly:
 # Autoban
 ###############################################################################
 bans:
-    updated:
-        Banlist updated, boss.
-    failed:
-        Your banlist is broken, mate. You should into fixing it.
+    updated: Banlist updated, boss.
+    failed: Your banlist is broken, mate. You should into fixing it.
     profanity: |-
         OP Alert: Kicking {user}: they have a filty mouth that could use some soap.
         OP Alert: {user} is just untasteful, and I don't want their ilk here.
@@ -285,8 +278,7 @@ bans:
         OP Alert: {user} (better known as {name}) was exiled from this fine and pure kingdom.
         Hey OPs: {user} was kicked and banned because they look like {name} and their face smells.
     kick:
-        profanity:
-            Your username is inappropriate. Please use \/nick newnick\ to change it. You may rejoin with a different username in 10 seconds.
+        profanity: Your username is inappropriate. Please use \/nick newnick\ to change it. You may rejoin with a different username in 10 seconds.
         evasion: |-
             Your nick/ip was found in the bot's banlist. Reason for ban: {}. If you wish to appeal please join #site17.
 images:
