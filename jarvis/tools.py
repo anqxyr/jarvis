@@ -37,7 +37,7 @@ def showmore(inp, *, index):
 
 
 def choose_input(options):
-    options = ['\x02{}\x02'.format(i) for i in options]
+    options = list(map('\x02{}\x02'.format, options))
     if len(options) <= 5:
         head, tail = options[:-1], options[-1]
         msg = lex.input.options

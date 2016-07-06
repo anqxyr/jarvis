@@ -205,9 +205,10 @@ def author_summary(name):
 @core.command
 def errors(inp):
     pages = []
-    lp = lambda **kw: list(core.wiki.list_pages(**kw))
+    lp = core.wiki.list_pages
 
     def report(errp, msg):
+        errp = list(errp)
         if not errp:
             return
         pages.extend(errp)
@@ -218,7 +219,7 @@ def errors(inp):
     yield from report(lp(tags='-'), lex.errors.tags)
 
     title = core.pages.tags('scp').pages
-    title.extend(lp(tags='scp', created_at='last 3 hours'))
+    title.extend(lp(name='scp-*', created_at='last 3 hours'))
     title = [
         i for i in title if
         core.wiki.titles().get(i.url) == '[ACCESS DENIED]']
