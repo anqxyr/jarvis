@@ -16,7 +16,7 @@ setuptools.setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3.4'],
     packages=['jarvis', 'jarvis/modules'],
-    package_data={'jarvis': ['lexicon.json']},
+    package_data={'jarvis': ['lexicon.yaml']},
     install_requires=[
         'sopel',
         'wikipedia',
