@@ -221,7 +221,7 @@ def outbound(inp, *, action):
             user=t.recipient, message=t.text) for t in query]
 
     users = ', '.join(sorted({i.recipient for i in query}))
-    return msg.format(count=query.count(), users=users)
+    return msg(count=query.count(), users=users)
 
 
 ###############################################################################

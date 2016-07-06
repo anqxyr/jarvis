@@ -27,8 +27,9 @@ class Lexicon:
         return self.__class__(self.path + [value])
 
     def __call__(self, **kwargs):
-        self.kwargs = kwargs
-        return self
+        new = self.__class__(self.path)
+        new.kwargs = kwargs
+        return new
 
     def format(self, inp):
         out = DATA
