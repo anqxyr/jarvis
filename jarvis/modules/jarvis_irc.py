@@ -62,7 +62,7 @@ def send(bot, text, private=False, notice=False):
 
 def privileges(bot, nick):
     channels = bot.privileges.items()
-    return {str(k): v[nick] for k, v in channels}
+    return {str(k): v[nick] for k, v in channels if nick in v}
 
 
 def wrapper(fn, group, *args, **kwargs):
