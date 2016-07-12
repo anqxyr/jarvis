@@ -164,7 +164,7 @@ def get_tells(inp):
 
     if tells:
         inp._send(
-            lex.tell.new(count=len(tells)).format(inp),
+            lex.tell.new(count=len(tells)).compose(inp),
             notice=True, private=False)
 
     for tell in tells:
