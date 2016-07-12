@@ -21,5 +21,7 @@ setuptools.setup(
         'sopel',
         'wikipedia',
         'dominate',
+        'pyaml',
+        'logbook',
         'google-api-python-client'],
 )

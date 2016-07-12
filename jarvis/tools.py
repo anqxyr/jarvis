@@ -68,7 +68,7 @@ def choose(inp):
 
 
 @core.command
-def roll_dice(inp):
+def roll(inp):
     """Return the result of rolling multiple dice."""
     if not inp.text:
         return lex.input.missing
@@ -100,7 +100,7 @@ def roll_dice(inp):
             return lex.dice.incorrect
         else:
             results.extend(roll_die(sign, count, sides))
-    results = ', '.join(map(str, results))
+    results = ', '.join(map(str, results[:20]))
     results = results.replace('+', '\x033+\x0F').replace('-', '\x034-\x0F')
 
     bonus = re.search(r'[+-][0-9]+$', inp.text)

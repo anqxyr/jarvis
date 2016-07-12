@@ -7,8 +7,16 @@
 import configparser
 import functools
 import pyscp
+import logbook
 
-from . import ext
+from . import ext, lex
+
+###############################################################################
+# Logging
+###############################################################################
+
+logbook.FileHandler('jarvis.log').push_application()
+log = logbook.Logger(__name__)
 
 ###############################################################################
 # Config and Cache
@@ -64,7 +72,8 @@ class Inp:
         """Send output data."""
         text = text if self.multiline else [text]
         for line in text:
-            line = line.format(inp=self)
+            if hasattr(line, 'compose'):
+                line = line.compose(self)
             if self.user != self.channel and not (self.notice or self.private):
                 line = '{}: {}'.format(self.user, line)
             self._send(line, private=self.private, notice=self.notice)
@@ -78,9 +87,14 @@ def command(func):
     """Enable generic command functionality."""
     @functools.wraps(func)
     def inner(inp, *args, **kwargs):
-        result = func(inp, *args, **kwargs)
-        if result:
-            inp.send(result)
+        log.info('{}: {}'.format(inp.user, inp.text))
+        try:
+            result = func(inp, *args, **kwargs)
+            if result:
+                inp.send(result)
+        except Exception as e:
+            log.exception(e)
+            inp.send(lex.error)
     return inner
 
 

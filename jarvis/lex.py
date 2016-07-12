@@ -31,7 +31,7 @@ class Lexicon:
         new.kwargs = kwargs
         return new
 
-    def format(self, inp):
+    def compose(self, inp):
         out = DATA
         for i in self.path:
             out = out[i]

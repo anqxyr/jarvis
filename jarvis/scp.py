@@ -223,13 +223,14 @@ def errors(inp):
     title = [
         i for i in title if
         core.wiki.titles().get(i.url) == '[ACCESS DENIED]']
+    title = [i for i in title if 'scp-1848' not in i.url]
     yield from report(title, lex.errors.title)
 
     yield from report(lp(category='deleted'), lex.errors.deleted)
 
     yield from report(lp(
         tags='-in-deletion -archived -author',
-        rating='<-10', created_at='older than 1 day'), lex.errors.zombie)
+        rating='<-10', created_at='older than 24 hours'), lex.errors.zombie)
 
     if not pages:
         yield lex.errors.none

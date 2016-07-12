@@ -150,7 +150,7 @@ rule(r'(?i).*!(scp-\d+(?:-[\w]+)?)', scp.name_lookup)
 
 command('showmore sm', tools.showmore)
 command('choose', tools.choose)
-command('roll dice', tools.roll_dice)
+command('roll dice', tools.roll)
 command('user', tools.user)
 command('zyn', tools.zyn)
 command('help', tools.help)
@@ -164,7 +164,7 @@ command('unsubscribe', tools.deprecate, '!topic unsub <topic>')
 command('firstseen', tools.deprecate, '!seen -f <name>')
 
 
-rule(r'(?i)(^(?:[+-]?[0-9]*d(?:[0-9]+|f))+(?:[+-][0-9]+)?$)', tools.roll_dice)
+rule(r'(?i)(^(?:[+-]?[0-9]*d(?:[0-9]+|f))+(?:[+-][0-9]+)?$)', tools.roll)
 rule(r'(?i)(^(?=.*\b$nickname)(?=.*\bhugs?\b).*)', tools.get_hugs)
 
 ###############################################################################
