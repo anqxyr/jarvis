@@ -38,7 +38,7 @@ def autocomplete(bot, tr):
     if len(funcs) > 1:
         send(
             bot,
-            tools.choose_input([f.commands[0] for f in funcs]).format(None))
+            tools.choose_input([f.commands[0] for f in funcs]).compose(None))
     else:
         wrapper = bot.SopelWrapper(bot, tr)
         bot.call(funcs[0], wrapper, tr)

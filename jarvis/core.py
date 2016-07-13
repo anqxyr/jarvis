@@ -87,14 +87,13 @@ def command(func):
     """Enable generic command functionality."""
     @functools.wraps(func)
     def inner(inp, *args, **kwargs):
-        log.info('{}: {}'.format(inp.user, inp.text))
         try:
             result = func(inp, *args, **kwargs)
             if result:
                 inp.send(result)
         except Exception as e:
             log.exception(e)
-            inp.send(lex.error)
+            inp._send(lex.error.compose(inp), private=False, notice=False)
     return inner
 
 
