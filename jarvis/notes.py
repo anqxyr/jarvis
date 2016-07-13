@@ -483,7 +483,7 @@ def get_alerts(inp):
     now = arrow.utcnow().timestamp
     where = ((Alert.user == inp.user.lower()) & (Alert.time < now))
     alerts = [i.text for i in Alert.select().where(where)]
-    Alert.delete().where(where)
+    Alert.delete().where(where).execute()
     return alerts
 
 
