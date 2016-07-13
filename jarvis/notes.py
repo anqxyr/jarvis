@@ -480,12 +480,11 @@ def alert(inp, *, date, span, message):
 @core.multiline
 def get_alerts(inp):
     """Retrieve stored alerts."""
-    now = arrow.utcnow()
-    for alert in Alert.select().where(
-            Alert.user == inp.user.lower()):
-        if arrow.get(alert.time) < now:
-            yield alert.text
-            alert.delete_instance()
+    now = arrow.utcnow().timestamp
+    where = ((Alert.user == inp.user.lower()) & (Alert.time < now))
+    alerts = [i.text for i in Alert.select().where(where)]
+    Alert.delete().where(where)
+    return alerts
 
 
 def backport(name):
