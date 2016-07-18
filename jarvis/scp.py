@@ -217,9 +217,9 @@ def errors(inp):
         pages.extend(errp)
         errp = [p.url.split('/')[-1] for p in errp]
         errp = map('\x02{}\x02'.format, errp)
-        return msg(pages=', '.join(errp))
+        yield msg(pages=', '.join(errp))
 
-    yield report(lp(tags='-'), lex.errors.no_tags)
+    yield from report(lp(tags='-'), lex.errors.no_tags)
 
     title = core.pages.tags('scp').pages
     title.extend(lp(name='scp-*', created_at='last 3 hours'))
@@ -227,19 +227,20 @@ def errors(inp):
         i for i in title if
         core.wiki.titles().get(i.url) == '[ACCESS DENIED]']
     title = [i for i in title if 'scp-1848' not in i.url]
-    yield report(title, lex.errors.no_title)
+    yield from report(title, lex.errors.no_title)
 
-    yield report(lp(category='deleted'), lex.errors.improperly_deleted)
+    yield from report(lp(category='deleted'), lex.errors.improperly_deleted)
 
-    yield report(lp(
+    yield from report(lp(
         tags='-in-deletion -archived -author',
         rating='<-10', created_at='older than 24 hours'),
         lex.errors.need_deletion_vote)
 
     urls = [p.url for p in core.pages]
-    ztitles = core.wiki.titles()
-    ztitles = [k for k in ztitles if k not in urls]
-    yield report(map(core.wiki, ztitles), lex.errors.orphaned_title)
+    titles = [
+        k for k, v in core.wiki.titles().items()
+        if k not in urls and v != '[ACCESS DENIED]']
+    yield from report(map(core.wiki, titles), lex.errors.orphaned_title)
 
     if not pages:
         yield lex.errors.none
