@@ -261,7 +261,7 @@ def quote(pr):
 def quote_add(pr):
     pr.add_argument('channel', re='#', nargs='?', ignore=True)
     pr.add_argument('mode', choices=['add'], ignore=True)
-    pr.add_argument('date', nargs='?', type=arrow.get)
+    pr.add_argument('date', nargs='?', type=arrow.get, re=r'\d{4}-\d{2}-\d{2}')
     pr.add_argument('user', type=str.lower)
     pr.add_argument('message', nargs='+', action='join')
 
@@ -277,7 +277,7 @@ def quote_del(pr):
 @parser
 def quote_get(pr):
     pr.add_argument('channel', re='#', nargs='?', ignore=True)
-    pr.add_argument('user', re='[^\d-].*', type=str.lower, nargs='?')
+    pr.add_argument('user', re=r'.*[^\d].*', type=str.lower, nargs='?')
     pr.add_argument('index', type=int, nargs='?')
 
 

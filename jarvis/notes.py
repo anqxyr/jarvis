@@ -109,7 +109,7 @@ init()
 def logevent(inp):
     """Log input into the database."""
     Message.create(
-        user=inp.user.lower(), channel=inp.channel,
+        user=inp.user, channel=inp.channel,
         time=arrow.utcnow().timestamp, text=inp.text)
 
 
@@ -153,8 +153,8 @@ def tell(inp, *, user, topic, message):
 @core.multiline
 def get_tells(inp):
     """Retrieve incoming messages."""
-    tells = list(Tell.select().where(Tell.recipient == inp.user.lower()))
-    Tell.delete().where(Tell.recipient == inp.user.lower()).execute()
+    tells = list(Tell.select().where(Tell.recipient == inp.user))
+    Tell.delete().where(Tell.recipient == inp.user).execute()
 
     if tells:
         inp._send(
@@ -176,7 +176,7 @@ def get_tells(inp):
 @core.command
 @core.notice
 def show_tells(inp):
-    query = Tell.select().where(Tell.recipient == inp.user.lower())
+    query = Tell.select().where(Tell.recipient == inp.user)
     if not query.exists():
         return lex.tell.no_new
 
@@ -193,9 +193,7 @@ def outbound(inp, *, action):
 
     Ignores messages sent to tell topics.
     """
-    query = Tell.select().where(
-        peewee.fn.Lower(Tell.sender) == inp.user.lower(),
-        Tell.topic.is_null())
+    query = Tell.select().where(Tell.sender == inp.user, Tell.topic.is_null())
 
     if not query.exists():
         return lex.tell.outbound.empty
@@ -204,8 +202,7 @@ def outbound(inp, *, action):
         msg = lex.tell.outbound.count
     elif action == 'purge':
         Tell.delete().where(
-            peewee.fn.Lower(Tell.sender) == inp.user.lower(),
-            Tell.topic.is_null()).execute()
+            Tell.sender == inp.user, Tell.topic.is_null()).execute()
         msg = lex.tell.outbound.purged
     elif action == 'echo':
         inp.multiline = True
@@ -349,9 +346,7 @@ def save_memo(inp, *, user, message, purge):
     if inp.channel in core.config['irc']['quotes_disabled']:
         return
 
-    Rem.delete().where(
-        peewee.fn.Lower(Rem.user) == user,
-        Rem.channel == inp.channel).execute()
+    Rem.delete().where(Rem.user == user, Rem.channel == inp.channel).execute()
 
     if purge:
         return lex.quote.deleted
@@ -404,8 +399,7 @@ def topic(inp, *, topic, action):
 
 @core.notice
 def topic_list(inp):
-    query = Subscriber.select().where(
-        Subscriber.user == inp.user.lower())
+    query = Subscriber.select().where(Subscriber.user == inp.user)
 
     if not query.exists():
         return lex.topic.user_has_no_topics
@@ -421,8 +415,7 @@ def topic_sub(inp, topic, remove):
         return lex.denied
 
     query = Subscriber.select().where(
-        Subscriber.user == inp.user.lower(),
-        Subscriber.topic == topic)
+        Subscriber.user == inp.user, Subscriber.topic == topic)
 
     if remove:
         if not query.exists():
@@ -432,7 +425,7 @@ def topic_sub(inp, topic, remove):
     else:
         if query.exists():
             return lex.topic.already_subscribed
-        Subscriber.create(user=inp.user.lower(), topic=topic)
+        Subscriber.create(user=inp.user, topic=topic)
         return lex.topic.subscribed(topic=topic)
 
 
@@ -471,7 +464,7 @@ def alert(inp, *, date, span, message):
             unit = dict(d='days', h='hours', m='minutes')[unit]
             date = date.replace(**{unit: int(length)})
 
-    Alert.create(user=inp.user.lower(), time=date.timestamp, text=message)
+    Alert.create(user=inp.user, time=date.timestamp, text=message)
     return lex.alert.set
 
 
@@ -481,7 +474,7 @@ def alert(inp, *, date, span, message):
 def get_alerts(inp):
     """Retrieve stored alerts."""
     now = arrow.utcnow().timestamp
-    where = ((Alert.user == inp.user.lower()) & (Alert.time < now))
+    where = ((Alert.user == inp.user) & (Alert.time < now))
     alerts = [i.text for i in Alert.select().where(where)]
     Alert.delete().where(where).execute()
     return alerts

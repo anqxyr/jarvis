@@ -226,10 +226,11 @@ unused:
         I know of {count} unused slots.
         {count} slots remain unclaimed.
 errors:
-    tags: No tags - {pages}
-    title: No titles - {pages}
-    deleted: Improperly deleted - {pages}
-    zombie: Meet requirements for deletion - {pages}
+    no_tags: No tags - {pages}
+    no_title: No title - {pages}
+    improperly_deleted: Improperly deleted - {pages}
+    need_deletion_vote: Meet requirements for deletion - {pages}
+    orphaned_title: Orphaned titles - {pages} 
     none: I was unable to find any errors. I am so sorry.
     done: These are all the errors I could find.
 ###############################################################################

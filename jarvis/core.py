@@ -59,8 +59,8 @@ class Inp:
     def __init__(self, text, user, channel, send, privileges):
         """Clean input values."""
         self.text = text.strip() if text else ''
-        self.user = str(user).strip()
-        self.channel = str(channel).strip()
+        self.user = str(user).strip().lower()
+        self.channel = str(channel).strip().lower()
         self._send = send
         self._priv = privileges
 
