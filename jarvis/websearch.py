@@ -159,3 +159,19 @@ def urbandictionary(inp, *, query):
         return lex.not_found.generic
     result = data['list'][0]
     return '{word}: {definition}'.format(**result)
+
+
+@core.command
+@parser.websearch
+def tvtropes(inp, *, query):
+    query = query.title().replace(' ', '')
+    baseurl = 'http://tvtropes.org/{}/' + query
+    url = baseurl.format('Laconic')
+    soup = bs4.BeautifulSoup(requests.get(url).text, 'lxml')
+    text = soup.find(class_='page-content').find('hr')
+    if text is None:
+        return lex.tvtropes.not_found
+    text = reversed(list(text.previous_siblings))
+    text = [i.text if hasattr(i, 'text') else i for i in text]
+    text = [str(i).strip() for i in text]
+    return '{} {}'.format(' '.join(text), baseurl.format('Main'))

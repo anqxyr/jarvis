@@ -236,6 +236,8 @@ errors:
 ###############################################################################
 # Tools
 ###############################################################################
+version: v{version} python IRC bot, created and maintained by anqxyr, powered by sopel and pyscp. Source code and changelog are available at https://github.com/anqxyr/jarvis . Uptime is {days} days, {hours} hours and {minutes} minutes. Contact anqxyr for bug reports and feature requests.
+rejoin: Entering {channel} ... now.
 dice:
     incorrect: |-
         That's a mutant monster killer die! Die! DIE! Why won't you die?! *kills the die*
@@ -265,6 +267,11 @@ silly:
         http://bit.ly/1qM18IL
         http://bit.ly/1Z7bi2z
         marp
+###############################################################################
+# Websearch
+###############################################################################
+tvtropes:
+    not_found: I couldn't find this trope. Either you misspelled it, it doesn't have a laconic description, or it doesn't exist.
 ###############################################################################
 # Autoban
 ###############################################################################

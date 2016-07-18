@@ -26,11 +26,6 @@ def get_ban_list():
 def parse_ban(row):
     names, hosts, status, reason, thread = [i.text for i in row('td')]
     names = [i for i in names.strip().lower().split() if 'generic' not in i]
-    try:
-        if arrow.get(status, ['M/D/YYYY', 'YYYY-MM-DD']) < arrow.now():
-            return
-    except arrow.parser.ParserError:
-        pass
     return Ban(names, hosts.strip().split(), status, reason, thread)
 
 
@@ -69,6 +64,12 @@ def offensive_username(name, host, kick, ban, send):
 
 def ban_evasion(name, host, kick, ban, send):
     for b in BANS:
+        try:
+            time = arrow.get(b.status, ['M/D/YYYY', 'YYYY-MM-DD'])
+            if time < arrow.now():
+                continue
+        except arrow.parser.ParserError:
+            pass
         if name.lower() in b.names or host in b.hosts:
             kick(lex.bans.kick.evasion(b.reason))
             ban(host, True)

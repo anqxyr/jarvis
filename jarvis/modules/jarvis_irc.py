@@ -75,7 +75,8 @@ def wrapper(fn, group, *args, **kwargs):
             tr.nick,
             tr.sender,
             functools.partial(send, bot),
-            functools.partial(privileges, bot, tr.nick))
+            functools.partial(privileges, bot, tr.nick),
+            bot.write)
         return fn(inp, *args, **kwargs)
     return inner
 
@@ -148,6 +149,8 @@ rule(r'(?i).*!(scp-\d+(?:-[\w]+)?)', scp.name_lookup)
 ###############################################################################
 
 
+command('jarvis version', tools.version)
+command('rejoin', tools.rejoin)
 command('showmore sm', tools.showmore)
 command('choose', tools.choose)
 command('roll dice', tools.roll)
@@ -165,7 +168,7 @@ command('firstseen', tools.deprecate, '!seen -f <name>')
 
 
 rule(r'(?i)(^(?:[+-]?[0-9]*d(?:[0-9]+|f))+(?:[+-][0-9]+)?$)', tools.roll)
-rule(r'(?i)(^(?=.*\b$nickname)(?=.*\bhugs?\b).*)', tools.get_hugs)
+rule(r'(?i)(^(?=.*\b$nickname)(?=.*\bhugs?\b).*)', tools.hugs)
 
 ###############################################################################
 # Websearch
@@ -178,6 +181,7 @@ command('youtube yt', websearch.youtube)
 command('wikipedia w', websearch.wikipedia)
 command('definition define dictionary', websearch.dictionary)
 command('urbandictionary', websearch.urbandictionary)
+command('tvtropes', websearch.tvtropes)
 
 rule(r'.*youtube\.com/watch\?v=([-_a-z0-9]+)', websearch.youtube_lookup)
 rule(r'.*youtu\.be/([-_a-z0-9]+)', websearch.youtube_lookup)

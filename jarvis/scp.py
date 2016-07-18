@@ -204,6 +204,9 @@ def author_summary(name):
 @core.multiline
 @core.command
 def errors(inp):
+    if inp.channel != core.config['irc']['sssc']:
+        return lex.denied
+
     pages = []
     lp = core.wiki.list_pages
 

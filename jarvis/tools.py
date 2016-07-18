@@ -5,10 +5,15 @@
 # Module Imports
 ###############################################################################
 
+import arrow
 import random
 import re
 
-from . import core, parser, lex
+from . import core, parser, lex, __version__
+
+###############################################################################
+
+BOOTTIME = arrow.now()
 
 ###############################################################################
 # Internal Tools
@@ -54,6 +59,24 @@ def deprecate(inp, cmd):
 ###############################################################################
 # Tools for users
 ###############################################################################
+
+
+@core.command
+def version(inp):
+    uptime = (arrow.now() - BOOTTIME).seconds
+    m, s = divmod(uptime, 60)
+    h, m = divmod(m, 60)
+    d, h = divmod(h, 24)
+    return lex.version(version=__version__, days=d, hours=h, minutes=m)
+
+
+@core.command
+def rejoin(inp):
+    if inp.channel != core.config['irc']['sssc']:
+        return lex.denied
+    channel = inp.text if inp.text.startswith('#') else '#' + inp.text
+    inp.raw(['JOIN', channel])
+    return lex.rejoin(channel=channel)
 
 
 @core.command
@@ -111,7 +134,7 @@ def roll(inp):
 
 
 @core.command
-def get_hugs(inp):
+def hugs(inp):
     return lex.silly.hugs
 
 

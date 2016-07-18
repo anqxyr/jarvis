@@ -1,8 +1,10 @@
 import setuptools
 
+from jarvis import __version__
+
 setuptools.setup(
     name='jarvis',
-    version='0.9',
+    version=__version__,
     description='Snarky bot for scp-wiki irc channels.',
     long_description='',
     url='https://github.com/anqxyr/jarvis/',
