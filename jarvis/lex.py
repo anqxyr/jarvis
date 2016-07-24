@@ -31,7 +31,8 @@ class Lexicon:
         new.kwargs = kwargs
         return new
 
-    def compose(self, inp):
+    @property
+    def _raw(self):
         out = DATA
         for i in self.path:
             out = out[i]
@@ -39,7 +40,11 @@ class Lexicon:
             out = out.split('\n')
         except AttributeError:
             pass
-        return random.choice(out).replace('*', '\x02').format(**self.kwargs)
+        return out
+
+    def compose(self, inp):
+        text = random.choice(self._raw)
+        return text.replace('*', '\x02').format(**self.kwargs)
 
 
 sys.modules[__name__] = Lexicon()

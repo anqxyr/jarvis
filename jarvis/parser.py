@@ -421,3 +421,10 @@ def images_search(pr):
 def images_stats(pr):
     pr.add_argument('mode', choices=['stats'], ignore=True)
     pr.add_argument('category')
+
+
+@parser
+def images_add(pr):
+    pr.add_argument('mode', choices=['add'], ignore=True)
+    pr.add_argument('url')
+    pr.add_argument('page', nargs='?')

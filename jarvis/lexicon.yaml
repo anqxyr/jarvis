@@ -91,7 +91,7 @@ tell:
         Your message has begun its journey through a series of tubes. Who knows where will it end, or when.
         I'm sending it.
         Just let me call USPS real quick, and it'll be on its way.
-        I have a trained pigeon I've been saving just for such occasion.
+        I have a trained pigeon I've been saving just for such an occasion.
         Initiating Comm Array startup sequence in 3, 2, 1...
     get: |-
         {name} said {time}: {text}
@@ -214,6 +214,19 @@ alert:
 ###############################################################################
 # SCP
 ###############################################################################
+show_page:
+    templates:
+        author: written {hdate} by {user}
+        rewrite: rewritten {hdate} by {user}
+        translator: translated {hdate} by {user}
+        maintainer: maintained {hdate} by {user}
+    group_templates:
+        author: co-written {hdate} by {users} and {last_user}
+        rewrite: rewritten {hdate} by {users} and {last_user}
+        translator: translated {hdate} by {users} and {last_user}
+        maintainer: maintained {hdate} by {users} and {last_user}
+    summary: "*{page.title}* ({attribution}; rating: {page.rating:+d}) - {page.url}"
+    nr_summary: "*{page.title}* ({attribution}) - {page.url}"
 summary:
     author: |-
         *{name}*{url} has *{pages.count}* pages ({rels}) ({tags}). They have *{primary.rating}* net upvotes with an average of *{primary.average}*. Their latest page is *{last.title}* at *{last.rating:+d}*.

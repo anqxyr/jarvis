@@ -45,22 +45,21 @@ class PageView:
             pages = [p for p in pages if p.tags & any_]
         return self.__class__(pages)
 
-    def related(self, user, rel=None):
+    def related(self, user, role=None):
         pages = [p for p in self.pages if user in p.metadata]
-        if rel:
-            pages = [p for p in pages if p.metadata[user][0] == rel]
+        if role:
+            pages = [p for p in pages if p.metadata[user].role == role]
         return self.__class__(pages)
 
     def primary(self, user):
         results = []
         for p in self.related(user, 'author').articles:
-            if not any(rel == 'rewrite' for rel, date in p.metadata.values()):
+            if 'rewrite' not in {i.role for i in p.metadata.values()}:
                 results.append(p)
         for p in self.related(user, 'rewrite').articles:
             dates = [
-                date for rel, date in p.metadata.values() if
-                date and rel == 'rewrite']
-            if not dates or p.metadata[user][1] == max(dates):
+                i.date for i in p.metadata.values() if i.role == 'rewrite']
+            if not dates or p.metadata[user].date == max(dates):
                 results.append(p)
         for p in self.related(user, 'translator').articles:
             results.append(p)

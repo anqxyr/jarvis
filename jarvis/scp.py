@@ -6,10 +6,22 @@
 ###############################################################################
 
 import arrow
-import collections
 import random as rand
 
 from . import core, ext, parser, lex, stats, tools
+
+###############################################################################
+# Internal Methods
+###############################################################################
+
+
+def show_page(page, rating=True):
+    attribution = page.build_attribution_string(
+        templates=lex.show_page.templates._raw,
+        group_templates=lex.show_page.group_templates._raw)
+    out = lex.show_page.summary if rating else lex.show_page.nr_summary
+    return out(page=page, attribution=attribution)
+
 
 ###############################################################################
 # Find And Lookup Functions
@@ -21,9 +33,9 @@ def show_search_results(inp, results):
     if not results:
         return lex.not_found.page
     elif len(results) == 1:
-        return page_summary(results[0])
+        return show_page(results[0])
     else:
-        tools.save_results(inp, results, page_summary)
+        tools.save_results(inp, results, show_page)
         results = [p.title for p in results]
         head, tail = results[:3], results[3:]
         output = ', '.join('\x02{}\x02'.format(i) for i in head)
@@ -76,7 +88,7 @@ def find_pages(
             p for p in pages if any(author in a.lower() for a in p.metadata)]
     if fullname:
         pages = [p for p in pages if p.title.lower() == fullname]
-        return page_summary(pages[0]) if pages else lex.not_found.page
+        return show_page(pages[0]) if pages else lex.not_found.page
 
     results = []
     for p in pages:
@@ -156,30 +168,6 @@ def search_results(results):
     return output
 
 
-def page_summary(page):
-    """Compose page summary."""
-    def get_segment(rel, date, users):
-        name = dict(author='written', rewrite='rewritten',
-                    translator='translated', maintainer='maintained')[rel]
-        if not date and rel == 'author':
-            date = page.created
-        if date:
-            date = ' ' + arrow.get(date).humanize()
-        *head, tail = users
-        users = '{} and {}'.format(', '.join(head), tail) if head else tail
-        return '{}{} by {}'.format(name, date, users)
-
-    rels = collections.defaultdict(list)
-    for user, (rel, date) in page.metadata.items():
-        rels[(rel, date)].append(user)
-    items = sorted(rels.items(), key=lambda x: (
-        'author rewrite translator maintainer'
-        .split().index(x[0][0]), x[0][1]))
-
-    attribution = '; '.join(get_segment(r, d, u) for (r, d), u in items)
-    return lex.summary.page(page=page, attribution=attribution)
-
-
 def author_summary(name):
     """Compose author summary."""
     pages = core.pages.related(name)
@@ -205,7 +193,8 @@ def author_summary(name):
 @core.command
 def errors(inp):
     if inp.channel != core.config['irc']['sssc']:
-        return lex.denied
+        yield lex.denied
+        return
 
     pages = []
     lp = core.wiki.list_pages
@@ -216,7 +205,7 @@ def errors(inp):
             return
         pages.extend(errp)
         errp = [p.url.split('/')[-1] for p in errp]
-        errp = map('\x02{}\x02'.format, errp)
+        errp = map('\x02{}\x02'.format, sorted(errp))
         yield msg(pages=', '.join(errp))
 
     yield from report(lp(tags='-'), lex.errors.no_tags)
@@ -245,7 +234,7 @@ def errors(inp):
     if not pages:
         yield lex.errors.none
     else:
-        tools.save_results(inp, pages, page_summary)
+        tools.save_results(inp, pages, show_page)
         yield lex.errors.done
 
 
@@ -254,14 +243,14 @@ def errors(inp):
 def random(inp, **kwargs):
     pages = core.pages if not inp.text else find_pages(core.pages, **kwargs)
     if pages:
-        return page_summary(rand.choice(pages))
+        return show_page(rand.choice(pages))
     else:
         return lex.not_found.page
 
 
 @core.command
 @core.multiline
-def last_created(inp, cooldown={}, **kwargs):
+def lastcreated(inp, cooldown={}, **kwargs):
     kwargs = dict(
         body='title created_by created_at rating',
         order='created_at desc',
@@ -276,7 +265,8 @@ def last_created(inp, cooldown={}, **kwargs):
 
     cooldown[inp.channel] = now
 
-    yield from map(page_summary, core.wiki.list_pages(**kwargs))
+    pages = core.wiki.list_pages(**kwargs)
+    yield from [show_page(p, rating=False) for p in pages]
 
 
 @core.command

@@ -3,6 +3,17 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 ## Changelog
 
+### 1.0.1
+
+New features
+
+* !lastcreated no longer shows the ratings of the articles.
+
+Bug fixes
+
+* Uptime now counts days correctly.
+* The pages reported by !errors will now be displayed in alphabetical order.
+
 ### 1.0.0
 
 New features

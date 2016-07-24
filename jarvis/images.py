@@ -180,12 +180,11 @@ def get_page_category(page):
 @core.command
 @parser.images
 def images(inp, mode):
-    print(inp.privileges)
-    if (
-            mode not in ['list', 'search', 'stats'] and
-            inp.privileges.get('#site77', 0) < 4):
-        return lex.denied
-    funcs = ['scan', 'update', 'list', 'notes', 'purge', 'search', 'stats']
+    if mode not in ['list', 'search', 'stats']:
+        if inp.privileges.get('#site77', 0) < 4:
+            return lex.denied
+    funcs = [
+        'scan', 'update', 'list', 'notes', 'purge', 'search', 'stats', 'add']
     funcs = {f: eval('images_' + f) for f in funcs}
     return funcs[mode](inp)
 
@@ -295,6 +294,10 @@ def images_stats(inp, *, category):
     return lex.images.stats(
         count=len(images), per_status=per_status, not_reviewed=not_reviewed)
 
+
+@parser.images_add
+def images_add(inp, *, url, page):
+    pass
 
 ###############################################################################
 

@@ -63,11 +63,11 @@ def deprecate(inp, cmd):
 
 @core.command
 def version(inp):
-    uptime = (arrow.now() - BOOTTIME).seconds
-    m, s = divmod(uptime, 60)
+    uptime = (arrow.now() - BOOTTIME)
+    m, s = divmod(uptime.seconds, 60)
     h, m = divmod(m, 60)
-    d, h = divmod(h, 24)
-    return lex.version(version=__version__, days=d, hours=h, minutes=m)
+    return lex.version(
+        version=__version__, days=uptime.days, hours=h, minutes=m)
 
 
 @core.command
