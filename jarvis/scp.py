@@ -7,6 +7,7 @@
 
 import arrow
 import random as rand
+import re
 
 from . import core, ext, parser, lex, stats, tools
 
@@ -184,9 +185,40 @@ def author_summary(name):
         name=name, url=url, pages=pages, rels=rels, tags=tags,
         primary=pages.primary(name), last=last)
 
+
 ###############################################################################
-# Misc
+# Errors
 ###############################################################################
+
+
+def errors_orphaned():
+    urls = [p.url for p in core.pages]
+    urls.extend([p.url for p in core.wiki.list_pages(
+        name='scp-*', created_at='last 3 hours')])
+    pages = [k for k in core.wiki.titles() if k not in urls]
+    return map(core.wiki, pages)
+
+
+def errors_untagged():
+    return core.wiki.list_pages(tags='-')
+
+
+def errors_untitled():
+    pages = core.pages.tags('scp').pages
+    pages.extend(core.wiki.list_pages(name='scp-*', created_at='last 3 hours'))
+    pages = [p for p in pages if p.url not in core.wiki.titles()]
+    pages = [p for p in pages if 'scp-1848' not in p.url]
+    return pages
+
+
+def errors_deleted():
+    return core.wiki.list_pages(category='deleted')
+
+
+def errors_vote():
+    return core.wiki.list_pages(
+        tags='-in-deletion -archived -author',
+        rating='<-10', created_at='older than 24 hours')
 
 
 @core.multiline
@@ -196,46 +228,62 @@ def errors(inp):
         yield lex.denied
         return
 
-    pages = []
-    lp = core.wiki.list_pages
+    all_pages = []
 
-    def report(errp, msg):
-        errp = list(errp)
-        if not errp:
-            return
-        pages.extend(errp)
-        errp = [p.url.split('/')[-1] for p in errp]
-        errp = map('\x02{}\x02'.format, sorted(errp))
-        yield msg(pages=', '.join(errp))
+    for name in ['untagged', 'untitled', 'deleted', 'vote', 'orphaned']:
+        pages = list(eval('errors_' + name)())
+        if not pages:
+            continue
+        all_pages.extend(pages)
+        pages = [p.url.split('/')[-1] for p in pages]
+        pages = map('\x02{}\x02'.format, sorted(pages))
+        yield getattr(lex.errors, name)(pages=', '.join(pages))
 
-    yield from report(lp(tags='-'), lex.errors.no_tags)
-
-    title = core.pages.tags('scp').pages
-    title.extend(lp(name='scp-*', created_at='last 3 hours'))
-    title = [
-        i for i in title if
-        core.wiki.titles().get(i.url) == '[ACCESS DENIED]']
-    title = [i for i in title if 'scp-1848' not in i.url]
-    yield from report(title, lex.errors.no_title)
-
-    yield from report(lp(category='deleted'), lex.errors.improperly_deleted)
-
-    yield from report(lp(
-        tags='-in-deletion -archived -author',
-        rating='<-10', created_at='older than 24 hours'),
-        lex.errors.need_deletion_vote)
-
-    urls = [p.url for p in core.pages]
-    titles = [
-        k for k, v in core.wiki.titles().items()
-        if k not in urls and v != '[ACCESS DENIED]']
-    yield from report(map(core.wiki, titles), lex.errors.orphaned_title)
-
-    if not pages:
+    if not all_pages:
         yield lex.errors.none
     else:
-        tools.save_results(inp, pages, show_page)
+        tools.save_results(inp, all_pages, show_page)
         yield lex.errors.done
+
+
+@core.command
+@core.multiline
+def cleantitles(inp):
+    yield lex.cleantitles.start
+
+    pages = [
+        'scp-series', 'scp-series-2', 'scp-series-3',
+        'joke-scps', 'scp-ex', 'archived-scps']
+    wiki = core.pyscp.wikidot.Wiki('scp-wiki')
+    wiki.auth(core.config['wiki']['name'], core.config['wiki']['pass'])
+    orphaned = [p.url.split('/')[-1] for p in errors_orphaned()]
+
+    def clean_line(line, purge):
+        pattern = r'^\* \[\[\[([^\]]+)\]\]\] - .+$'
+        parsed = re.match(pattern, line)
+        if not parsed:
+            return line
+        name = parsed.group(1)
+        if name.lower() not in orphaned:
+            return line
+        if not purge:
+            return '* [[[{}]]] - [ACCESS DENIED]'.format(name)
+
+    for page in map(wiki, pages):
+        source = page.source.split('\n')
+        purge = 'scp-series' not in page.url
+        source = [clean_line(i, purge) for i in source]
+        source = [i for i in source if i is not None]
+        source = '\n'.join(source)
+        if source != page.source:
+            page.edit(source, comment='clean titles')
+
+    yield lex.cleantitles.end
+
+
+###############################################################################
+# Misc
+###############################################################################
 
 
 @core.command
