@@ -101,8 +101,6 @@ def init():
     db.connect()
     db.create_tables(
         [Tell, Message, Quote, Rem, Subscriber, Restricted, Alert], safe=True)
-    q = Message.update(channel='#site12').where(Message.channel == '#Site12')
-    print(q.execute())
 
 
 init()
