@@ -169,7 +169,7 @@ def get_page_category(page):
                 return v
         return 'U-Z'
 
-    if page.url in core.wiki('001').links:
+    if page.url in core.wiki('scp-001').links:
         return '001'
 
 ###############################################################################
@@ -177,20 +177,14 @@ def get_page_category(page):
 ###############################################################################
 
 
-@core.command
 @parser.images
-def images(inp, mode):
-    if mode not in ['list', 'search', 'stats']:
-        if inp.privileges.get('#site77', 0) < 4:
-            return lex.denied
-    funcs = [
-        'scan', 'update', 'list', 'notes', 'purge', 'search', 'stats', 'add']
-    funcs = {f: eval('images_' + f) for f in funcs}
-    return funcs[mode](inp)
+@core.command
+def images(inp, mode, **kwargs):
+    return images.dispatch(inp, mode, **kwargs)
 
 
-@parser.images_scan
-def images_scan(inp, *, page):
+@images.subcommand('scan')
+def scan(inp, *, page):
     page = core.wiki(page)
     cat = get_page_category(page)
     if not cat:
@@ -213,9 +207,9 @@ def images_scan(inp, *, page):
         return lex.images.scan.added_none
 
 
-@parser.images_update
+@images.subcommand('update')
 @targeted(1)
-def images_update(inp, *, images, url, page, source, status):
+def update(inp, *, images, url, page, source, status):
     image = images[0]
     if url:
         image.url = url
@@ -232,17 +226,17 @@ def images_update(inp, *, images, url, page, source, status):
     return lex.images.update.done
 
 
+@images.subcommand('list')
 @core.multiline
-@parser.images_list
 @targeted(5)
-def images_list(inp, *, images, terse):
+def list_images(inp, *, images, terse):
     out = lex.images.list.terse if terse else lex.images.list.verbose
     return [out(image=i) for i in images]
 
 
-@parser.images_notes
+@images.subcommand('notes')
 @targeted(1)
-def images_notes(inp, *, images, append, purge, list):
+def notes(inp, *, images, append, purge, list):
     image = images[0]
 
     if append:
@@ -262,26 +256,26 @@ def images_notes(inp, *, images, append, purge, list):
         return image.notes
 
 
-@parser.images_purge
+@images.subcommand('purge')
 @targeted()
-def images_purge(inp, *, images):
+def purge(inp, *, images):
     global IMAGES
     IMAGES = [i for i in IMAGES if i not in images]
     save_images(images[0].category, 'records purged', inp.user)
     return lex.images.purge(count=len(images))
 
 
+@images.subcommand('search')
 @core.multiline
-@parser.images_search
 @targeted(1)
-def images_search(inp, *, images):
+def search(inp, *, images):
     image = images[0]
     yield 'http://tineye.com/search?url=' + image.url
     yield 'http://www.google.com/searchbyimage?image_url=' + image.url
 
 
-@parser.images_stats
-def images_stats(inp, *, category):
+@images.subcommand('stats')
+def stats(inp, *, category):
     images = [i for i in IMAGES if i.category == category]
     per_status = []
     for s in STATUS:
@@ -292,11 +286,13 @@ def images_stats(inp, *, category):
     per_status = ', '.join(per_status)
     not_reviewed = len([i for i in images if not i.status])
     return lex.images.stats(
-        count=len(images), per_status=per_status, not_reviewed=not_reviewed)
+        count=len(images),
+        per_status=per_status,
+        not_reviewed=not_reviewed)
 
 
-@parser.images_add
-def images_add(inp, *, url, page):
+@images.subcommand('add')
+def add(inp, *, url, page):
     pass
 
 ###############################################################################

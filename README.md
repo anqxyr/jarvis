@@ -7,8 +7,12 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 New features
 
-* !lastcreated no longer shows the ratings of the articles.
 * Added !cleantitles command.
+
+Other changes
+
+* !lastcreated no longer shows the ratings of the articles.
+* Improved the architecture of modal commands.
 
 Bug fixes
 

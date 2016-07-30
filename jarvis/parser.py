@@ -20,24 +20,43 @@ from . import lex
 ###############################################################################
 
 
-def parser(fn):
+def parser(func):
     parser = ArgumentParser()
-    fn(parser)
+    func(parser)
 
-    @functools.wraps(fn)
+    @functools.wraps(func)
     def deco(command):
-        @functools.wraps(command)
-        def wrapped(inp, *args, **kwargs):
-            try:
-                parsed_args = parser.parse_args(inp.text)
-            except ArgumentError:
-                inp.multiline = False
-                return lex.input.incorrect
-            parsed_args.update(kwargs)
-            return command(inp, *args, **parsed_args)
-        return wrapped
+        inner = CommandWrapper(command, parser)
+        return functools.wraps(command)(inner)
     return deco
 
+
+class CommandWrapper:
+
+    def __init__(self, func, parser):
+        self._func = func
+        self._parser = parser
+        self._subcommands = {}
+
+    def __call__(self, inp, *args, **kwargs):
+        try:
+            parsed = self._parser.parse_args(inp.text.split())
+        except ArgumentError:
+            inp.multiline = False
+            return lex.input.incorrect
+        parsed.update(kwargs)
+        return self._func(inp, *args, **parsed)
+
+    def subcommand(self, mode=None):
+
+        def inner(func):
+            self._subcommands[mode] = func
+            return func
+
+        return inner
+
+    def dispatch(self, inp, mode, *args, **kwargs):
+        return self._subcommands[mode](inp, *args, **kwargs)
 
 ###############################################################################
 # ArgumentParser
@@ -48,13 +67,13 @@ class Argument:
 
     def __init__(self, *args, **kwargs):
         self.name = args[0].lstrip('-')
-        self.is_opt = args[0].startswith('-')
-        self.flags = args if self.is_opt else []
+        self.is_optional = args[0].startswith('-')
+        self.flags = args if self.is_optional else []
 
         self.nargs = kwargs.get('nargs', None)
-        if not self.nargs and self.is_opt:
+        if not self.nargs and self.is_optional:
             self.nargs = 0
-        elif not self.nargs and not self.is_opt:
+        elif not self.nargs and not self.is_optional:
             self.nargs = 1
 
         self.action = kwargs.get('action', None)
@@ -62,7 +81,6 @@ class Argument:
         self.re = kwargs.get('re', None)
         self.type = kwargs.get('type', None)
         self.choices = kwargs.get('choices', None)
-        self.ignore = kwargs.get('ignore', None)
 
         self.values = []
         self.open = True
@@ -73,6 +91,13 @@ class Argument:
             self.__class__.__name__, repr(self.name), repr(self.values))
 
     def consume(self, value):
+        """
+        Attempt to consume the value.
+
+        Checks if the argument can consume the value based on its
+        restrictions. If so, adds the value to the argument's value list
+        and returns True. Otherwise returns False.
+        """
         if self.max_consumed or not self.open:
             return False
 
@@ -94,8 +119,9 @@ class Argument:
 
     @property
     def min_consumed(self):
-        if self.is_opt:
-            return True
+        """Show if minimal requirements for the argument have been met."""
+        if self.is_optional:
+            return True  # optional args don't have minimal requirements
         if self.nargs in ['?', '*']:
             return True
         if self.nargs == '+':
@@ -104,6 +130,7 @@ class Argument:
 
     @property
     def max_consumed(self):
+        """Show if the argument has consumed all the values it can."""
         if self.nargs == '?':
             return len(self.values) > 0
         if self.nargs in ['*', '+']:
@@ -111,16 +138,13 @@ class Argument:
         return len(self.values) >= self.nargs
 
     def get_values(self):
-        if self.ignore:
-            return {}
-
         if self.action == 'join':
             return {self.name: ' '.join(self.values)}
 
         if self.action:
             return self.action(self.name, self.values)
 
-        if self.nargs == 0 and self.is_opt:
+        if self.nargs == 0 and self.is_optional:
             return {self.name: self.marked}
 
         if self.nargs in [1, '?']:
@@ -132,49 +156,84 @@ class Argument:
 class ArgumentParser:
 
     def __init__(self):
-        self._pos = []
-        self._opt = []
-        self.exc = []
+        self._args = []
+        self._exclusive_args = []
+        self._subparsers = {}
 
     def add_argument(self, *args, **kwargs):
-        arg = Argument(*args, **kwargs)
-        (self._opt if arg.is_opt else self._pos).append(arg)
+        self._args.append(Argument(*args, **kwargs))
 
     def exclusive(self, *args, required=False):
-        self.exc.append({'args': args, 'required': required})
+        self._exclusive_args.append({'args': args, 'required': required})
 
-    def parse_args(self, input_string):
-        self.pos = copy.deepcopy(self._pos)
-        self.opt = copy.deepcopy(self._opt)
+    def subparser(self, mode=None):
+        if not any(i.name == 'mode' for i in self._args):
+            self.add_argument('mode', nargs='?')
+        pr = ArgumentParser()
+        self._subparsers[mode] = pr
+        return pr
+
+    def parse_args(self, unparsed):
+        """
+        Parse arguments.
+
+        Takes a list of strings, and returns a dict of parsed args.
+        """
+        # Argument objects are mutable
+        # at the beginning of each parsing we make a copy of them
+        # and work with that copy only from then on
+        self.args = copy.deepcopy(self._args)
+        values = {}
         last = None
-        for value in input_string.split(' '):
-            if not input_string:
+        while unparsed:
+            # go through each segment and try to match it either to the
+            # current positional argument  or to any optional one
+            if not unparsed:
                 break
+            value = unparsed[0]
+            unparsed = unparsed[1:]
             known_flag = self._get_known_flag(value)
             if known_flag:
+                # if an optional argument is found, then the last argument
+                # has just ended, so lets close it
                 self._close(last)
                 last = known_flag
             elif last:
+                # otherwise continue feeding the last known argument
                 consumed = last.consume(value)
                 if not consumed:
                     self._close(last)
                     last = self._next_positional(value)
             else:
+                # and if we don't know any, get the next positional
                 last = self._next_positional(value)
+            # if the name of the argument is 'mode'
+            # then hand off the rest of the parsing to a subparser
+            if last.name == 'mode':
+                self._close(last)
+                break
         self._check_constraints()
-        values = {}
-        for arg in self.pos + self.opt:
+        for arg in self.args:
             values.update(arg.get_values())
+        if 'mode' in values:
+            subparser = self._subparsers[values['mode']]
+            values.update(subparser.parse_args(unparsed))
         return values
 
     def _get_known_flag(self, value):
-        for arg in self.opt:
+        """
+        Get the flag corresponding to the value.
+
+        Checks if the value indicates any of the known flags.
+        If it does, returns it. Otherwise, returns None.
+        """
+        for arg in [i for i in self.args if i.is_optional]:
             if value in arg.flags and arg.open:
                 arg.marked = True
                 return arg
 
     def _next_positional(self, value):
-        for arg in self.pos:
+        for arg in [i for i in self.args if not i.is_optional]:
             if not arg.open:
                 continue
             consumed = arg.consume(value)
@@ -192,23 +251,22 @@ class ArgumentParser:
         if not arg.min_consumed:
             raise ArgumentError
         arg.open = False
-        if (arg.is_opt and not arg.marked) or not arg.values:
+        if (arg.is_optional and not arg.marked) or not arg.values:
             return
-        for exc in self.exc:
+        for exc in self._exclusive_args:
             if arg.name not in exc['args']:
                 continue
             for name in exc['args']:
-                arg = next(i for i in self.pos + self.opt if i.name == name)
-                arg.open = False
+                next(i for i in self.args if i.name == name).open = False
 
     def _arg_present(self, name):
-        arg = next(i for i in self.opt + self.pos if i.name == name)
-        return bool(arg.marked if arg.is_opt else arg.values)
+        arg = next(i for i in self.args if i.name == name)
+        return bool(arg.marked if arg.is_optional else arg.values)
 
     def _check_constraints(self):
-        if not all(i.min_consumed for i in self.pos + self.opt):
+        if not all(i.min_consumed for i in self.args):
             raise ArgumentError
-        for exc in self.exc:
+        for exc in self._exclusive_args:
             if sum(1 for arg in exc['args'] if self._arg_present(arg)) > 1:
                 raise ArgumentError
             if not exc['required']:
@@ -216,7 +274,7 @@ class ArgumentParser:
             if not any(self._arg_present(arg) for arg in exc['args']):
                 raise ArgumentError(
                     'Required mutually exclusive arguments missing: {}'
-                    .format(self.pos + self.opt))
+                    .format(self.args))
 
 
 class ArgumentError(Exception):
@@ -253,32 +311,20 @@ def seen(pr):
 @parser
 def quote(pr):
     pr.add_argument('channel', re='#', nargs='?')
-    pr.add_argument('mode', nargs='?', choices=['add', 'del'])
-    pr.add_argument('_', nargs='*', ignore=True)
 
+    get = pr.subparser()
+    get.add_argument('user', re=r'.*[^\d].*', type=str.lower, nargs='?')
+    get.add_argument('index', type=int, nargs='?')
 
-@parser
-def quote_add(pr):
-    pr.add_argument('channel', re='#', nargs='?', ignore=True)
-    pr.add_argument('mode', choices=['add'], ignore=True)
-    pr.add_argument('date', nargs='?', type=arrow.get, re=r'\d{4}-\d{2}-\d{2}')
-    pr.add_argument('user', type=str.lower)
-    pr.add_argument('message', nargs='+', action='join')
+    add = pr.subparser('add')
+    add.add_argument(
+        'date', nargs='?', type=arrow.get, re=r'\d{4}-\d{2}-\d{2}')
+    add.add_argument('user', type=str.lower)
+    add.add_argument('message', nargs='+', action='join')
 
-
-@parser
-def quote_del(pr):
-    pr.add_argument('channel', re='#', nargs='?', ignore=True)
-    pr.add_argument('mode', choices=['del'], ignore=True)
-    pr.add_argument('user', type=str.lower)
-    pr.add_argument('message', nargs='+', action='join')
-
-
-@parser
-def quote_get(pr):
-    pr.add_argument('channel', re='#', nargs='?', ignore=True)
-    pr.add_argument('user', re=r'.*[^\d].*', type=str.lower, nargs='?')
-    pr.add_argument('index', type=int, nargs='?')
+    delete = pr.subparser('del')
+    delete.add_argument('user', type=str.lower)
+    delete.add_argument('message', nargs='+', action='join')
 
 
 @parser
@@ -362,69 +408,41 @@ def websearch(pr):
 
 @parser
 def images(pr):
-    pr.add_argument('mode', choices=[
-        'scan', 'update', 'list', 'notes', 'purge', 'search', 'stats'])
-    pr.add_argument('_', nargs='*', ignore=True)
 
+    pr.subparser('scan').add_argument('page')
 
-@parser
-def images_scan(pr):
-    pr.add_argument('mode', choices=['scan'], ignore=True)
-    pr.add_argument('page')
+    update = pr.subparser('update')
+    update.add_argument('target')
+    update.add_argument('index', nargs='?', type=int)
+    update.add_argument('--url', '-u', nargs=1)
+    update.add_argument('--page', '-p', nargs=1)
+    update.add_argument('--source', '--origin', '-o', nargs=1)
+    update.add_argument(
+        '--status', '-s', nargs='+', type=str.upper, action='join')
 
+    list_ = pr.subparser('list')
+    list_.add_argument('target')
+    list_.add_argument('index', nargs='?', type=int)
+    list_.add_argument('--terse', '-t')
 
-@parser
-def images_update(pr):
-    pr.add_argument('mode', choices=['update'], ignore=True)
-    pr.add_argument('target')
-    pr.add_argument('index', nargs='?', type=int)
-    pr.add_argument('--url', '-u', nargs=1)
-    pr.add_argument('--page', '-p', nargs=1)
-    pr.add_argument('--source', '--origin', '-o', nargs=1)
-    pr.add_argument('--status', '-s', nargs='+', type=str.upper, action='join')
+    notes = pr.subparser('notes')
+    notes.add_argument('target')
+    notes.add_argument('index', nargs='?', type=int)
+    notes.add_argument('--append', '-a', nargs='+', action='join')
+    notes.add_argument('--purge', '-p')
+    notes.add_argument('--list', '-l')
+    notes.exclusive('append', 'purge', 'list')
 
+    purge = pr.subparser('purge')
+    purge.add_argument('target')
+    purge.add_argument('index', nargs='?', type=int)
 
-@parser
-def images_list(pr):
-    pr.add_argument('mode', choices=['list'], ignore=True)
-    pr.add_argument('target')
-    pr.add_argument('index', nargs='?', type=int)
-    pr.add_argument('--terse', '-t')
+    search = pr.subparser('search')
+    search.add_argument('target')
+    search.add_argument('index', nargs='?', type=int)
 
+    pr.subparser('stats').add_argument('category')
 
-@parser
-def images_notes(pr):
-    pr.add_argument('mode', choices=['notes'], ignore=True)
-    pr.add_argument('target')
-    pr.add_argument('index', nargs='?', type=int)
-    pr.add_argument('--append', '-a', nargs='+', action='join')
-    pr.add_argument('--purge', '-p')
-    pr.add_argument('--list', '-l')
-    pr.exclusive('append', 'purge', 'list')
-
-
-@parser
-def images_purge(pr):
-    pr.add_argument('mode', choices=['purge'], ignore=True)
-    pr.add_argument('target')
-    pr.add_argument('index', nargs='?', type=int)
-
-
-@parser
-def images_search(pr):
-    pr.add_argument('mode', choices=['search'], ignore=True)
-    pr.add_argument('target')
-    pr.add_argument('index', nargs='?', type=int)
-
-
-@parser
-def images_stats(pr):
-    pr.add_argument('mode', choices=['stats'], ignore=True)
-    pr.add_argument('category')
-
-
-@parser
-def images_add(pr):
-    pr.add_argument('mode', choices=['add'], ignore=True)
-    pr.add_argument('url')
-    pr.add_argument('page', nargs='?')
+    add = pr.subparser('add')
+    add.add_argument('url')
+    add.add_argument('page', nargs='?')

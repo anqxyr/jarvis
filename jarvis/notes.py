@@ -256,9 +256,10 @@ def seen(inp, *, channel, user, first, total):
 ###############################################################################
 
 
-@core.command
 @parser.quote
-def quote(inp, *, channel, mode):
+@core.command
+def quote(inp, channel, mode, **kwargs):
+
     if inp.channel in core.config['irc']['quotes_disabled']:
         return
 
@@ -268,48 +269,11 @@ def quote(inp, *, channel, mode):
         inp.channel = channel
         inp.notice = True
 
-    if mode == 'add':
-        return quote_add(inp)
-    elif mode == 'del':
-        return quote_del(inp)
-    return quote_get(inp)
+    return quote.dispatch(inp, mode, **kwargs)
 
 
-@parser.quote_add
-def quote_add(inp, *, date, user, message):
-    """!quote add [<date>] <user> <message> -- Save user's quote."""
-    if Quote.select().where(
-            Quote.user == user,
-            Quote.channel == inp.channel,
-            Quote.text == message).exists():
-        return lex.quote.already_exists
-
-    Quote.create(
-        user=user,
-        channel=inp.channel,
-        time=(date or arrow.utcnow()).format('YYYY-MM-DD'),
-        text=message)
-
-    return lex.quote.saved
-
-
-@parser.quote_del
-def quote_del(inp, *, user, message):
-    """!quote del <user> <message> -- Delete the matching quote."""
-    query = Quote.select().where(
-        Quote.user == user,
-        Quote.channel == inp.channel,
-        Quote.text == message)
-
-    if not query.exists():
-        return lex.quote.not_found
-
-    query.get().delete_instance()
-    return lex.quote.deleted
-
-
-@parser.quote_get
-def quote_get(inp, *, user, index):
+@quote.subcommand()
+def get_quote(inp, *, user, index):
     """Retrieve a quote."""
     if index is not None and index <= 0:
         return lex.input.bad_index
@@ -332,6 +296,37 @@ def quote_get(inp, *, user, index):
         time=str(quote.time)[:10],
         user=quote.user,
         text=quote.text)
+
+
+@quote.subcommand('add')
+def add_quote(inp, *, date, user, message):
+    if Quote.select().where(
+            Quote.user == user,
+            Quote.channel == inp.channel,
+            Quote.text == message).exists():
+        return lex.quote.already_exists
+
+    Quote.create(
+        user=user,
+        channel=inp.channel,
+        time=(date or arrow.utcnow()).format('YYYY-MM-DD'),
+        text=message)
+
+    return lex.quote.saved
+
+
+@quote.subcommand('del')
+def delete_quote(inp, *, user, message):
+    query = Quote.select().where(
+        Quote.user == user,
+        Quote.channel == inp.channel,
+        Quote.text == message)
+
+    if not query.exists():
+        return lex.quote.not_found
+
+    query.get().delete_instance()
+    return lex.quote.deleted
 
 
 ###############################################################################
