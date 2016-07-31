@@ -16,7 +16,7 @@ from . import core, parser, lex
 ###############################################################################
 
 wiki = pyscp.wikidot.Wiki('scp-stats')
-wiki.auth(core.config['wiki']['name'], core.config['wiki']['pass'])
+wiki.auth(core.config.wiki.name, core.config.wiki.password)
 
 IMAGES = []
 STATUS = [
@@ -183,6 +183,7 @@ def images(inp, mode, **kwargs):
     return images.dispatch(inp, mode, **kwargs)
 
 
+@core.require(channel=core.config.irc.imageteam)
 @images.subcommand('scan')
 def scan(inp, *, page):
     page = core.wiki(page)
@@ -207,6 +208,7 @@ def scan(inp, *, page):
         return lex.images.scan.added_none
 
 
+@core.require(channel=core.config.irc.imageteam)
 @images.subcommand('update')
 @targeted(1)
 def update(inp, *, images, url, page, source, status):
@@ -234,6 +236,7 @@ def list_images(inp, *, images, terse):
     return [out(image=i) for i in images]
 
 
+@core.require(channel=core.config.irc.imageteam)
 @images.subcommand('notes')
 @targeted(1)
 def notes(inp, *, images, append, purge, list):
@@ -256,6 +259,7 @@ def notes(inp, *, images, append, purge, list):
         return image.notes
 
 
+@core.require(channel=core.config.irc.imageteam)
 @images.subcommand('purge')
 @targeted()
 def purge(inp, *, images):

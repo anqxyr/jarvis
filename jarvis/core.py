@@ -4,10 +4,10 @@
 # Module Imports
 ###############################################################################
 
-import configparser
 import functools
-import pyscp
 import logbook
+import pyscp
+import yaml
 
 from . import ext, lex
 
@@ -19,11 +19,25 @@ logbook.FileHandler('jarvis.log').push_application()
 log = logbook.Logger(__name__)
 
 ###############################################################################
-# Config and Cache
+# Config
 ###############################################################################
 
-config = configparser.ConfigParser()
-config.read('jarvis.cfg')
+
+class _AttributeDict(dict):
+
+    def __getattr__(self, name):
+        value = self[name]
+        if isinstance(value, dict):
+            return self.__class__(value)
+        return value
+
+
+with open('config.yaml') as file:
+    config = _AttributeDict(yaml.load(file))
+
+###############################################################################
+# Page Cache
+###############################################################################
 
 wiki = pyscp.wikidot.Wiki('www.scp-wiki.net')
 wlwiki = pyscp.wikidot.Wiki('wanderers-library')
@@ -33,7 +47,7 @@ def refresh():
     global pages
     global wlpages
     kwargs = dict(body='title created_by created_at rating tags', category='*')
-    if config['wiki'].getboolean('debug'):
+    if config.debug:
         pyscp.utils.default_logging(True)
         data = wiki._list_pages_parsed(author='anqxyr', **kwargs)
     else:
@@ -42,7 +56,7 @@ def refresh():
     wiki.titles.cache_clear()
     wiki.metadata.cache_clear()
 
-    if not config['wiki'].getboolean('debug'):
+    if not config.debug:
         wlpages = ext.PageView(wlwiki.list_pages(**kwargs))
 
 
@@ -98,25 +112,28 @@ def command(func):
     return inner
 
 
-def private(func):
-    @functools.wraps(func)
-    def inner(inp, *args, **kwargs):
-        inp.private = True
-        return func(inp, *args, **kwargs)
-    return inner
+def require(channel=None, level=0):
+    def decorator(func):
+        @functools.wraps(func)
+        def inner(inp, *args, **kwargs):
+            ch = channel or inp.channel
+            if inp.privileges.get(ch, -1) < level:
+                return lex.denied
+            return func(inp, *args, **kwargs)
+        return inner
+    return decorator
 
 
-def notice(func):
-    @functools.wraps(func)
-    def inner(inp, *args, **kwargs):
-        inp.notice = True
-        return func(inp, *args, **kwargs)
-    return inner
+def sendmode(mode):
+    def decorator(func):
+        @functools.wraps(func)
+        def inner(inp, *args, **kwargs):
+            setattr(inp, mode, True)
+            return func(inp, *args, **kwargs)
+        return inner
+    return decorator
 
 
-def multiline(func):
-    @functools.wraps(func)
-    def inner(inp, *args, **kwargs):
-        inp.multiline = True
-        return func(inp, *args, **kwargs)
-    return inner
+private = sendmode('private')
+notice = sendmode('notice')
+multiline = sendmode('multiline')

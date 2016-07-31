@@ -196,8 +196,11 @@ class ArticlesTable(Chart):
             rel = p.metadata[user][0]
             rel = html('span', rel, cls='rel-' + rel)
 
+            date = p.metadata[user].date
+            if not date:
+                date = p.created[:10] if p.metadata[user] == 'author' else ' '
             self.data.append([
-                p.title, p.rating, tags, link, p.created[:10], rel])
+                p.title, p.rating, tags, link, date, rel])
 
 
 ###############################################################################

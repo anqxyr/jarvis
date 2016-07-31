@@ -137,6 +137,7 @@ command('lastcreated lc', scp.lastcreated)
 command('unused', scp.unused)
 command('random', scp.random)
 command('errors', scp.errors)
+command('cleantitles', scp.cleantitles)
 command('staff', scp.staff)
 
 rule(r'(?i).*http[s]?://www\.scp-wiki\.net/([^/\s]+)(?:\s|$)', scp.name_lookup)

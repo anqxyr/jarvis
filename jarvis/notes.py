@@ -224,7 +224,7 @@ def outbound(inp, *, action):
 @parser.seen
 def seen(inp, *, channel, user, first, total):
     """Retrieve the first or the last message said by the user."""
-    if user == core.config['irc']['nick']:
+    if user == core.config.irc.nick:
         return lex.seen.self
 
     if channel:
@@ -260,7 +260,7 @@ def seen(inp, *, channel, user, first, total):
 @core.command
 def quote(inp, channel, mode, **kwargs):
 
-    if inp.channel in core.config['irc']['quotes_disabled']:
+    if inp.channel in core.config.irc.noquotes:
         return
 
     if channel:
@@ -338,7 +338,7 @@ def delete_quote(inp, *, user, message):
 @parser.save_memo
 def save_memo(inp, *, user, message, purge):
     """!rem <user> <message> -- Make a memo about the user."""
-    if inp.channel in core.config['irc']['quotes_disabled']:
+    if inp.channel in core.config.irc.noquotes:
         return
 
     Rem.delete().where(Rem.user == user, Rem.channel == inp.channel).execute()
@@ -354,7 +354,7 @@ def save_memo(inp, *, user, message, purge):
 @core.command
 def load_memo(inp):
     """?<user> -- Display the user's memo."""
-    if inp.channel in core.config['irc']['quotes_disabled']:
+    if inp.channel in core.config.irc.noquotes:
         return
 
     rem = Rem.select().where(
@@ -404,7 +404,7 @@ def topic_list(inp):
 
 
 def topic_sub(inp, topic, remove):
-    if (inp.channel != core.config['irc']['sssc'] and
+    if (inp.channel != core.config.irc.sssc and
         Restricted.select().where(Restricted.topic == topic).exists() and
             not remove):
         return lex.denied
@@ -424,10 +424,8 @@ def topic_sub(inp, topic, remove):
         return lex.topic.subscribed(topic=topic)
 
 
+@core.require(channel=core.config.irc.sssc)
 def topic_restrict(inp, topic, remove):
-    if inp.channel != core.config['irc']['sssc']:
-        return lex.denied
-
     query = Restricted.select().where(Restricted.topic == topic)
 
     if remove:

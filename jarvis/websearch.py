@@ -21,10 +21,10 @@ def google_search(inp, *, query):
     google = googleapi.build(
         'customsearch',
         'v1',
-        developerKey=core.config['google']['apikey']).cse()
+        developerKey=core.config.google.apikey).cse()
     results = google.list(
         q=query,
-        cx=core.config['google']['cseid'],
+        cx=core.config.google.cseid,
         num=1).execute()
     if not results.get('items'):
         return lex.not_found.generic
@@ -38,10 +38,10 @@ def google_image_search(inp, *, query):
     google = googleapi.build(
         'customsearch',
         'v1',
-        developerKey=core.config['google']['apikey']).cse()
+        developerKey=core.config.google.apikey).cse()
     results = google.list(
         q=query,
-        cx=core.config['google']['cseid'],
+        cx=core.config.google.cseid,
         searchType='image',
         num=1,
         safe='high').execute()
@@ -56,7 +56,7 @@ def youtube(inp, *, query):
     youtube = googleapi.build(
         'youtube',
         'v3',
-        developerKey=core.config['google']['apikey'])
+        developerKey=core.config.google.apikey)
     results = youtube.search().list(
         q=query,
         maxResults=1,
@@ -78,7 +78,7 @@ def get_youtube_video_info(video_id=None):
     youtube = googleapi.build(
         'youtube',
         'v3',
-        developerKey=core.config['google']['apikey'])
+        developerKey=core.config.google.apikey)
     vdata = youtube.videos().list(
         part='contentDetails,snippet,statistics',
         id=video_id,

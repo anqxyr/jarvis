@@ -70,10 +70,9 @@ def version(inp):
         version=__version__, days=uptime.days, hours=h, minutes=m)
 
 
+@core.require(channel=core.config.irc.sssc)
 @core.command
 def rejoin(inp):
-    if inp.channel != core.config['irc']['sssc']:
-        return lex.denied
     channel = inp.text if inp.text.startswith('#') else '#' + inp.text
     inp.raw(['JOIN', channel])
     return lex.rejoin(channel=channel)

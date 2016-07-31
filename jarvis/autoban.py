@@ -34,11 +34,10 @@ BANS = get_ban_list()
 ###############################################################################
 
 
+@core.require(channel=core.config.irc.sssc)
 @core.command
 def update_bans(inp):
     global BANS
-    if inp.channel != core.config['irc']['sssc']:
-        return
     try:
         BANS = get_ban_list()
         return lex.bans.updated
@@ -71,7 +70,7 @@ def ban_evasion(name, host, kick, ban, send):
         except arrow.parser.ParserError:
             pass
         if name.lower() in b.names or host in b.hosts:
-            kick(lex.bans.kick.evasion(b.reason))
+            kick(lex.bans.kick.evasion(reason=b.reason))
             ban(host, True)
             send(lex.bans.evasion(user=name, name=b.names[0]))
             time.sleep(900)

@@ -23,6 +23,10 @@ class Lexicon:
         self.path = path or []
         self.kwargs = {}
 
+    def __repr__(self):
+        return '<{} {}>'.format(
+            self.__class__.__qualname__, '.'.join(self.path))
+
     def __getattr__(self, value):
         return self.__class__(self.path + [value])
 

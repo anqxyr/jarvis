@@ -305,7 +305,7 @@ bans:
     kick:
         profanity: Your username is inappropriate. Please use \/nick newnick\ to change it. You may rejoin with a different username in 10 seconds.
         evasion: |-
-            Your nick/ip was found in the bot's banlist. Reason for ban: {}. If you wish to appeal please join #site17.
+            Your nick/ip was found in the bot's banlist. Reason for ban: {reason}. If you wish to appeal please join #site17.
 images:
     scan:
         unknown_category: Scan aborted. Could not determine page category.

@@ -222,12 +222,9 @@ def errors_vote():
 
 
 @core.multiline
+@core.require(channel=core.config.irc.sssc)
 @core.command
 def errors(inp):
-    if inp.channel != core.config['irc']['sssc']:
-        yield lex.denied
-        return
-
     all_pages = []
 
     for name in ['untagged', 'untitled', 'deleted', 'vote', 'orphaned']:
@@ -255,7 +252,7 @@ def cleantitles(inp):
         'scp-series', 'scp-series-2', 'scp-series-3',
         'joke-scps', 'scp-ex', 'archived-scps']
     wiki = core.pyscp.wikidot.Wiki('scp-wiki')
-    wiki.auth(core.config['wiki']['name'], core.config['wiki']['pass'])
+    wiki.auth(core.config.wiki.name, core.config.wiki.password)
     orphaned = [p.url.split('/')[-1] for p in errors_orphaned()]
 
     def clean_line(line, purge):
