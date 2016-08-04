@@ -168,7 +168,10 @@ class ArgumentParser:
 
     def subparser(self, mode=None):
         if not any(i.name == 'mode' for i in self._args):
-            self.add_argument('mode', nargs='?')
+            self.add_argument('mode', nargs='?', choices=[mode])
+        else:
+            mode_arg = next(i for i in self._args if i.name == 'mode')
+            mode_arg.choices.append(mode)
         pr = ArgumentParser()
         self._subparsers[mode] = pr
         return pr
@@ -190,26 +193,28 @@ class ArgumentParser:
             # current positional argument  or to any optional one
             if not unparsed:
                 break
-            value = unparsed[0]
-            unparsed = unparsed[1:]
-            known_flag = self._get_known_flag(value)
+            known_flag = self._get_known_flag(unparsed[0])
             if known_flag:
                 # if an optional argument is found, then the last argument
                 # has just ended, so lets close it
+                unparsed = unparsed[1:]
                 self._close(last)
                 last = known_flag
             elif last:
                 # otherwise continue feeding the last known argument
-                consumed = last.consume(value)
-                if not consumed:
+                if not last.consume(unparsed[0]):
                     self._close(last)
-                    last = self._next_positional(value)
+                    last = self._next_positional()
+                else:
+                    unparsed = unparsed[1:]
             else:
                 # and if we don't know any, get the next positional
-                last = self._next_positional(value)
+                last = self._next_positional()
             # if the name of the argument is 'mode'
             # then hand off the rest of the parsing to a subparser
             if last.name == 'mode':
+                if last.consume(unparsed[0]):
+                    unparsed = unparsed[1:]
                 self._close(last)
                 break
         self._check_constraints()
@@ -232,17 +237,11 @@ class ArgumentParser:
                 arg.marked = True
                 return arg
 
-    def _next_positional(self, value):
+    def _next_positional(self):
         for arg in [i for i in self.args if not i.is_optional]:
             if not arg.open:
                 continue
-            consumed = arg.consume(value)
-            if not consumed and not arg.min_consumed:
-                raise ArgumentError
-            elif not consumed:
-                self._close(arg)
-            else:
-                return arg
+            return arg
         raise ArgumentError
 
     def _close(self, arg):
@@ -328,11 +327,24 @@ def quote(pr):
 
 
 @parser
-def save_memo(pr):
+def memo(pr):
+    pr.add_argument('channel', re='#', nargs='?')
+
+    pr.subparser().add_argument('user', type=str.lower)
+
+    add = pr.subparser('add')
+    add.add_argument('user', type=str.lower)
+    add.add_argument('message', nargs='+', action='join')
+
+    pr.subparser('del').add_argument('user', type=str.lower)
+
+    pr.subparser('count')
+
+
+@parser
+def rem(pr):
     pr.add_argument('user', type=str.lower)
-    pr.add_argument('message', nargs='*', action='join')
-    pr.add_argument('--purge', '-p', '--forget', '-f')
-    pr.exclusive('message', 'purge', required=True)
+    pr.add_argument('message', nargs='+', action='join')
 
 
 @parser

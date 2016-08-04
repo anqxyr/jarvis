@@ -98,18 +98,23 @@ class Inp:
         return self._priv()
 
 
-def command(func):
+class command:
     """Enable generic command functionality."""
-    @functools.wraps(func)
-    def inner(inp, *args, **kwargs):
+
+    def __init__(self, func):
+        self.func = func
+
+    def __call__(self, inp, *args, **kwargs):
         try:
-            result = func(inp, *args, **kwargs)
+            result = self.func(inp, *args, **kwargs)
             if result:
                 inp.send(result)
         except Exception as e:
             log.exception(e)
             inp._send(lex.error.compose(inp), private=False, notice=False)
-    return inner
+
+    def __getattr__(self, name):
+        return getattr(self.func, name)
 
 
 def require(channel, level=0):

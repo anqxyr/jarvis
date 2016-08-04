@@ -65,8 +65,8 @@ class Quote(BaseModel):
     text = peewee.TextField()
 
 
-class Rem(BaseModel):
-    """Database Rem Table."""
+class Memo(BaseModel):
+    """Database Memo Table."""
 
     user = peewee.CharField(index=True)
     channel = peewee.CharField()
@@ -98,9 +98,14 @@ class Alert(BaseModel):
 
 def init():
     """Initialize the database, create missing tables."""
+    migrator = playhouse.migrate.SqliteMigrator(db)
+    try:
+        playhouse.migrate.migrate(migrator.rename_table('Rem', 'Memo'))
+    except:
+        pass
     db.connect()
     db.create_tables(
-        [Tell, Message, Quote, Rem, Subscriber, Restricted, Alert], safe=True)
+        [Tell, Message, Quote, Subscriber, Restricted, Alert], safe=True)
 
 
 init()
@@ -249,10 +254,9 @@ def seen(inp, *, user, first, total):
 # Quotes
 ###############################################################################
 
-
+@core.command
 @parser.quote
 @core.crosschannel
-@core.command
 def quote(inp, mode, **kwargs):
     if inp.channel in core.config.irc.noquotes:
         return lex.denied
@@ -299,7 +303,7 @@ def add_quote(inp, *, date, user, message):
         time=(date or arrow.utcnow()).format('YYYY-MM-DD'),
         text=message)
 
-    return lex.quote.saved
+    return lex.quote.added
 
 
 @quote.subcommand('del')
@@ -320,38 +324,62 @@ def delete_quote(inp, *, user, message):
 # Memos
 ###############################################################################
 
-
 @core.command
-@parser.save_memo
-def save_memo(inp, *, user, message, purge):
-    """!rem <user> <message> -- Make a memo about the user."""
+@parser.memo
+@core.crosschannel
+def memo(inp, mode, **kwargs):
     if inp.channel in core.config.irc.noquotes:
-        return
-
-    Rem.delete().where(Rem.user == user, Rem.channel == inp.channel).execute()
-
-    if purge:
-        return lex.quote.deleted
-
-    Rem.create(user=user, channel=inp.channel, text=message)
-
-    return lex.quote.saved
+        return lex.denied
+    return memo.dispatch(inp, mode, **kwargs)
 
 
-@core.command
-def load_memo(inp):
-    """?<user> -- Display the user's memo."""
-    if inp.channel in core.config.irc.noquotes:
-        return
+@memo.subcommand()
+def get_memo(inp, *, user):
+    memo = Memo.select().where(Memo.user == user, Memo.channel == inp.channel)
 
-    rem = Rem.select().where(
-        Rem.user == inp.text.lower()[1:],
-        Rem.channel == inp.channel)
-
-    if rem.exists():
-        return rem.get().text
+    if memo.exists():
+        return lex.memo.get(user=user, text=memo.get().text)
     else:
-        return lex.not_found.generic
+        return lex.memo.not_found
+
+
+@memo.subcommand('add')
+def add_memo(inp, *, user, message):
+    memo = Memo.select().where(Memo.user == user, Memo.channel == inp.channel)
+    if memo.exists():
+        return lex.memo.already_exists
+
+    Memo.create(user=user, channel=inp.channel, text=message)
+    return lex.memo.added
+
+
+@memo.subcommand('del')
+def delete_memo(inp, *, user):
+    memo = Memo.select().where(Memo.user == user, Memo.channel == inp.channel)
+    if not memo.exists():
+        return lex.memo.not_found
+
+    memo.get().delete_instance()
+    return lex.memo.deleted
+
+
+@memo.subcommand('count')
+def count_memos(inp):
+    count = Memo.select().where(Memo.channel == inp.channel).count()
+    return lex.memo.count(count=count)
+
+
+@core.command
+@parser.rem
+def rem(inp, *, user, message):
+    if inp.channel not in core.config.irc.noquotes:
+        return add_memo(inp, user=user, message=message)
+
+
+@core.command
+def peek_memo(inp):
+    if inp.channel not in core.config.irc.noquotes:
+        return get_memo(inp, user=inp.text[1:])
 
 
 ###############################################################################

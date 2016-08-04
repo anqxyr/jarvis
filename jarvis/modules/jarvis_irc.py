@@ -106,7 +106,8 @@ command('showtells st', notes.show_tells)
 command('outbound', notes.outbound)
 command('seen', notes.seen)
 command('quote', notes.quote)
-command('remember', notes.save_memo)
+command('memo', notes.memo)
+command('remember', notes.rem)
 command('topic', notes.topic)
 command('alert', notes.alert)
 command('backport', notes.backport)
@@ -114,7 +115,7 @@ command('backport', notes.backport)
 rule(r'(.*)', notes.logevent, priority='low')
 rule(r'(.*)', notes.get_tells, priority='low')
 rule(r'(.*)', notes.get_alerts, priority='low')
-rule(r'(\?[^\s]+)\s*$', notes.load_memo)
+rule(r'(\?[^\s]+)\s*$', notes.peek_memo)
 
 
 ###############################################################################

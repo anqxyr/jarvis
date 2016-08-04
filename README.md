@@ -9,6 +9,7 @@ New features
 
 * Added !cleantitles command.
 * Added wildcard support to the autoban module.
+* Added !memo command, expanded the old memo functionality.
 
 Other changes
 
