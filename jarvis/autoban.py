@@ -7,11 +7,20 @@
 import arrow
 import collections
 import pyscp
-import time
+import threading
 
 from . import core, lex
 
 ###############################################################################
+
+PROFANITY = [
+    'bitch', 'fuck', 'asshole', 'penis', 'vagina', 'nigger', 'retard',
+    'faggot', 'chink', 'shit', 'hitler', 'douche', 'bantest']
+
+###############################################################################
+# Helper Functions
+###############################################################################
+
 
 Ban = collections.namedtuple('Ban', 'names hosts status reason thread')
 
@@ -31,48 +40,54 @@ def parse_ban(row):
 
 BANS = get_ban_list()
 
+
+def kick_user(inp, name, message):
+    message = message.compose(inp)
+    inp.raw(['KICK', inp.channel, name], message)
+
+
+def ban_user(inp, target, length):
+    inp.raw(['MODE', inp.channel, '+b', target])
+    t = threading.Timer(
+        length,
+        lambda: inp.raw(['MODE', inp.channel, '-b', target]))
+    t.start()
+
+###############################################################################
+# Commands
 ###############################################################################
 
 
 @core.require(channel=core.config.irc.sssc)
 @core.command
-def update_bans(inp):
+def updatebans(inp):
     global BANS
     try:
         BANS = get_ban_list()
-        return lex.bans.updated
+        return lex.updatebans.updated
     except:
-        return lex.bans.failed
+        return lex.updatebans.failed
 
 
-def offensive_username(name, host, kick, ban, send):
-    banned_words = [
-        'bitch', 'fuck', 'asshole', 'penis', 'vagina', 'nigger', 'retard',
-        'faggot', 'chink', 'shit', 'hitler', 'douche']
-    if any(word in name.lower() for word in banned_words):
-        kick(lex.bans.kick.profanity)
-        ban(host, True)
-        ban(name, True)
-        send(lex.bans.profanity(user=name))
-        time.sleep(10)
-        ban(host, False)
-        time.sleep(890)
-        ban(name, False)
-        return True
-
-
-def ban_evasion(name, host, kick, ban, send):
-    for b in BANS:
+@core.command
+def autoban(inp, name, host):
+    if inp.channel != '#site19':
+        return
+    if any(word in name.lower() for word in PROFANITY):
+        kick_user(inp, name, lex.autoban.kick.name)
+        ban_user(inp, host, 10)
+        ban_user(inp, name, 900)
+        return lex.autoban.name(user=name)
+    # find if the user is in the banlist
+    bans = [b for b in BANS if name.lower() in b.names or host in b.hosts]
+    for ban in bans:
         try:
-            time = arrow.get(b.status, ['M/D/YYYY', 'YYYY-MM-DD'])
-            if time < arrow.now():
+            # check if the ban has expired
+            if arrow.get(ban.status, ['M/D/YYYY', 'YYYY-MM-DD']) < arrow.now():
                 continue
         except arrow.parser.ParserError:
+            # if we can't parse the time, it's perma
             pass
-        if name.lower() in b.names or host in b.hosts:
-            kick(lex.bans.kick.evasion(reason=b.reason))
-            ban(host, True)
-            send(lex.bans.evasion(user=name, name=b.names[0]))
-            time.sleep(900)
-            ban(host, False)
-            return True
+        kick_user(inp, name, lex.autoban.kick.banlist(reason=ban.reason))
+        ban_user(inp, host, 900)
+        return lex.autoban.banlist(user=name, truename=ban.names[0])

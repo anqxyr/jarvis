@@ -291,21 +291,25 @@ tvtropes:
 ###############################################################################
 # Autoban
 ###############################################################################
-bans:
+updatebans:
     updated: Banlist updated, boss.
     failed: Your banlist is broken, mate. You should into fixing it.
-    profanity: |-
+autoban:
+    name: |-
         OP Alert: Kicking {user}: they have a filty mouth that could use some soap.
         OP Alert: {user} is just untasteful, and I don't want their ilk here.
         OP Alert: Was {user} a troll? It was probably a troll.
-    evasion: |-
-        OP Alert: {user} was kicked - they're {name}. See, I can kick ass too!
-        OP Alert: {user} (better known as {name}) was exiled from this fine and pure kingdom.
-        Hey OPs: {user} was kicked and banned because they look like {name} and their face smells.
+    banlist: |-
+        OP Alert: {user} was kicked - they're {truename}. See, I can kick ass too!
+        OP Alert: {user} (better known as {truename}) was exiled from this fine and pure kingdom.
+        Hey OPs: {user} was kicked and banned because they look like {truename} and their face smells.
     kick:
-        profanity: Your username is inappropriate. Please use \/nick newnick\ to change it. You may rejoin with a different username in 10 seconds.
-        evasion: |-
+        name: Your username is inappropriate. Please use "/nick newnick" to change it. You may rejoin with a different username in 10 seconds.
+        banlist: |-
             Your nick/ip was found in the bot's banlist. Reason for ban: {reason}. If you wish to appeal please join #site17.
+###############################################################################
+# Images
+###############################################################################
 images:
     scan:
         unknown_category: Scan aborted. Could not determine page category.

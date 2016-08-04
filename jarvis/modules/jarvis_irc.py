@@ -199,22 +199,15 @@ command('images img', images.images)
 ###############################################################################
 
 
-command('updatebans', autoban.update_bans)
+command('updatebans', autoban.updatebans)
 
 
 @sopel.module.event('JOIN')
 @sopel.module.rule('.*')
 def ban_on_join(bot, tr):
-    if tr.sender != '#site19':
-        return
-
-    def kick(message):
-        bot.write(['KICK', tr.sender, tr.nick], message)
-
-    def ban(target, enable):
-        bot.write(['MODE', tr.sender, '+b' if enable else '-b', target])
-
-    send_ = functools.partial(send, bot)
-
-    if not autoban.ban_evasion(tr.nick, tr.host, kick, ban, send_):
-        autoban.offensive_username(tr.nick, tr.host, kick, ban, send_)
+    inp = core.Inp(
+        None, tr.nick, tr.sender,
+        functools.partial(send, bot),
+        functools.partial(privileges, bot, tr.nick),
+        bot.write)
+    autoban.autoban(inp, tr.nick, tr.host)
