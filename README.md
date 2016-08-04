@@ -20,6 +20,7 @@ Bug fixes
 
 * Uptime now counts days correctly.
 * The pages reported by !errors will now be displayed in alphabetical order.
+* Fixed bugs in the autoban module.
 
 ### 1.0.0
 

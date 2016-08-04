@@ -8,6 +8,7 @@ import arrow
 import collections
 import pyscp
 import threading
+import fnmatch
 
 from . import core, lex
 
@@ -79,7 +80,8 @@ def autoban(inp, name, host):
         ban_user(inp, name, 900)
         return lex.autoban.name(user=name)
     # find if the user is in the banlist
-    bans = [b for b in BANS if name.lower() in b.names or host in b.hosts]
+    bans = [b for b in BANS if name.lower() in b.names
+            or any(fnmatch.fnmatch(host, pat) for pat in b.hosts))]
     for ban in bans:
         try:
             # check if the ban has expired
