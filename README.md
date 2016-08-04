@@ -8,6 +8,7 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 New features
 
 * Added !cleantitles command.
+* Added wildcard support to the autoban module.
 
 Other changes
 

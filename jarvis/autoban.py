@@ -72,7 +72,7 @@ def updatebans(inp):
 
 @core.command
 def autoban(inp, name, host):
-    if inp.channel != '#site19':
+    if not core.config.debug and inp.channel != '#site19':
         return
     if any(word in name.lower() for word in PROFANITY):
         kick_user(inp, name, lex.autoban.kick.name)
@@ -80,8 +80,8 @@ def autoban(inp, name, host):
         ban_user(inp, name, 900)
         return lex.autoban.name(user=name)
     # find if the user is in the banlist
-    bans = [b for b in BANS if name.lower() in b.names
-            or any(fnmatch.fnmatch(host, pat) for pat in b.hosts))]
+    bans = [b for b in BANS if name.lower() in b.names or
+            any(fnmatch.fnmatch(host, pat) for pat in b.hosts)]
     for ban in bans:
         try:
             # check if the ban has expired
