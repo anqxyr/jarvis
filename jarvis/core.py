@@ -112,16 +112,27 @@ def command(func):
     return inner
 
 
-def require(channel=None, level=0):
+def require(channel, level=0):
     def decorator(func):
         @functools.wraps(func)
         def inner(inp, *args, **kwargs):
-            ch = channel or inp.channel
-            if inp.privileges.get(ch, -1) < level:
+            if inp.privileges.get(channel, -1) < level:
                 return lex.denied
             return func(inp, *args, **kwargs)
         return inner
     return decorator
+
+
+def crosschannel(func):
+    @functools.wraps(func)
+    def inner(inp, *args, channel, **kwargs):
+        if channel:
+            if channel not in inp.privileges:
+                return lex.denied
+            inp.channel = channel
+            inp.notice = True
+        return func(inp, *args, **kwargs)
+    return inner
 
 
 def sendmode(mode):

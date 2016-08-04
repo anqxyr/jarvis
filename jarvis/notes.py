@@ -219,19 +219,13 @@ def outbound(inp, *, action):
 # Seen
 ###############################################################################
 
-
-@core.command
 @parser.seen
-def seen(inp, *, channel, user, first, total):
+@core.crosschannel
+@core.command
+def seen(inp, *, user, first, total):
     """Retrieve the first or the last message said by the user."""
     if user == core.config.irc.nick:
         return lex.seen.self
-
-    if channel:
-        if channel not in inp.privileges:
-            return lex.denied
-        inp.channel = channel
-        inp.notice = True
 
     query = Message.select().where(
         Message.user == user, Message.channel == inp.channel)
@@ -257,18 +251,11 @@ def seen(inp, *, channel, user, first, total):
 
 
 @parser.quote
+@core.crosschannel
 @core.command
-def quote(inp, channel, mode, **kwargs):
-
+def quote(inp, mode, **kwargs):
     if inp.channel in core.config.irc.noquotes:
-        return
-
-    if channel:
-        if channel not in inp.privileges:
-            return lex.denied
-        inp.channel = channel
-        inp.notice = True
-
+        return lex.denied
     return quote.dispatch(inp, mode, **kwargs)
 
 
