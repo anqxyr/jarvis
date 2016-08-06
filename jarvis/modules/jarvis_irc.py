@@ -151,7 +151,7 @@ rule(r'(?i).*!(scp-\d+(?:-[\w]+)?)', scp.name_lookup)
 ###############################################################################
 
 
-command('jarvis version', tools.version)
+command('jarvis version changelog', tools.version)
 command('rejoin', tools.rejoin)
 command('showmore sm', tools.showmore)
 command('choose', tools.choose)
