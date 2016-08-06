@@ -369,7 +369,7 @@ def alert(pr):
 
 
 @parser
-def search(pr):
+def random(pr):
     pr.add_argument('partial', nargs='*', type=str.lower)
     pr.add_argument('--exclude', '-e', nargs='+', type=str.lower)
     pr.add_argument('--strict', '-s', nargs='+', type=str.lower)
@@ -379,6 +379,13 @@ def search(pr):
     pr.add_argument('--created', '-c', nargs=1)
     pr.add_argument(
         '--fullname', '-f', nargs='+', action='join', type=str.lower)
+
+
+@parser
+def search(pr):
+    # search and random are almost the same
+    # except search has one more argument
+    random.__wrapped__(pr)
     pr.add_argument('--summary', '-u')
 
 

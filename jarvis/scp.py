@@ -75,8 +75,8 @@ def author_search(inp, func):
 
 
 def find_pages(
-        inp, pages, partial, exclude, strict,
-        tags, author, rating, created, fullname, summary):
+        pages, *, partial, exclude, strict,
+        tags, author, rating, created, fullname):
     if tags:
         pages = pages.tags(tags)
     if rating:
@@ -89,7 +89,7 @@ def find_pages(
             p for p in pages if any(author in a.lower() for a in p.metadata)]
     if fullname:
         pages = [p for p in pages if p.title.lower() == fullname]
-        return show_page(pages[0]) if pages else lex.not_found.page
+        return pages[0]
 
     results = []
     for p in pages:
@@ -105,32 +105,30 @@ def find_pages(
 
         results.append(p)
 
+    return results
+
+
+@parser.search
+def _page_search_base(inp, pages, *, summary, **kwargs):
+    if not inp.text:
+        return lex.input.incorrect
     func = show_search_summary if summary else show_search_results
-    return func(inp, results)
+    return func(inp, find_pages(pages, **kwargs))
 
 
 @core.command
-@parser.search
-def search(inp, **kwargs):
-    if not inp.text:
-        return lex.input.incorrect
-    return find_pages(inp, core.pages, **kwargs)
+def search(inp):
+    return _page_search_base(inp, core.pages)
 
 
 @core.command
-@parser.search
-def tale(inp, **kwargs):
-    if not inp.text:
-        return lex.input.incorrect
-    return find_pages(inp, core.pages.tags('tale'), **kwargs)
+def tale(inp):
+    return _page_search_base(inp, core.pages.tags('tale'))
 
 
 @core.command
-@parser.search
-def wanderers_library(inp, **kwargs):
-    if not inp.text:
-        return lex.input.incorrect
-    return find_pages(inp, core.wlpages, **kwargs)
+def wanderers_library(inp):
+    return _page_search_base(inp, core.wlpages)
 
 
 @core.command
@@ -284,9 +282,9 @@ def cleantitles(inp):
 
 
 @core.command
-@parser.search
+@parser.random
 def random(inp, **kwargs):
-    pages = core.pages if not inp.text else find_pages(core.pages, **kwargs)
+    pages = find_pages(core.pages, **kwargs) if inp.text else core.pages
     if pages:
         return show_page(rand.choice(pages))
     else:

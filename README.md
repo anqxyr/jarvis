@@ -23,6 +23,8 @@ Bug fixes
 * Uptime now counts days correctly.
 * The pages reported by !errors will now be displayed in alphabetical order.
 * Fixed bugs in the autoban module.
+* It is no longer possible to accidentally overwrite memos.
+* Fixed !random failing when called with any arguments.
 
 ### 1.0.0
 
