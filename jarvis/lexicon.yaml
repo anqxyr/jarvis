@@ -58,12 +58,12 @@ not_found:
         You may want to read this: http://www.scp-wiki.net/meet-the-staff
 denied: You are not allowed to do that.
 error: An unknown error just happened. That was highly unexpected, so I don't have a smartass response ready. Someone call anqxyr pls.
-spam: |-
+cooldown: |-
     Don't spam the bot.
-    I did this literally less than two minutes ago. Can't I get some rest?
     Stop bothering me, I'm taking a nap.
     Come back later, maybe then I'll do it.
-    Do you need your memory checked or something?
+    I can't do this right now.
+    Too soon.
 ###############################################################################
 # Notes
 ###############################################################################

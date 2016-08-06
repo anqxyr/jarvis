@@ -242,6 +242,7 @@ def errors(inp):
 
 
 @core.command
+@core.cooldown(1200)
 @core.multiline
 def cleantitles(inp):
     yield lex.cleantitles.start
@@ -292,24 +293,15 @@ def random(inp, **kwargs):
 
 
 @core.command
+@core.cooldown(120)
 @core.multiline
 def lastcreated(inp, cooldown={}, **kwargs):
     kwargs = dict(
         body='title created_by created_at rating',
         order='created_at desc',
         limit=3)
-    now = arrow.now()
-
-    if inp.channel not in cooldown:
-        pass
-    elif (now - cooldown[inp.channel]).seconds < 120:
-        yield lex.spam
-        return
-
-    cooldown[inp.channel] = now
-
     pages = core.wiki.list_pages(**kwargs)
-    yield from [show_page(p, rating=False) for p in pages]
+    return [show_page(p, rating=False) for p in pages]
 
 
 @core.command

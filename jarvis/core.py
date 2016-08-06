@@ -4,6 +4,7 @@
 # Module Imports
 ###############################################################################
 
+import arrow
 import functools
 import logbook
 import pyscp
@@ -153,3 +154,23 @@ def sendmode(mode):
 private = sendmode('private')
 notice = sendmode('notice')
 multiline = sendmode('multiline')
+
+
+def cooldown(time):
+    def decorator(func):
+        func._cooldown = {}
+
+        @functools.wraps(func)
+        def inner(inp, *args, **kwargs):
+            now = arrow.now()
+
+            if inp.channel not in func._cooldown:
+                pass
+            elif (now - func._cooldown[inp.channel]).seconds < time:
+                inp.multiline = False
+                return lex.cooldown
+
+            func._cooldown[inp.channel] = now
+            return func(inp, *args, **kwargs)
+        return inner
+    return decorator

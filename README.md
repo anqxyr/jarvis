@@ -14,6 +14,7 @@ New features
 Other changes
 
 * !lastcreated no longer shows the ratings of the articles.
+* SCP Articles without a title no longer show up as [ACCESS DENIED]
 * Improved the architecture of modal commands.
 * Standartised crosschannel commands.
 * Commands bound to a specific channel can now all be used in PMs / from other channels.
