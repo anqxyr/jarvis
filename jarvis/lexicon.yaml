@@ -242,7 +242,7 @@ show_page:
         rewrite: rewritten {hdate} by {users} and {last_user}
         translator: translated {hdate} by {users} and {last_user}
         maintainer: maintained {hdate} by {users} and {last_user}
-    summary: "*{page.title}* ({attribution}; rating: {page.rating:+d}) - {page.url}"
+    summary: "*{page.title}* ({attribution}; rating: {rating:+d}) - {page.url}"
     nr_summary: "*{page.title}* ({attribution}) - {page.url}"
 summary:
     author: |-

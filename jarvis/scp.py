@@ -21,7 +21,13 @@ def show_page(page, rating=True):
         templates=lex.show_page.templates._raw,
         group_templates=lex.show_page.group_templates._raw)
     out = lex.show_page.summary if rating else lex.show_page.nr_summary
-    return out(page=page, attribution=attribution)
+    if page.name == 'scp-1848':
+        rand.seed(int(arrow.now().format('YYYYMMDDHH')))
+        rating = rand.range(-160, -140)
+        rand.seed()
+    else:
+        rating = page.rating
+    return out(page=page, rating=rating, attribution=attribution)
 
 
 ###############################################################################
