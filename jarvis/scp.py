@@ -23,7 +23,7 @@ def show_page(page, rating=True):
     out = lex.show_page.summary if rating else lex.show_page.nr_summary
     if page.name == 'scp-1848':
         rand.seed(int(arrow.now().format('YYYYMMDDHH')))
-        rating = rand.range(-160, -140)
+        rating = rand.randrange(-160, -140)
         rand.seed()
     else:
         rating = page.rating
