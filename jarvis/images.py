@@ -37,13 +37,13 @@ STATUS = [
 
 class Image:
 
-    def __init__(self, url, page, source, status, notes, category):
+    def __init__(self, url, page, category, **kwargs):
         self.url = url
         self.page = page
-        self.source = source
-        self.status = status
-        self.notes = notes
         self.category = category
+        self.source = kwargs.get('source') or ''
+        self.status = kwargs.get('status') or ''
+        self.notes = kwargs.get('notes') or []
 
     @property
     def status_col(self):
@@ -81,7 +81,8 @@ def load_images():
             status = status.text
             notes = notes.find('td').text.split('\n')
             notes = [i for i in notes if i]
-            IMAGES.append(Image(url, page, source, status, notes, name))
+            IMAGES.append(Image(url=url, page=page, category=name,
+                                source=source, status=status, notes=notes))
 
 
 def save_images(category, comment, user):
@@ -135,8 +136,10 @@ def targeted(maxres=None):
                 if img.url == target:
                     return fn(inp, *args, images=[img], **kwargs)
             if not matches:
+                inp.multiline = False
                 return lex.images.not_found
             if not index and maxres and maxres < len(matches):
+                inp.multiline = False
                 return lex.images.too_many(count=len(matches))
             if index:
                 if index < 1 or index > len(matches):
@@ -185,33 +188,35 @@ def images(inp, mode, **kwargs):
 
 @core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('scan')
-def scan(inp, *, page):
-    page = core.wiki(page)
-    cat = get_page_category(page)
-    if not cat:
-        return lex.images.scan.unknown_category
-
+@core.multiline
+def scan(inp, *, pages):
+    cats = set()
     counter = 0
-    for img in page._soup.find(id='page-content')('img'):
-        if any(i.url == img['src'] for i in IMAGES):
+    for page in pages:
+        page = core.wiki(page)
+        cat = get_page_category(page)
+        if not cat:
+            yield lex.images.scan.unknown_category(page=page.name)
             continue
-        img = Image(img['src'], page.url, '', '', [], cat)
-        IMAGES.append(img)
-        counter += 1
-    save_images(cat, 'new page indexed', inp.user)
 
-    if counter == 1:
-        return lex.images.scan.added_one
-    elif counter > 1:
-        return lex.images.scan.added_several(count=counter)
-    else:
-        return lex.images.scan.added_none
+        for img in page._soup.find(id='page-content')('img'):
+            if any(i.url == img['src'] for i in IMAGES):
+                continue
+            img = Image(url=img['src'], page=page.url, category=cat)
+            IMAGES.append(img)
+            cats.add(cat)
+            counter += 1
+
+    for cat in cats:
+        save_images(cat, 'added scan results', inp.user)
+
+    yield lex.images.scan.done(count=counter)
 
 
 @core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('update')
 @targeted(1)
-def update(inp, *, images, url, page, source, status):
+def update(inp, *, images, url, page, source, status, notes):
     image = images[0]
     if url:
         image.url = url
@@ -223,6 +228,11 @@ def update(inp, *, images, url, page, source, status):
         if status not in STATUS and status != '-':
             return lex.images.update.bad_status
         image.status = status
+    if notes:
+        print(repr(image.notes))
+        if image.notes:
+            return lex.images.update.notes_conflict
+        image.notes.append(notes)
 
     save_images(image.category, 'image updated', inp.user)
     return lex.images.update.done
@@ -233,7 +243,7 @@ def update(inp, *, images, url, page, source, status):
 @targeted(5)
 def list_images(inp, *, images, terse):
     out = lex.images.list.terse if terse else lex.images.list.verbose
-    return [out(image=i) for i in images]
+    yield from [out(image=i) for i in images]
 
 
 @core.require(channel=core.config.irc.imageteam, level=4)
@@ -295,9 +305,20 @@ def stats(inp, *, category):
         not_reviewed=not_reviewed)
 
 
+@core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('add')
 def add(inp, *, url, page):
-    pass
+    if not page:
+        page = re.search(r'scp-wiki.wdfiles.com/local--files/([^/]+)/', url)
+        if not page:
+            return lex.images.add.offsite_image
+        page = page.group(1)
+    page = core.wiki(page)
+    category = get_page_category(page)
+    IMAGES.append(Image(url=url, page=page.url, category=category))
+    save_images(category, 'image added', inp.user)
+    return lex.images.add.done
+
 
 ###############################################################################
 

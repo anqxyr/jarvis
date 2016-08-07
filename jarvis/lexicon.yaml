@@ -329,14 +329,12 @@ autoban:
 ###############################################################################
 images:
     scan:
-        unknown_category: Scan aborted. Could not determine page category.
-        added_one: New image have been added to the index.
-        added_several: |-
-            {count} new images have been added to the index.
-        added_none: That page doesn't contain any unknown images.
+        unknown_category: Could not determine the category for {page}. Proceeding to the next page.
+        done: "{count} new images have been added to the index."
     update:
         done: Index updated.
         bad_status: Incorrect status. Action aborted.
+        notes_conflict: The image record already contains notes. The update subcommand can only add notes where none had previously existed. Use "!images notes -a" to append to existing notes.
     list:
         all: |-
             The list of all currently indexed images is available here: http://scp-stats.wikidot.com/images
@@ -348,6 +346,9 @@ images:
         append: Note appended.
         purge: All notes have been purged.
         empty: There are no notes about this image.
+    add:
+        done: The image has been successfully added to the index.
+        offsite: Could not determine the parent page from the image url. The image is likely hosted off-site. Reupload the image localy or specify the parent page explicitly.
     too_many: Specified page includes {count} images. Please specify which image you wish to see.
     not_found: The image is not found in the index.
     purge: Purged {count} record(s).

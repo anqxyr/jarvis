@@ -219,9 +219,9 @@ def outbound(inp, *, action):
 # Seen
 ###############################################################################
 
+@core.command
 @parser.seen
 @core.crosschannel
-@core.command
 def seen(inp, *, user, first, total):
     """Retrieve the first or the last message said by the user."""
     if user == core.config.irc.nick:

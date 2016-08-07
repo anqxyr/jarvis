@@ -41,9 +41,11 @@ class CommandWrapper:
     def __call__(self, inp, *args, **kwargs):
         try:
             parsed = self._parser.parse_args(inp.text.split())
-        except ArgumentError:
+        except ArgumentError as e:
             inp.multiline = False
-            return lex.input.incorrect
+            if e.usage:
+                return e.usage(self._func.__name__)
+            return self._parser.usage(self._func.__name__)
         parsed.update(kwargs)
         return self._func(inp, *args, **parsed)
 
@@ -70,17 +72,15 @@ class Argument:
         self.is_optional = args[0].startswith('-')
         self.flags = args if self.is_optional else []
 
-        self.nargs = kwargs.get('nargs', None)
-        if not self.nargs and self.is_optional:
-            self.nargs = 0
-        elif not self.nargs and not self.is_optional:
-            self.nargs = 1
+        self.nargs = kwargs.get('nargs')
+        if not self.nargs:
+            self.nargs = 0 if self.is_optional else 1
 
-        self.action = kwargs.get('action', None)
+        self.action = kwargs.get('action')
 
-        self.re = kwargs.get('re', None)
-        self.type = kwargs.get('type', None)
-        self.choices = kwargs.get('choices', None)
+        self.re = kwargs.get('re')
+        self.type = kwargs.get('type')
+        self.choices = kwargs.get('choices')
 
         self.values = []
         self.open = True
@@ -152,10 +152,52 @@ class Argument:
 
         return {self.name: self.values}
 
+    @property
+    def usage(self):
+        if self.is_optional:
+            return self._usage_optional
+        else:
+            return self._usage_positional
+
+    @property
+    def _usage_optional(self):
+        flag = max(self.flags, key=len)
+        if self.nargs == 0:
+            return flag
+        if self.nargs == 1:
+            return '{} {}'.format(flag, self.name)
+        if self.nargs == '+':
+            return '{0} {1}1 [{1}2 ...]'.format(flag, self.name)
+        args = [self.name + str(i) for i in range(1, self.nargs + 1)]
+        return '{} {}'.format(flag, ' '.join(args))
+
+    @property
+    def _usage_positional(self):
+        if self.choices:
+            choices = ','.join([i for i in self.choices if i])
+            if self.nargs == 1:
+                return '{{{}}}'.format(choices)
+            if self.nargs == '?':
+                return '[{{{}}}]'.format(choices)
+        if self.nargs == 1:
+            return self.name
+        if self.nargs == '?':
+            return '[{}]'.format(self.name)
+        if self.nargs == '*':
+            if self.action == 'join':
+                return '[{}]'.format(self.name)
+            return '[{}1 ...]'.format(self.name)
+        if self.nargs == '+':
+            if self.action == 'join':
+                return self.name
+            return '{0}1 [{0}2 ...]'.format(self.name)
+        return ' '.join([self.name + str(i) for i in range(1, self.nargs + 1)])
+
 
 class ArgumentParser:
 
-    def __init__(self):
+    def __init__(self, usage_subparser=None):
+        self._uspr = usage_subparser
         self._args = []
         self._exclusive_args = []
         self._subparsers = {}
@@ -172,7 +214,7 @@ class ArgumentParser:
         else:
             mode_arg = next(i for i in self._args if i.name == 'mode')
             mode_arg.choices.append(mode)
-        pr = ArgumentParser()
+        pr = ArgumentParser(mode)
         self._subparsers[mode] = pr
         return pr
 
@@ -189,6 +231,9 @@ class ArgumentParser:
         values = {}
         last = None
         while unparsed:
+            # a hook to force usage output
+            if unparsed == ['--usage']:
+                raise ArgumentError(self.usage)
             # go through each segment and try to match it either to the
             # current positional argument  or to any optional one
             if not unparsed:
@@ -247,37 +292,74 @@ class ArgumentParser:
     def _close(self, arg):
         if arg is None:
             return
+        arg.open = False
+        for exc in self._exclusive_args:
+            args = exc['args']
+            if arg.name not in args:
+                continue
+            if not self._arg_present(arg.name):
+                return
+            args = [i for i in self.args if i.name in args]
+            for i in args:
+                i.open = False
+            return
         if not arg.min_consumed:
             raise ArgumentError
-        arg.open = False
         if (arg.is_optional and not arg.marked) or not arg.values:
             return
-        for exc in self._exclusive_args:
-            if arg.name not in exc['args']:
-                continue
-            for name in exc['args']:
-                next(i for i in self.args if i.name == name).open = False
 
     def _arg_present(self, name):
         arg = next(i for i in self.args if i.name == name)
         return bool(arg.marked if arg.is_optional else arg.values)
 
     def _check_constraints(self):
-        if not all(i.min_consumed for i in self.args):
-            raise ArgumentError
-        for exc in self._exclusive_args:
-            if sum(1 for arg in exc['args'] if self._arg_present(arg)) > 1:
-                raise ArgumentError
-            if not exc['required']:
+        exclusive = [i for e in self._exclusive_args for i in e['args']]
+        for arg in self.args:
+            if arg.name in exclusive:
                 continue
-            if not any(self._arg_present(arg) for arg in exc['args']):
-                raise ArgumentError(
-                    'Required mutually exclusive arguments missing: {}'
-                    .format(self.args))
+            if not arg.min_consumed:
+                raise ArgumentError
+
+        for exc in self._exclusive_args:
+            count = len([i for i in exc['args'] if self._arg_present(i)])
+            if count > 1:
+                raise ArgumentError
+            if exc['required'] and count == 0:
+                raise ArgumentError
+
+    def _usage_exclusive(self, group):
+        args = [i.usage for i in self._args if i.name in group['args']]
+        args = ' | '.join(args)
+        if group['required']:
+            return '( {} )'.format(args)
+        else:
+            return '[ {} ]'.format(args)
+
+    def usage(self, command_name):
+        args = []
+        exclusive_matched = []
+        for arg in self._args:
+            if arg.name in exclusive_matched:
+                continue
+            for excgroup in self._exclusive_args:
+                if arg.name in excgroup['args']:
+                    args.append(self._usage_exclusive(excgroup))
+                    exclusive_matched.extend(excgroup['args'])
+                    break
+            else:
+                usage = '[{}]' if arg.is_optional else '{}'
+                usage = usage.format(arg.usage)
+                args.append(usage)
+        if self._uspr:
+            return 'usage: !{} {} {}'.format(
+                command_name, self._uspr, ' '.join(args))
+        return 'usage: !{} {}'.format(command_name, ' '.join(args))
 
 
 class ArgumentError(Exception):
-    pass
+
+    def __init__(self, usage=None):
+        self.usage = usage
 
 
 ###############################################################################
@@ -287,8 +369,8 @@ class ArgumentError(Exception):
 
 @parser
 def tell(pr):
-    pr.add_argument('topic', re='@.+', type=lambda x: x.lstrip('@'), nargs='?')
-    pr.add_argument('user', type=lambda x: x.lower().rstrip(':,'), nargs='?')
+    pr.add_argument('topic', re='@.+', type=lambda x: x.lstrip('@'))
+    pr.add_argument('user', type=lambda x: x.lower().rstrip(':,'))
     pr.exclusive('user', 'topic', required=True)
     pr.add_argument('message', nargs='+', action='join')
 
@@ -357,8 +439,8 @@ def topic(pr):
 
 @parser
 def alert(pr):
-    pr.add_argument('date', type=arrow.get, nargs='?')
-    pr.add_argument('span', re='(\d+[dhm])+', nargs='?')
+    pr.add_argument('date', type=arrow.get)
+    pr.add_argument('span', re='(\d+[dhm])+')
     pr.exclusive('date', 'span', required=True)
     pr.add_argument('message', nargs='+', action='join')
 
@@ -428,7 +510,7 @@ def websearch(pr):
 @parser
 def images(pr):
 
-    pr.subparser('scan').add_argument('page')
+    pr.subparser('scan').add_argument('pages', nargs='+')
 
     update = pr.subparser('update')
     update.add_argument('target')
@@ -438,6 +520,7 @@ def images(pr):
     update.add_argument('--source', '--origin', '-o', nargs=1)
     update.add_argument(
         '--status', '-s', nargs='+', type=str.upper, action='join')
+    update.add_argument('--notes', '-n', nargs='+', action='join')
 
     list_ = pr.subparser('list')
     list_.add_argument('target')
