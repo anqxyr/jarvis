@@ -98,11 +98,6 @@ class Alert(BaseModel):
 
 def init():
     """Initialize the database, create missing tables."""
-    migrator = playhouse.migrate.SqliteMigrator(db)
-    try:
-        playhouse.migrate.migrate(migrator.rename_table('Rem', 'Memo'))
-    except:
-        pass
     db.connect()
     db.create_tables(
         [Tell, Message, Quote, Subscriber, Restricted, Alert], safe=True)
