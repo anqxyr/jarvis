@@ -5,6 +5,10 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 ### 1.0.1
 
+Other changes
+
+* Reenabled !lc ratings in SSSC.
+
 Bug fixes
 
 * !ad works again.

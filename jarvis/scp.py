@@ -302,7 +302,8 @@ def lastcreated(inp, cooldown={}, **kwargs):
         order='created_at desc',
         limit=3)
     pages = core.wiki.list_pages(**kwargs)
-    return [show_page(p, rating=False) for p in pages]
+    rating = inp.channel == core.config.irc.sssc
+    return [show_page(p, rating=rating) for p in pages]
 
 
 @core.command
