@@ -340,10 +340,7 @@ def get_memo(inp, *, user):
 
 @memo.subcommand('add')
 def add_memo(inp, *, user, message):
-    memo = Memo.select().where(
-        Memo.user == user,
-        Memo.channel == inp.channel,
-        Memo.text == message)
+    memo = Memo.select().where(Memo.user == user, Memo.channel == inp.channel)
     if memo.exists():
         return lex.memo.already_exists
 
@@ -354,7 +351,7 @@ def add_memo(inp, *, user, message):
 @memo.subcommand('del')
 def delete_memo(inp, *, user, message):
     memo = Memo.select().where(
-        Memo.user == user, Memo.channel == inp.channel, )
+        Memo.user == user, Memo.channel == inp.channel, Memo.text == message)
     if not memo.exists():
         return lex.memo.not_found
 
