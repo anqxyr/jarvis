@@ -10,6 +10,7 @@ New features
 * Added usage messages. Usage messages are great.
 * Incorrectly issued commands will respond with their usage message.
 * Added a global --usage argument to force the usage message even if the command is issued correctly. This is especially useful for modal commands or commands that don't require arguments.
+* Added !memo append
 
 Other changes
 
