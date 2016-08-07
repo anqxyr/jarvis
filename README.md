@@ -8,6 +8,7 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 Bug fixes
 
 * !ad works again.
+* Fixed excessive false-positive missing title reports in !errors
 
 ### 1.0.1
 
