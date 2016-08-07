@@ -111,6 +111,8 @@ class command:
             if result:
                 inp.send(result)
         except Exception as e:
+            if config.debug:
+                raise e
             log.exception(e)
             inp._send(lex.error.compose(inp), private=False, notice=False)
 

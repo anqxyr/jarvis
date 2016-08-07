@@ -208,7 +208,7 @@ class ArticlesTable(Chart):
 
 def update_user(name):
     wiki = pyscp.wikidot.Wiki('scp-stats')
-    wiki.auth(core.config['wiki']['name'], core.config['wiki']['pass'])
+    wiki.auth(core.config.wiki.name, core.config.wiki.password)
     p = wiki('user:' + name.lower())
 
     pages = core.pages.related(name).sorted('created')

@@ -5,6 +5,12 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 ### 1.0.1
 
+Bug fixes
+
+* !ad works again.
+
+### 1.0.1
+
 New features
 
 * Added !cleantitles command.
