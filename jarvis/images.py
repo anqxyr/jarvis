@@ -180,8 +180,8 @@ def get_page_category(page):
 ###############################################################################
 
 
-@parser.images
 @core.command
+@parser.images
 def images(inp, mode, **kwargs):
     return images.dispatch(inp, mode, **kwargs)
 

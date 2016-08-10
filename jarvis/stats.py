@@ -9,7 +9,7 @@ import textwrap
 
 from dominate import tags as dt
 
-from . import core, lex
+from . import core, lex, ext
 
 
 ###############################################################################
@@ -118,9 +118,11 @@ class SummaryTable(Chart):
 
 class ArticlesChart(Chart):
 
-    def __init__(self, pages):
+    def __init__(self, pages, user):
         self.name = 'articles_chart'
         self.class_name = 'ColumnChart'
+
+        self.user = user
 
         self.populate(pages)
 
@@ -155,10 +157,12 @@ class ArticlesChart(Chart):
             else:
                 color = 'color: #f4b400'
 
+            date = p.metadata[self.user].date or '-'
+
             tooltip = dt.table(
                 dt.tr(dt.td(p.title, colspan=2)),
                 dt.tr(dt.td('Rating:'), dt.td(p.rating)),
-                dt.tr(dt.td('Created:'), dt.td(p.created[:10])),
+                dt.tr(dt.td('Created:'), dt.td(date)),
                 cls='articles_chart_tooltip')
 
             self.data.append([
@@ -184,7 +188,7 @@ class ArticlesTable(Chart):
             'width': '100%'}
 
     def populate(self, pages, user):
-        self.data = ['Title Rating Tags Link Created Relation'.split()]
+        self.data = ['Title Rating Tags Link Created Role'.split()]
 
         for p in pages:
             tags = [html('b', t) if t in 'scp tale hub admin author' else t
@@ -193,14 +197,12 @@ class ArticlesTable(Chart):
 
             link = html('a', p.url.split('/')[-1], href=p.url)
 
-            rel = p.metadata[user][0]
-            rel = html('span', rel, cls='rel-' + rel)
+            role = p.metadata[user].role
+            role = html('span', role, cls='rel-' + role)
 
             date = p.metadata[user].date
-            if not date:
-                date = p.created[:10] if p.metadata[user] == 'author' else ' '
-            self.data.append([
-                p.title, p.rating, tags, link, date, rel])
+
+            self.data.append([p.title, p.rating, tags, link, date, role])
 
 
 ###############################################################################
@@ -211,12 +213,16 @@ def update_user(name):
     wiki.auth(core.config.wiki.name, core.config.wiki.password)
     p = wiki('user:' + name.lower())
 
-    pages = core.pages.related(name).sorted('created')
+    pages = sorted(
+        core.pages.related(name),
+        key=lambda x: (x.metadata[name].date, x.created))
+    pages = ext.PageView(pages)
+
     if not pages.articles:
         return lex.not_found.author
     data = USER.format(
         summary_table=SummaryTable(pages.primary(name), name).render(),
-        articles_chart=ArticlesChart(pages.articles).render(),
+        articles_chart=ArticlesChart(pages.articles, name).render(),
         articles_table=ArticlesTable(
             [p for p in pages if p.tags], name).render())
 
