@@ -40,14 +40,10 @@ class Lexicon:
         out = DATA
         for i in self.path:
             out = out[i]
-        try:
-            out = out.split('\n')
-        except AttributeError:
-            pass
         return out
 
     def compose(self, inp):
-        text = random.choice(self._raw)
+        text = random.choice(self._raw.split('\n'))
         return text.replace('*', '\x02').format(**self.kwargs)
 
 

@@ -6,10 +6,12 @@
 ###############################################################################
 
 import functools
+import natural.number
 import pyscp
 import re
 
 from . import core, parser, lex
+
 
 ###############################################################################
 # Global Variables
@@ -17,6 +19,10 @@ from . import core, parser, lex
 
 wiki = pyscp.wikidot.Wiki('scp-stats')
 wiki.auth(core.config.wiki.name, core.config.wiki.password)
+
+scpwiki = pyscp.wikidot.Wiki('scp-wiki')
+scpwiki.auth(core.config.wiki.name, core.config.wiki.password)
+
 
 IMAGES = []
 STATUS = [
@@ -306,6 +312,13 @@ def stats(inp, *, category):
 
 
 @core.require(channel=core.config.irc.imageteam, level=4)
+@images.subcommand('sync')
+def sync(inp):
+    load_images()
+    return lex.images.sync
+
+
+@core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('add')
 def add(inp, *, url, page):
     if not page:
@@ -318,6 +331,92 @@ def add(inp, *, url, page):
     IMAGES.append(Image(url=url, page=page.url, category=category))
     save_images(category, 'image added', inp.user)
     return lex.images.add.done
+
+
+def remove_image_component(source, image_url):
+    name = image_url.split('/')[-1]
+    regex = r'(?is)\[\[include\s+component:image-block.*{}.*\]\]'
+    regex = regex.format(name)
+
+    bracketed = re.search(regex, source).group(0)
+
+    counter = 0
+    for idx, char in enumerate(bracketed):
+        if char == '[':
+            counter += 1
+        if char == ']':
+            counter -= 1
+        if counter == 0:
+            break
+
+    bracketed = bracketed[:idx + 1]
+    bracketed = re.escape(bracketed)
+    return re.sub(bracketed, '', source)
+
+
+@core.require(channel=core.config.irc.imageteam, level=4)
+@images.subcommand('remove')
+@core.multiline
+def remove(inp, *, page, images):
+    page = scpwiki(page)
+
+    source = page.source
+    for i in images:
+        source = remove_image_component(source, i)
+    page.edit(source, comment='removed image code. -' + inp.user)
+    yield lex.images.remove.page_edited
+
+    text = lex.templates.removal.post._raw
+    text += lex.templates.postfix._raw
+    text = text.format(user=inp.user)
+    page._thread.new_post(text)
+    yield lex.images.remove.posted
+
+    text = lex.templates.removal.pm._raw
+    text += lex.templates.postfix._raw
+    text = text.format(
+        page=page.title, images='\n'.join(images), user=inp.user)
+    for i in page.metadata:
+        scpwiki.send_pm(i, text, title='Image Removal')
+    yield lex.images.remove.pm_sent
+
+
+@core.require(channel=core.config.irc.imageteam, level=4)
+@images.subcommand('attribute')
+def attribute(inp, *, page):
+    print(page)
+    messages = []
+    url = core.wiki(page).url
+    images = [i for i in IMAGES if i.page == url]
+
+    for idx, image in enumerate(images):
+        print(image)
+        if not image.source or not image.status:
+            continue
+
+        if image.status == 'BY-SA CC':
+            text = lex.templates.attribution.cc
+        elif image.status == 'BY-NC-SA CC':
+            text = lex.templates.attribution.cc_non_commercial
+        elif image.status == 'PERMISSION GRANTED':
+            text = lex.templates.attribution.permission
+        else:
+            continue
+
+        text = text._raw.format(
+            url=image.url,
+            num=natural.number.ordinal(idx + 1),
+            origin=image.source)
+        messages.append(text)
+
+    if not messages:
+        return lex.images.attribute.not_found
+
+    count = len(messages)
+    messages = '\n----\n'.join(messages)
+    messages += lex.templates.postfix._raw.format(user=inp.user)
+    scpwiki(page)._thread.new_post(messages, title='Image Attribution')
+    return lex.images.attribute.done(count=count)
 
 
 ###############################################################################

@@ -99,7 +99,7 @@ tell:
         You have no pending tells.
         No new tells today.
         There's nothing here.
-        You have 4 new messages. Wait, no, those are for someone else. Nevermind.
+        You have 17 new messages. Wait, no, those are for someone else. Nevermind.
         Still no tells.
         I don't recall anyone sending you anything.
     new: You have {count} new messages.
@@ -336,12 +336,9 @@ images:
         bad_status: Incorrect status. Action aborted.
         notes_conflict: The image record already contains notes. The update subcommand can only add notes where none had previously existed. Use "!images notes -a" to append to existing notes.
     list:
-        all: |-
-            The list of all currently indexed images is available here: http://scp-stats.wikidot.com/images
-        terse: |-
-            {image.url_t} - {image.source_t} - {image.status_col}
-        verbose: |-
-            {image.url} - {image.page} - {image.source} - {image.status_col}
+        all: "The list of all currently indexed images is available here: http://scp-stats.wikidot.com/images"
+        terse: "{image.url_t} - {image.source_t} - {image.status_col}"
+        verbose: "{image.url} - {image.page} - {image.source} - {image.status_col}"
     notes:
         append: Note appended.
         purge: All notes have been purged.
@@ -352,6 +349,35 @@ images:
     too_many: Specified page includes {count} images. Please specify which image you wish to see.
     not_found: The image is not found in the index.
     purge: Purged {count} record(s).
-    stats: |-
-        {count} indexed images in this category ({per_status}). Not reviewed - {not_reviewed}.
+    stats: "{count} indexed images in this category ({per_status}). Not reviewed - {not_reviewed}."
+    sync: Page index synchronized.
+    remove:
+        page_edited: Image code removed.
+        posted: Discussion page post created.
+        pm_send: Author PM sent.
+    attribute:
+        not_found: Could not find any images with proper origin and status.
+        done: Succesfully attributed {count} images.
+templates:
+    attribution:
+        cc_non_commercial: The [{url} {num} image] in this article is a CC BY-NC-SA image from {origin}. Note that the image is used here under a different license than the rest of the site. Commercial use of the image is not permitted by its creator.
+        cc: The [{url} {num} image] in this article is a CC BY-SA image from {origin}.
+        permission: The [{url} {num} image] in this article is a copyrighted image from {origin} and is used here with the permission of the copyright holder.
+    removal:
+        post: One or several images in this article have been removed due to non-compliance with the Creative Commons license. They may be added once again if/when proper attribution or proper use under CC guidelines is confirmed. Please contact {user} or another member of the Image Team if you have questions. 
+        pm: |-
+            Hello,
+
+            Your article {page} have been reviewed for image license compliance. The following images were removed for not adhering to the Creative Commons license:
+
+            {images}
+
+            Where possible, the copyright owners have been contacted in an attempt to sequre a permission for image use. In case of their positive responce, the respective images will be reinstated. If you have questions regarding the image use policies, or bject to the remooval of the image, please contact a member of the Image Team.
+
+            -{user}
+    postfix: |-
+        ----
+        [[size 75%]]
+        This automated message was sent on behalf of {user}. Please do not reply to this message or send other messages to this bot. Contact {user} in regard to this message. If you believe that you are not the intended recipient of this message, that the image was deliverred incorrectly, or have other concerns about this bot, please contact [[user anqxyr]].
+        [[/size]]
 

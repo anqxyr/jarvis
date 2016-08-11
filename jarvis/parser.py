@@ -13,8 +13,6 @@ import copy
 import functools
 import re
 
-from . import lex
-
 ###############################################################################
 # Generic Functionality
 ###############################################################################
@@ -547,6 +545,14 @@ def images(pr):
 
     pr.subparser('stats').add_argument('category')
 
+    pr.subparser('sync')
+
     add = pr.subparser('add')
     add.add_argument('url')
     add.add_argument('page', nargs='?')
+
+    remove = pr.subparser('remove')
+    remove.add_argument('page')
+    remove.add_argument('images', nargs='+')
+
+    pr.subparser('attribute').add_argument('page')
