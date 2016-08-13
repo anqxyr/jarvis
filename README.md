@@ -5,6 +5,10 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 ### 1.0.3
 
+Other changes
+
+* Improved argument parsing.
+
 Bug fixes
 
 * Fixed attribution to multiple users.

@@ -81,7 +81,7 @@ def author_search(inp, func):
 
 
 def find_pages(
-        pages, *, partial, exclude, strict,
+        pages, *, title, exclude, strict,
         tags, author, rating, created, fullname):
     if tags:
         pages = pages.tags(tags)
@@ -94,8 +94,7 @@ def find_pages(
         pages = [
             p for p in pages if any(author in a.lower() for a in p.metadata)]
     if fullname:
-        pages = [p for p in pages if p.title.lower() == fullname]
-        return pages[0]
+        return [p for p in pages if p.name == fullname]
 
     results = []
     for p in pages:
@@ -106,7 +105,7 @@ def find_pages(
             continue
         if strict and not words >= set(strict):
             continue
-        if partial and not all(i in p.title.lower() for i in partial):
+        if title and not all(i in p.title.lower() for i in title):
             continue
 
         results.append(p)
@@ -114,7 +113,6 @@ def find_pages(
     return results
 
 
-@parser.search
 def _page_search_base(inp, pages, *, summary, **kwargs):
     if not inp.text:
         return lex.input.incorrect
@@ -123,18 +121,21 @@ def _page_search_base(inp, pages, *, summary, **kwargs):
 
 
 @core.command
-def search(inp):
-    return _page_search_base(inp, core.pages)
+@parser.search
+def search(inp, **kwargs):
+    return _page_search_base(inp, core.pages, **kwargs)
 
 
 @core.command
-def tale(inp):
-    return _page_search_base(inp, core.pages.tags('tale'))
+@parser.search
+def tale(inp, **kwargs):
+    return _page_search_base(inp, core.pages.tags('tale'), **kwargs)
 
 
 @core.command
-def wanderers_library(inp):
-    return _page_search_base(inp, core.wlpages)
+@parser.search
+def wanderers_library(inp, **kwargs):
+    return _page_search_base(inp, core.wlpages, **kwargs)
 
 
 @core.command

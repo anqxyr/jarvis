@@ -149,8 +149,11 @@ def user(inp):
 
 
 @core.command
-def help(inp):
+@parser.help
+def help(inp, *, command, elemental):
+    if elemental:
+        return
     url = 'http://scp-stats.wikidot.com/jarvis'
-    return url if not inp.text else url + '#' + inp.text
+    return url if not command else url + '#' + command
 
 ###############################################################################

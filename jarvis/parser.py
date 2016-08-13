@@ -99,14 +99,14 @@ class PositionalArgument:
         return self.nargs
 
     def _apply_constraints(self, bit):
-        if self.choices:
-            assert bit in self.choices
-
         if self.re:
             assert re.match(self.re, bit)
 
         if self.type:
             bit = self.type(bit)
+
+        if self.choices:
+            assert bit in self.choices
 
         return bit
 
@@ -145,7 +145,7 @@ class PositionalArgument:
         elif self.nargs in [1, '?'] or self.action == 'join':
             usage = self.name
         elif self.nargs in ['*', '+']:
-            usage = '{}1 ...'.format(self.name)
+            usage = self.name
         else:
             usage = [self.name + str(i) for i in range(1, self.nargs + 1)]
             usage = ' '.join(usage)
@@ -214,8 +214,8 @@ class ExclusiveGroup:
     def usage(self, args):
         args = [i for i in args if i.name in self.args]
         args = [i.usage(brackets=False) for i in args]
-        args = ' | '.join(args)
-        return ('( {} )' if self.required else '[ {} ]').format(args)
+        args = '|'.join(args)
+        return ('({})' if self.required else '[{}]').format(args)
 
 
 class ArgumentParser:
@@ -238,10 +238,15 @@ class ArgumentParser:
 
     def subparser(self, mode=None):
         if not any(i.name == 'mode' for i in self._args):
-            self.add_argument('mode', nargs='?', choices=[mode])
+            self.add_argument(
+                'mode',
+                nargs='?' if mode is None else 1,
+                choices=[mode], type=str.lower)
         else:
             mode_arg = next(i for i in self._args if i.name == 'mode')
             mode_arg.choices.append(mode)
+            if mode is None:
+                mode_arg.nargs = '?'
         pr = ArgumentParser(mode)
         self._subparsers[mode] = pr
         return pr
@@ -405,7 +410,7 @@ def alert(pr):
 
 @parser
 def random(pr):
-    pr.add_argument('partial', nargs='*', type=str.lower)
+    pr.add_argument('title', nargs='*', type=str.lower)
     pr.add_argument('--exclude', '-e', nargs='+', type=str.lower)
     pr.add_argument('--strict', '-s', nargs='+', type=str.lower)
     pr.add_argument('--tags', '-t', nargs='+', action='join', type=str.lower)
@@ -444,6 +449,11 @@ def unused(pr):
 def showmore(pr):
     pr.add_argument('index', nargs='?', type=int)
 
+
+@parser
+def help(pr):
+    pr.add_argument('command', nargs='?')
+    pr.add_argument('--elemental', '-e')
 
 ###############################################################################
 # Websearch
