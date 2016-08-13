@@ -9,7 +9,6 @@ Contains argument parsers for other commands.
 ###############################################################################
 
 import arrow
-import copy
 import functools
 import re
 
@@ -63,16 +62,14 @@ class CommandWrapper:
 ###############################################################################
 
 
-class Argument:
+class PositionalArgument:
 
     def __init__(self, *args, **kwargs):
         self.name = args[0].lstrip('-')
-        self.is_optional = args[0].startswith('-')
-        self.flags = args if self.is_optional else []
 
-        self.nargs = kwargs.get('nargs')
-        if not self.nargs:
-            self.nargs = 0 if self.is_optional else 1
+        self.is_optional = False
+
+        self.nargs = kwargs.get('nargs', 1)
 
         self.action = kwargs.get('action')
 
@@ -80,131 +77,164 @@ class Argument:
         self.type = kwargs.get('type')
         self.choices = kwargs.get('choices')
 
-        self.values = []
-        self.open = True
-        self.marked = False
-
     def __repr__(self):
-        return '<{} name={} values={}>'.format(
-            self.__class__.__name__, repr(self.name), repr(self.values))
+        return '<{} name={}>'.format(self.__class__.__name__, repr(self.name))
 
-    def consume(self, value):
-        """
-        Attempt to consume the value.
+    @property
+    def _min(self):
+        """Minimum number of required values."""
+        if self.nargs in ['?', '*']:
+            return 0
+        if self.nargs == '+':
+            return 1
+        return self.nargs
 
-        Checks if the argument can consume the value based on its
-        restrictions. If so, adds the value to the argument's value list
-        and returns True. Otherwise returns False.
-        """
-        if self.max_consumed or not self.open:
-            return False
+    @property
+    def _max(self):
+        """Maximum number of allowed values."""
+        if self.nargs in ['*', '+']:
+            return 999
+        if self.nargs == '?':
+            return 1
+        return self.nargs
 
-        if self.re and not re.match(self.re, value):
-            return False
+    def _apply_constraints(self, bit):
+        if self.choices:
+            assert bit in self.choices
+
+        if self.re:
+            assert re.match(self.re, bit)
 
         if self.type:
-            try:
-                value = self.type(value)
-                assert value is not None
-            except:
-                return False
+            bit = self.type(bit)
 
-        if self.choices and value not in self.choices:
-            return False
+        return bit
 
-        self.values.append(value)
-        return True
-
-    @property
-    def min_consumed(self):
-        """Show if minimal requirements for the argument have been met."""
-        if self.is_optional:
-            return True  # optional args don't have minimal requirements
-        if self.nargs in ['?', '*']:
-            return True
-        if self.nargs == '+':
-            return len(self.values) > 0
-        return len(self.values) >= self.nargs
-
-    @property
-    def max_consumed(self):
-        """Show if the argument has consumed all the values it can."""
-        if self.nargs == '?':
-            return len(self.values) > 0
-        if self.nargs in ['*', '+']:
-            return False
-        return len(self.values) >= self.nargs
-
-    def get_values(self):
-        if self.action == 'join':
-            return {self.name: ' '.join(self.values)}
-
-        if self.action:
-            return self.action(self.name, self.values)
-
-        if self.nargs == 0 and self.is_optional:
-            return {self.name: self.marked}
-
+    def _finalize(self, values):
         if self.nargs in [1, '?']:
-            return {self.name: self.values[0] if self.values else None}
+            return values[0] if values else None
 
-        return {self.name: self.values}
+        if not self.action:
+            return values
 
-    @property
-    def usage(self):
-        if self.is_optional:
-            return self._usage_optional
-        else:
-            return self._usage_positional
+        if self.action == 'join':
+            return ' '.join(values)
 
-    @property
-    def _usage_optional(self):
-        flag = max(self.flags, key=len)
-        if self.nargs == 0:
-            return flag
-        if self.nargs == 1:
-            return '{} {}'.format(flag, self.name)
-        if self.nargs == '+':
-            return '{0} {1}1 [{1}2 ...]'.format(flag, self.name)
-        args = [self.name + str(i) for i in range(1, self.nargs + 1)]
-        return '{} {}'.format(flag, ' '.join(args))
+        return self.action(values)
 
-    @property
-    def _usage_positional(self):
+    def parse(self, unparsed, values):
+        parsed = []
+        counter = 0
+        for bit in unparsed:
+            assert bit != '--usage'
+            if len(parsed) >= self._max:
+                break
+            try:
+                bit = self._apply_constraints(bit)
+            except:
+                break
+            parsed.append(bit)
+            counter += 1
+        assert self._min <= len(parsed) <= self._max
+        values[self.name] = self._finalize(parsed)
+        unparsed[:] = unparsed[counter:]
+
+    def usage(self, brackets=True):
         if self.choices:
-            choices = ','.join([i for i in self.choices if i])
-            if self.nargs == 1:
-                return '{{{}}}'.format(choices)
-            if self.nargs == '?':
-                return '[{{{}}}]'.format(choices)
-        if self.nargs == 1:
-            return self.name
-        if self.nargs == '?':
-            return '[{}]'.format(self.name)
-        if self.nargs == '*':
-            if self.action == 'join':
-                return '[{}]'.format(self.name)
-            return '[{}1 ...]'.format(self.name)
-        if self.nargs == '+':
-            if self.action == 'join':
-                return self.name
-            return '{0}1 [{0}2 ...]'.format(self.name)
-        return ' '.join([self.name + str(i) for i in range(1, self.nargs + 1)])
+            usage = '{{{}}}'.format(','.join([i for i in self.choices if i]))
+        elif self.nargs in [1, '?'] or self.action == 'join':
+            usage = self.name
+        elif self.nargs in ['*', '+']:
+            usage = '{}1 ...'.format(self.name)
+        else:
+            usage = [self.name + str(i) for i in range(1, self.nargs + 1)]
+            usage = ' '.join(usage)
+
+        if self.nargs in ['?', '*'] and brackets:
+            usage = '[{}]'.format(usage)
+
+        return usage
+
+
+class OptionalArgument(PositionalArgument):
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('nargs', 0)
+        super().__init__(*args, **kwargs)
+        self.is_optional = True
+        self.flags = args
+
+    def _finalize(self, values):
+        if not values:
+            return True
+        return super()._finalize(values)
+
+    def parse(self, unparsed, values):
+        for i in self.flags:
+            if i in unparsed:
+                idx = unparsed.index(i)
+                break
+        else:
+            values[self.name] = False
+            return
+
+        unparsed2 = unparsed[idx + 1:]
+        super().parse(unparsed2, values)
+
+        unparsed[:] = unparsed[:idx] + unparsed2
+
+    def usage(self, brackets=True):
+        usage = super().usage()
+        usage = '--{} {}'.format(self.name, usage).strip()
+
+        if brackets:
+            usage = '[{}]'.format(usage)
+
+        return usage
+
+
+class ExclusiveGroup:
+
+    def __init__(self, args, required):
+        self.args = args
+        self.required = required
+
+    def parse(self, arg, values):
+        if arg.name not in self.args:
+            return
+        if any(values.get(i) for i in self.args):
+            values[arg.name] = None
+
+    def validate(self, values):
+        if not self.required:
+            return
+        if not any(values.get(i) for i in self.args):
+            assert False
+
+    def usage(self, args):
+        args = [i for i in args if i.name in self.args]
+        args = [i.usage(brackets=False) for i in args]
+        args = ' | '.join(args)
+        return ('( {} )' if self.required else '[ {} ]').format(args)
 
 
 class ArgumentParser:
 
-    def __init__(self, usage_subparser=None):
-        self._uspr = usage_subparser
+    def __init__(self, subparser=None):
+        self._spname = subparser
         self._args = []
-        self._exclusive_args = []
+        self._egroups = []
         self._subparsers = {}
 
     def add_argument(self, *args, **kwargs):
-        self._args.append(Argument(*args, **kwargs))
+        if args[0].startswith('-'):
+            cls = OptionalArgument
+        else:
+            cls = PositionalArgument
+        self._args.append(cls(*args, **kwargs))
 
     def exclusive(self, *args, required=False):
-        self._exclusive_args.append({'args': args, 'required': required})
+        self._egroups.append(ExclusiveGroup(args, required))
 
     def subparser(self, mode=None):
         if not any(i.name == 'mode' for i in self._args):
@@ -216,142 +246,65 @@ class ArgumentParser:
         self._subparsers[mode] = pr
         return pr
 
+    def _next_arg(self, args, values):
+        for arg in args:
+            for e in self._egroups:
+                e.parse(arg, values)
+            if arg.name in values:
+                continue
+            yield arg
+
+    def _next_positional(self, values):
+        args = [i for i in self._args if not i.is_optional]
+        yield from self._next_arg(args, values)
+
+    def _next_optional(self, values):
+        args = [i for i in self._args if i.is_optional]
+        yield from self._next_arg(args, values)
+
+    def _parse(self, unparsed):
+        values = {}
+        for arg in self._next_optional(values):
+            arg.parse(unparsed, values)
+        for arg in self._next_positional(values):
+            arg.parse(unparsed, values)
+        if 'mode' in values:
+            subparser = self._subparsers[values['mode']]
+            values.update(subparser.parse_args(unparsed))
+        assert not unparsed
+        for e in self._egroups:
+            e.validate(values)
+        return values
+
     def parse_args(self, unparsed):
         """
         Parse arguments.
 
         Takes a list of strings, and returns a dict of parsed args.
         """
-        # Argument objects are mutable
-        # at the beginning of each parsing we make a copy of them
-        # and work with that copy only from then on
-        self.args = copy.deepcopy(self._args)
-        values = {}
-        last = None
-        while unparsed:
-            # a hook to force usage output
-            if unparsed == ['--usage']:
-                raise ArgumentError(self.usage)
-            # go through each segment and try to match it either to the
-            # current positional argument  or to any optional one
-            if not unparsed:
-                break
-            known_flag = self._get_known_flag(unparsed[0])
-            if known_flag:
-                # if an optional argument is found, then the last argument
-                # has just ended, so lets close it
-                unparsed = unparsed[1:]
-                self._close(last)
-                last = known_flag
-            elif last:
-                # otherwise continue feeding the last known argument
-                if not last.consume(unparsed[0]):
-                    self._close(last)
-                    last = self._next_positional()
-                else:
-                    unparsed = unparsed[1:]
-            else:
-                # and if we don't know any, get the next positional
-                last = self._next_positional()
-            # if the name of the argument is 'mode'
-            # then hand off the rest of the parsing to a subparser
-            if last.name == 'mode':
-                if last.consume(unparsed[0]):
-                    unparsed = unparsed[1:]
-                self._close(last)
-                break
-        self._check_constraints()
-        for arg in self.args:
-            values.update(arg.get_values())
-        if 'mode' in values:
-            subparser = self._subparsers[values['mode']]
-            values.update(subparser.parse_args(unparsed))
-        return values
+        try:
+            return self._parse(unparsed)
+        except ArgumentError as e:
+            raise e
+        except Exception:
+            raise ArgumentError(self.usage)
 
-    def _get_known_flag(self, value):
-        """
-        Get the flag corresponding to the value.
-
-        Checks if the value indicates any of the known flags.
-        If it does, returns it. Otherwise, returns None.
-        """
-        for arg in [i for i in self.args if i.is_optional]:
-            if value in arg.flags and arg.open:
-                arg.marked = True
-                return arg
-
-    def _next_positional(self):
-        for arg in [i for i in self.args if not i.is_optional]:
-            if not arg.open:
-                continue
-            return arg
-        raise ArgumentError
-
-    def _close(self, arg):
-        if arg is None:
-            return
-        arg.open = False
-        for exc in self._exclusive_args:
-            args = exc['args']
-            if arg.name not in args:
-                continue
-            if not self._arg_present(arg.name):
-                return
-            args = [i for i in self.args if i.name in args]
-            for i in args:
-                i.open = False
-            return
-        if not arg.min_consumed:
-            raise ArgumentError
-        if (arg.is_optional and not arg.marked) or not arg.values:
-            return
-
-    def _arg_present(self, name):
-        arg = next(i for i in self.args if i.name == name)
-        return bool(arg.marked if arg.is_optional else arg.values)
-
-    def _check_constraints(self):
-        exclusive = [i for e in self._exclusive_args for i in e['args']]
-        for arg in self.args:
-            if arg.name in exclusive:
-                continue
-            if not arg.min_consumed:
-                raise ArgumentError
-
-        for exc in self._exclusive_args:
-            count = len([i for i in exc['args'] if self._arg_present(i)])
-            if count > 1:
-                raise ArgumentError
-            if exc['required'] and count == 0:
-                raise ArgumentError
-
-    def _usage_exclusive(self, group):
-        args = [i.usage for i in self._args if i.name in group['args']]
-        args = ' | '.join(args)
-        if group['required']:
-            return '( {} )'.format(args)
-        else:
-            return '[ {} ]'.format(args)
-
-    def usage(self, command_name):
-        args = []
-        exclusive_matched = []
+    def usage(self, command):
+        usage = []
         for arg in self._args:
-            if arg.name in exclusive_matched:
+            egroups = [e for e in self._egroups if arg.name in e.args]
+            if not egroups:
+                usage.append(arg.usage())
                 continue
-            for excgroup in self._exclusive_args:
-                if arg.name in excgroup['args']:
-                    args.append(self._usage_exclusive(excgroup))
-                    exclusive_matched.extend(excgroup['args'])
-                    break
-            else:
-                usage = '[{}]' if arg.is_optional else '{}'
-                usage = usage.format(arg.usage)
-                args.append(usage)
-        if self._uspr:
-            return 'usage: !{} {} {}'.format(
-                command_name, self._uspr, ' '.join(args))
-        return 'usage: !{} {}'.format(command_name, ' '.join(args))
+            for e in egroups:
+                eusage = e.usage(self._args)
+                if eusage not in usage:
+                    usage.append(eusage)
+        usage = ' '.join(usage)
+
+        if self._spname:
+            return 'usage: !{} {} {}'.format(command, self._spname, usage)
+        return 'usage: !{} {}'.format(command, usage)
 
 
 class ArgumentError(Exception):
@@ -367,7 +320,7 @@ class ArgumentError(Exception):
 
 @parser
 def tell(pr):
-    pr.add_argument('topic', re='@.+', type=lambda x: x.lstrip('@'))
+    pr.add_argument('topic', re='@.+', type=lambda x: x.lstrip('@'), nargs='?')
     pr.add_argument('user', type=lambda x: x.lower().rstrip(':,'))
     pr.exclusive('user', 'topic', required=True)
     pr.add_argument('message', nargs='+', action='join')
@@ -439,7 +392,7 @@ def topic(pr):
 
 @parser
 def alert(pr):
-    pr.add_argument('date', type=arrow.get)
+    pr.add_argument('date', type=arrow.get, nargs='?')
     pr.add_argument('span', re='(\d+[dhm])+')
     pr.exclusive('date', 'span', required=True)
     pr.add_argument('message', nargs='+', action='join')
