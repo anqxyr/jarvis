@@ -25,6 +25,7 @@ scpwiki.auth(core.config.wiki.name, core.config.wiki.password)
 
 
 IMAGES = []
+CLAIMS = {}
 STATUS = [
     'PUBLIC DOMAIN',
     'BY-SA CC',
@@ -124,9 +125,19 @@ def save_images(category, comment, user):
         rows.append(wtag('row', img, page, source, status))
         rows.append(wtag('row', notes))
 
+    source = []
+
+    if category in CLAIMS:
+        claim = 'This category is maintained by **{}**'
+        claim = claim.format(CLAIMS[category])
+        claim = '[[span class="claim"]]{}[[/span]]'.format(claim)
+        source.append(claim)
+
+    source.append(wtag('table', *rows))
+    source = '\n'.join(source)
+
     wiki('images:' + category).create(
-        wtag('table', *rows), category,
-        comment='{}. -{}'.format(comment, user))
+        source, category, comment='{}. -{}'.format(comment, user))
 
 
 def targeted(maxres=None):
@@ -418,6 +429,19 @@ def attribute(inp, *, page):
     scpwiki(page)._thread.new_post(messages, title='Image Attribution')
     return lex.images.attribute.done(count=count)
 
+
+@core.require(channel=core.config.irc.imageteam, level=4)
+@images.subcommand('claim')
+def claim(inp, *, category, purge):
+    if not [i for i in IMAGES if i.category == category]:
+        return lex.images.claim.unknown_category
+    if not purge:
+        CLAIMS[category] = inp.user
+        save_images(category, 'category claimed', inp.user)
+        return lex.images.claim.done
+    else:
+        CLAIMS.pop(category)
+        save_images(category, 'category claim purged', inp.user)
 
 ###############################################################################
 

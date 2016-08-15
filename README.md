@@ -7,6 +7,7 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 New features
 
+* The !images command is now feature-complete.
 * Twitter support.
 
 Other changes

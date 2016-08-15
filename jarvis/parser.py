@@ -519,3 +519,7 @@ def images(pr):
     remove.add_argument('images', nargs='+')
 
     pr.subparser('attribute').add_argument('page')
+
+    claim = pr.subparser('claim')
+    claim.add_argument('category')
+    claim.add_argument('--purge', '-p')
