@@ -5,6 +5,10 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 ### 1.0.3
 
+New features
+
+* Twitter support.
+
 Other changes
 
 * Improved argument parsing.

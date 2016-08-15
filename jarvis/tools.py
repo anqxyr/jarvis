@@ -8,6 +8,7 @@
 import arrow
 import random
 import re
+import tweepy
 
 from . import core, parser, lex, __version__
 
@@ -157,3 +158,50 @@ def help(inp, *, command, elemental):
     return url if not command else url + '#' + command
 
 ###############################################################################
+
+
+def tweet():
+    twitter = core.config.twitter
+    auth = tweepy.OAuthHandler(twitter.key, twitter.secret)
+    auth.set_access_token(twitter.token, twitter.token_secret)
+
+    api = tweepy.API(auth)
+
+    timeline = api.user_timeline(count=100)
+    timeline = [i for i in timeline if i.source == twitter.name]
+
+    def pages(tag, rating, age):
+        urls = [i.entities['urls'][0]['expanded_url'] for i in timeline]
+        pages = [p for p in core.pages if p.url not in urls]
+        pages = [p for p in pages if tag in p.tags and p.rating >= rating]
+        date = arrow.now().replace(days=-int(age[1:])).format('YYYY-MM-DD')
+        if age.startswith('>'):
+            pages = [p for p in pages if date > p.created]
+        elif age.startswith('<'):
+            pages = [p for p in pages if date < p.created]
+        return pages
+
+    queue = {
+        lex.tweet.new_scp: pages('scp', 40, '<30'),
+        lex.tweet.new_tale: pages('tale', 20, '<30')}
+
+    now = arrow.now().replace
+
+    rpages = [i for i in timeline if i.text.startswith('Random SCP')]
+    rpages = [i for i in rpages if i.created_at > now(days=-7).naive]
+    if not rpages:
+        queue[lex.tweet.random_scp] = pages('scp', 120, '>180')
+
+    rpages = [i for i in timeline if i.text.startswith('Random tale')]
+    rpages = [i for i in rpages if i.created_at > now(days=-2).naive]
+    if not rpages:
+        queue[lex.tweet.random_tale] = pages('tale', 60, '>180')
+
+    for k, v in queue.items():
+        if not v:
+            continue
+        page = random.choice(v)
+        attr = page.build_attribution_string(
+            templates=lex.tweet.attribution._raw)
+        api.update_status(str(k(page=page, attr=attr)))
+        return

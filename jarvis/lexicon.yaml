@@ -300,6 +300,16 @@ silly:
         http://bit.ly/1qM18IL
         http://bit.ly/1Z7bi2z
         marp
+tweet:
+    attribution:
+        author: "{user}"
+        rewrite: "{user}"
+        translation: "{user}"
+        maintainer: "{user}"
+    new_scp: New SCP article - {page.title} by {attr}. {page.url}
+    new_tale: New tale - {page.title} by {attr}. {page.url}
+    random_scp: Random SCP article - {page.title} by {attr}. {page.url}
+    random_tale: Random tale - {page.title} by {attr}. {page.url}
 ###############################################################################
 # Websearch
 ###############################################################################

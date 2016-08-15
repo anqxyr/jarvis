@@ -35,6 +35,10 @@ class Lexicon:
         new.kwargs = kwargs
         return new
 
+    def __str__(self):
+        text = random.choice(self._raw.split('\n')).replace('*', '\x02')
+        return text.format(**self.kwargs)
+
     @property
     def _raw(self):
         out = DATA
@@ -43,8 +47,7 @@ class Lexicon:
         return out
 
     def compose(self, inp):
-        text = random.choice(self._raw.split('\n'))
-        return text.replace('*', '\x02').format(**self.kwargs)
+        return str(self)
 
 
 sys.modules[__name__] = Lexicon()

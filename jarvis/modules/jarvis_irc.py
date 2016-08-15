@@ -172,6 +172,11 @@ command('firstseen', tools.deprecate, '!seen -f <name>')
 rule(r'(?i)(^(?:[+-]?[0-9]*d(?:[0-9]+|f))+(?:[+-][0-9]+)?$)', tools.roll)
 rule(r'(?i)(^(?=.*\b$nickname)(?=.*\bhugs?\b).*)', tools.hugs)
 
+
+@sopel.module.interval(28800)
+def tweet(bot):
+    tools.tweet()
+
 ###############################################################################
 # Websearch
 ###############################################################################
