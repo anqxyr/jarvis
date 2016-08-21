@@ -3,6 +3,14 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 ## Changelog
 
+### 1.0.4
+
+Bug fixes
+
+* Fixed incorrect creation times for articles that are less than a day old.
+* Improved the results of --usage for modal commands.
+* Adjusted the help command.
+
 ### 1.0.3
 
 New features
@@ -18,8 +26,6 @@ Bug fixes
 
 * Fixed attribution to multiple users.
 * Fixed errors in the content of .ad pages.
-
-
 
 ### 1.0.2
 

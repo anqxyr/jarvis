@@ -453,8 +453,8 @@ def showmore(pr):
 
 @parser
 def help(pr):
-    pr.add_argument('command', nargs='?')
-    pr.add_argument('--elemental', '-e')
+    pr.add_argument('command', nargs='*', action='join')
+    pr.add_argument('--elemental', '-e', nargs='*')
 
 ###############################################################################
 # Websearch

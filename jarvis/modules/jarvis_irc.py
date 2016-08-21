@@ -158,7 +158,6 @@ command('ch choose', tools.choose)
 command('roll dice', tools.roll)
 command('user', tools.user)
 command('zyn', tools.zyn)
-command('help', tools.help)
 
 command('notdelivered nd', tools.deprecate, '!outbound count')
 command('purgetells', tools.deprecate, '!outbound purge')
@@ -168,7 +167,7 @@ command('subscribe', tools.deprecate, '!topic sub <topic>')
 command('unsubscribe', tools.deprecate, '!topic unsub <topic>')
 command('firstseen', tools.deprecate, '!seen -f <name>')
 
-
+rule(r'(?i)^\.help(.*)', tools.help)
 rule(r'(?i)(^(?:[+-]?[0-9]*d(?:[0-9]+|f))+(?:[+-][0-9]+)?$)', tools.roll)
 rule(r'(?i)(^(?=.*\b$nickname)(?=.*\bhugs?\b).*)', tools.hugs)
 

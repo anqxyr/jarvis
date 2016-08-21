@@ -395,13 +395,11 @@ def remove(inp, *, page, images):
 @core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('attribute')
 def attribute(inp, *, page):
-    print(page)
     messages = []
     url = core.wiki(page).url
     images = [i for i in IMAGES if i.page == url]
 
     for idx, image in enumerate(images):
-        print(image)
         if not image.source or not image.status:
             continue
 

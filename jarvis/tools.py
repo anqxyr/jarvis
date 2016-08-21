@@ -155,7 +155,7 @@ def help(inp, *, command, elemental):
     if elemental:
         return
     url = 'http://scp-stats.wikidot.com/jarvis'
-    return url if not command else url + '#' + command
+    return url if not command else url + '#' + command.replace(' ', '-')
 
 ###############################################################################
 
