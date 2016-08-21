@@ -126,7 +126,8 @@ class PositionalArgument:
         parsed = []
         counter = 0
         for bit in unparsed:
-            assert bit != '--usage'
+            if self.name != 'mode':
+                assert bit != '--usage'
             if len(parsed) >= self._max:
                 break
             try:
