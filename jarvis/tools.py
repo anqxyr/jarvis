@@ -28,6 +28,7 @@ def save_results(inp, items, func=None):
 
 
 @core.command
+@core.alias('sm')
 @parser.showmore
 def showmore(inp, *, index):
     if index is None:
@@ -53,16 +54,14 @@ def choose_input(options):
     return msg(head=', '.join(head), tail=tail)
 
 
-@core.command
-def deprecate(inp, cmd):
-    return 'This command is deprecated. Use "{}" instead.'.format(cmd)
-
 ###############################################################################
 # Tools for users
 ###############################################################################
 
 
 @core.command
+@core.alias('jarvis')
+@core.alias('changelog')
 def version(inp):
     uptime = (arrow.now() - BOOTTIME)
     m, s = divmod(uptime.seconds, 60)
@@ -80,6 +79,7 @@ def rejoin(inp):
 
 
 @core.command
+@core.alias('ch')
 def choose(inp):
     """Return one random comma-separated option."""
     if not inp.text:
@@ -91,6 +91,8 @@ def choose(inp):
 
 
 @core.command
+@core.alias('dice')
+@core.rule(r'(?i)(^(?:[+-]?[0-9]*d(?:[0-9]+|f))+(?:[+-][0-9]+)?$)')
 def roll(inp):
     """Return the result of rolling multiple dice."""
     if not inp.text:
@@ -134,6 +136,7 @@ def roll(inp):
 
 
 @core.command
+@core.rule(r'(?i)(^(?=.*\bjarvis)(?=.*\bhugs?\b).*)')
 def hugs(inp):
     return lex.silly.hugs
 
@@ -149,9 +152,9 @@ def user(inp):
     return 'http://www.wikidot.com/user:info/' + user
 
 
-@core.command
+@core.rule(r'(?i)^\.help\b(.*)')
 @parser.help
-def help(inp, *, command, elemental):
+def _help(inp, *, command, elemental):
     if elemental:
         return
     url = 'http://scp-stats.wikidot.com/jarvis'

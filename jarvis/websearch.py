@@ -16,8 +16,9 @@ from . import core, parser, lex, tools
 
 
 @core.command
+@core.alias('g')
 @parser.websearch
-def google_search(inp, *, query):
+def google(inp, *, query):
     google = googleapi.build(
         'customsearch',
         'v1',
@@ -34,7 +35,7 @@ def google_search(inp, *, query):
 
 @core.command
 @parser.websearch
-def google_image_search(inp, *, query):
+def gis(inp, *, query):
     google = googleapi.build(
         'customsearch',
         'v1',
@@ -51,6 +52,7 @@ def google_image_search(inp, *, query):
 
 
 @core.command
+@core.alias('yt')
 @parser.websearch
 def youtube(inp, *, query):
     youtube = googleapi.build(
@@ -69,7 +71,8 @@ def youtube(inp, *, query):
     return '{} - http://youtube.com/watch?v={}'.format(info, vid)
 
 
-@core.command
+@core.rule(r'.*youtube\.com/watch\?v=([-_a-z0-9]+)')
+@core.rule(r'.*youtu\.be/([-_a-z0-9]+)')
 def youtube_lookup(inp):
     return get_youtube_video_info(inp.text)
 
@@ -108,6 +111,7 @@ def get_youtube_video_info(video_id=None):
 
 
 @core.command
+@core.alias('w')
 @parser.websearch
 def wikipedia(inp, *, query):
     print(query)
@@ -128,6 +132,7 @@ def wikipedia(inp, *, query):
 
 
 @core.command
+@core.alias('define')
 @parser.websearch
 def dictionary(inp, *, query):
     url = 'http://ninjawords.com/' + query

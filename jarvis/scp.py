@@ -121,6 +121,7 @@ def _page_search_base(inp, pages, *, summary, **kwargs):
 
 
 @core.command
+@core.alias('s')
 @parser.search
 def search(inp, **kwargs):
     return _page_search_base(inp, core.pages, **kwargs)
@@ -133,8 +134,9 @@ def tale(inp, **kwargs):
 
 
 @core.command
+@core.alias('wl')
 @parser.search
-def wanderers_library(inp, **kwargs):
+def wandererslibrary(inp, **kwargs):
     return _page_search_base(inp, core.wlpages, **kwargs)
 
 
@@ -143,19 +145,23 @@ def tags(inp):
     return show_search_results(inp, core.pages.tags(inp.text))
 
 
-@core.command
+@core.rule(r'(?i).*http[s]?://www\.scp-wiki\.net/([^/\s]+)(?:\s|$)')
+@core.rule(r'(?i)^(scp-[^\s]+)\s*$')
+@core.rule(r'(?i).*!(scp-[^\s]+)')
 def name_lookup(inp):
     pages = [p for p in core.pages if p.url.split('/')[-1] == inp.text.lower()]
     return show_search_results(inp, pages)
 
 
 @core.command
+@core.alias('au')
 def author(inp):
     return author_search(inp, author_summary)
 
 
 @core.command
-def author_details(inp):
+@core.alias('ad')
+def authordetails(inp):
     return author_search(inp, stats.update_user)
 
 
@@ -301,6 +307,7 @@ def random(inp, **kwargs):
 
 
 @core.command
+@core.alias('lc')
 @core.cooldown(120)
 @core.multiline
 def lastcreated(inp, cooldown={}, **kwargs):

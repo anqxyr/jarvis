@@ -70,7 +70,6 @@ def updatebans(inp):
         return lex.updatebans.failed
 
 
-@core.command
 def autoban(inp, name, host):
     if not core.config.debug and inp.channel != '#site19':
         return

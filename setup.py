@@ -25,5 +25,7 @@ setuptools.setup(
         'dominate',
         'pyaml',
         'logbook',
+        'natural',
+        'tweepy',
         'google-api-python-client'],
 )

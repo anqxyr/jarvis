@@ -106,6 +106,7 @@ def init():
 init()
 
 
+@core.rule(r'(.*)')
 def logevent(inp):
     """Log input into the database."""
     Message.create(
@@ -148,7 +149,7 @@ def tell(inp, *, user, topic, message):
     return msg(count=len(users))
 
 
-@core.command
+@core.rule(r'(.*)')
 @core.private
 @core.multiline
 def get_tells(inp):
@@ -174,8 +175,9 @@ def get_tells(inp):
 
 
 @core.command
+@core.alias('st')
 @core.notice
-def show_tells(inp):
+def showtells(inp):
     query = Tell.select().where(Tell.recipient == inp.user)
     if not query.exists():
         return lex.tell.no_new
@@ -384,10 +386,10 @@ def rem(inp, *, user, message):
         return add_memo(inp, user=user, message=message)
 
 
-@core.command
+@core.rule(r'^\?([^\s]+)\s*$')
 def peek_memo(inp):
     if inp.channel not in core.config.irc.noquotes:
-        return get_memo(inp, user=inp.text[1:])
+        return get_memo(inp, user=inp.text)
 
 
 ###############################################################################
@@ -484,7 +486,7 @@ def alert(inp, *, date, span, message):
     return lex.alert.set
 
 
-@core.command
+@core.rule(r'(.*)')
 @core.private
 @core.multiline
 def get_alerts(inp):

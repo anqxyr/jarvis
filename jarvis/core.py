@@ -8,6 +8,7 @@ import arrow
 import functools
 import logbook
 import pyscp
+import re
 import yaml
 
 from . import ext, lex
@@ -63,9 +64,14 @@ def refresh():
 
 refresh()
 
+
 ###############################################################################
-# Command Decorators
+# Core Functions
 ###############################################################################
+
+
+COMMANDS = {}
+RULES = []
 
 
 class Inp:
@@ -84,40 +90,105 @@ class Inp:
         self.notice = False
         self.multiline = False
 
-    def send(self, text):
+    def send(self, text, private=None, notice=None, multiline=None):
         """Send output data."""
-        text = text if self.multiline else [text]
+        if not text:
+            return
+
+        private = private if private is not None else self.private
+        notice = notice if notice is not None else self.notice
+        multiline = multiline if multiline is not None else self.multiline
+
+        text = text if multiline else [text]
         for line in text:
             if hasattr(line, 'compose'):
                 line = line.compose(self)
-            if self.user != self.channel and not (self.notice or self.private):
+            if self.user != self.channel and not (notice or private):
                 line = '{}: {}'.format(self.user, line)
-            self._send(line, private=self.private, notice=self.notice)
+            self._send(line, private=private, notice=notice)
 
     @property
     def privileges(self):
         return self._priv()
 
 
-class command:
-    """Enable generic command functionality."""
+def choose_input(options):
+    options = list(map('\x02{}\x02'.format, options))
+    if len(options) <= 5:
+        head, tail = options[:-1], options[-1]
+        msg = lex.input.options
+    else:
+        head, tail = options[:5], len(options[5:])
+        msg = lex.input.cropped_options
+    return msg(head=', '.join(head), tail=tail)
 
-    def __init__(self, func):
-        self.func = func
 
-    def __call__(self, inp, *args, **kwargs):
+def dispatcher(inp):
+    """
+    Dispatch the correct command based on the input text.
+
+    This is the main entry point for the jarvis' commands. It also acts as
+    an autocompleter, automatically executing the commands if their partial
+    name is used, or returning a disambiguation prompt if multiple commands
+    match the partial input.
+    """
+    funcs = {}
+
+    name = inp.text.split(' ')[0]
+    if name[0] in '.!':
+        text = ' '.join(inp.text.split(' ')[1:])
+        funcs = {v: text for k, v in COMMANDS.items() if k == name[1:]}
+        if not funcs:
+            funcs = {
+                v: text for k, v in COMMANDS.items()
+                if v not in funcs.values() and k.startswith(name[1:])}
+    if len(funcs) > 1:
+        inp.send(choose_input([k.__name__ for k, v in funcs.items()]))
+        funcs = {}
+
+    for k, v in RULES:
+        match = re.match(k, inp.text)
+        if match:
+            funcs[v] = match.group(1)
+
+    for func, text in funcs.items():
+        print(func.__name__, text)
+        inp.text = text
+        inp.private = inp.notice = inp.multiline = False
         try:
-            result = self.func(inp, *args, **kwargs)
-            if result:
-                inp.send(result)
+            inp.send(func(inp))
         except Exception as e:
             if config.debug:
                 raise e
             log.exception(e)
-            inp._send(lex.error.compose(inp), private=False, notice=False)
+            inp.send(lex.error, private=False, notice=False, multiline=False)
 
-    def __getattr__(self, name):
-        return getattr(self.func, name)
+
+###############################################################################
+# Command Decorators
+###############################################################################
+
+
+def command(func):
+    """Register a new command."""
+    COMMANDS[func.__name__] = func
+    return func
+
+
+def alias(name):
+    """Add another alias to the command."""
+    def inner(func):
+        COMMANDS[name] = func
+        return func
+    return inner
+
+
+def rule(regex):
+    """Add a regex rule which would trigger the command."""
+    def inner(func):
+        RULES.append((regex, func))
+        return func
+    return inner
 
 
 def require(channel, level=0):
