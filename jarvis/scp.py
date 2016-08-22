@@ -256,7 +256,7 @@ def errors(inp):
 
 
 @core.command
-@core.cooldown(1200)
+@core.cooldown(7200)
 @core.multiline
 def cleantitles(inp):
     yield lex.cleantitles.start
@@ -288,6 +288,7 @@ def cleantitles(inp):
         if source != page.source:
             page.edit(source, comment='clean titles')
 
+    core.wiki.titles.cache_clear()
     yield lex.cleantitles.end
 
 
