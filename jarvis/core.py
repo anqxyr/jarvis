@@ -86,9 +86,7 @@ class Inp:
         self._priv = privileges
         self.raw = raw
 
-        self.private = False
-        self.notice = False
-        self.multiline = False
+        self.private = self.notice = self.multiline = False
 
     def send(self, text, private=None, notice=None, multiline=None):
         """Send output data."""
@@ -152,7 +150,6 @@ def dispatcher(inp):
             funcs[v] = match.group(1)
 
     for func, text in funcs.items():
-        print(func.__name__, text)
         inp.text = text
         inp.private = inp.notice = inp.multiline = False
         try:

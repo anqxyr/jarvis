@@ -272,12 +272,20 @@ cleantitles:
 version: v{version} python IRC bot, created and maintained by anqxyr, powered by sopel and pyscp. Source code and changelog are available at https://github.com/anqxyr/jarvis . Uptime is {days} days, {hours} hours and {minutes} minutes. Contact anqxyr for bug reports and feature requests.
 rejoin: Entering {channel} ... now.
 dice:
-    incorrect: |-
-        That's a mutant monster killer die! Die! DIE! Why won't you die?! *kills the die*
-        No dice. Get it? You get it. Heh.
-    too_many: |-
-        That's a hella a lot of dice, mister.
-        No dice. Get it? You get it. Heh.
+    not_enough_sides: |-
+        What the hell kind of die that is? I can't throw that.
+        That's an interesting thing to ask for, but I'm not gonna do it.
+        Nah.
+        You lose.
+    too_many_dice: |-
+        You are throwing too many dice at once. Try to slow down.
+        You lose.
+        Rocks Fall, Everyone Dies.
+        Try a more realistic number, would you?
+    output:
+        expanded: "*{total}* [{expanded}]"
+        annotated: "{text}: *{total}*"
+        simple: "*{total}*"
 silly:
     hugs: |-
         I'd hug you with my big robot hands, but you meatbags are so squishy, we'd just end up with a mess on my pretty hands.

@@ -7,7 +7,6 @@
 
 import arrow
 import random
-import re
 import tweepy
 
 from . import core, parser, lex, __version__
@@ -90,49 +89,58 @@ def choose(inp):
     return random.choice(options)
 
 
+def get_throw(throw):
+    count, sides = throw.split('d')
+    count = int(count) if count else 1
+
+    if count > 5000:
+        raise ValueError
+
+    if sides == 'f':
+        die = {-1: '\x034-\x0F', 0: '0', 1: '\x033+\x0F'}
+    else:
+        die = {i: str(i) for i in range(1, int(sides) + 1)}
+
+    if len(die) < 2:
+        return lex.dice.not_enough_sides
+
+    if count < 0:
+        count = -count
+        die = {-k: v for k, v in die.items()}
+
+    results = [random.choice(list(die.keys())) for _ in range(count)]
+    total = sum(results)
+    expanded = ','.join(die[i] for i in results[:10])
+
+    return total, expanded
+
+
 @core.command
-@core.alias('dice')
-@core.rule(r'(?i)(^(?:[+-]?[0-9]*d(?:[0-9]+|f))+(?:[+-][0-9]+)?$)')
-def roll(inp):
+@core.alias('roll')
+@parser.dice
+def dice(inp, *, throws, bonus, text, expand):
     """Return the result of rolling multiple dice."""
-    if not inp.text:
-        return lex.input.missing
-    rolls = re.findall(r'([+-]?)([0-9]*)d([0-9]+|f)', inp.text)
     total = 0
+    expanded = {}
 
-    def roll_die(sign, count, sides):
-        nonlocal total
-        results = [random.randint(1, int(sides)) for _ in range(count)]
-        if sign == '-':
-            results = [-i for i in results]
-        total += sum(results)
-        return results
+    for throw in throws:
+        try:
+            subtotal, subexp = get_throw(throw)
+        except ValueError:
+            return lex.dice.too_many_dice
+        total += subtotal
+        expanded[throw] = subexp
 
-    def roll_fudge_die(count):
-        nonlocal total
-        results = [random.choice(['+1', '0', '-1']) for _ in range(count)]
-        total += sum(map(int, results))
-        return [i[0] for i in results]
+    expanded = ['{}={}'.format(i, expanded[i]) for i in throws]
+    expanded = '|'.join(expanded)
 
-    results = []
-    for sign, count, sides in rolls:
-        count = int(count) if count else 1
-        if count > 5000:
-            return lex.dice.too_many
-        if sides == 'f':
-            results.extend(roll_fudge_die(count))
-        elif int(sides) < 2:
-            return lex.dice.incorrect
-        else:
-            results.extend(roll_die(sign, count, sides))
-    results = ', '.join(map(str, results[:20]))
-    results = results.replace('+', '\x033+\x0F').replace('-', '\x034-\x0F')
-
-    bonus = re.search(r'[+-][0-9]+$', inp.text)
     if bonus:
-        total += int(bonus.group(0))
+        expanded = '{}|bonus={:+d}'.format(expanded, bonus)
+        total += bonus
 
-    return '{} ({}={})'.format(total, inp.text, results)
+    msg = 'expanded' if expand else 'annotated' if text else 'simple'
+    msg = getattr(lex.dice.output, msg)
+    return msg(total=total, expanded=expanded, text=text)
 
 
 @core.command
@@ -154,7 +162,7 @@ def user(inp):
 
 @core.rule(r'(?i)^\.help\b(.*)')
 @parser.help
-def _help(inp, *, command, elemental):
+def help(inp, *, command, elemental):
     if elemental:
         return
     url = 'http://scp-stats.wikidot.com/jarvis'

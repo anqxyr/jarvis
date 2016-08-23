@@ -5,11 +5,16 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 ### 1.0.4
 
+Other changes
+
+* Adjusted the help command.
+* Normalised argument parsing for the !dice command.
+
 Bug fixes
 
 * Fixed incorrect creation times for articles that are less than a day old.
 * Improved the results of --usage for modal commands.
-* Adjusted the help command.
+* Fixed missing titles for several articles with non-standard series formatting.
 
 ### 1.0.3
 
