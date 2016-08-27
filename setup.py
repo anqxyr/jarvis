@@ -1,10 +1,13 @@
 import setuptools
 
-from jarvis import __version__
+VERSIONFILE = 'jarvis/version.py'
+with open(VERSIONFILE) as file:
+    version = file.readline()
+    version = version.split('=')[-1].strip().strip("'")
 
 setuptools.setup(
     name='jarvis',
-    version=__version__,
+    version=version,
     description='Snarky bot for scp-wiki irc channels.',
     long_description='',
     url='https://github.com/anqxyr/jarvis/',
