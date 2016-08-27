@@ -157,7 +157,7 @@ class ArticlesChart(Chart):
             else:
                 color = 'color: #f4b400'
 
-            date = p.metadata[self.user].date or '-'
+            date = p.metadata[self.user].date[:10] or '-'
 
             tooltip = dt.table(
                 dt.tr(dt.td(p.title, colspan=2)),
@@ -200,7 +200,7 @@ class ArticlesTable(Chart):
             role = p.metadata[user].role
             role = html('span', role, cls='rel-' + role)
 
-            date = p.metadata[user].date
+            date = p.metadata[user].date[:10]
 
             self.data.append([p.title, p.rating, tags, link, date, role])
 
