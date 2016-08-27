@@ -229,7 +229,7 @@ def errors_deleted():
 
 def errors_vote():
     return core.wiki.list_pages(
-        tags='-in-deletion -archived -author',
+        tags='-in-deletion -archived -author -in-rewrite',
         rating='<-10', created_at='older than 24 hours')
 
 
@@ -315,6 +315,7 @@ def lastcreated(inp, cooldown={}, **kwargs):
     kwargs = dict(
         body='title created_by created_at rating',
         order='created_at desc',
+        rating='>=-25',
         limit=3)
     pages = core.wiki.list_pages(**kwargs)
     rating = inp.channel == core.config.irc.sssc
