@@ -233,9 +233,9 @@ def errors_vote():
         rating='<-10', created_at='older than 24 hours')
 
 
-@core.multiline
 @core.require(channel=core.config.irc.sssc)
 @core.command
+@core.multiline
 def errors(inp):
     all_pages = []
 
