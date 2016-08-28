@@ -71,8 +71,8 @@ def youtube(inp, *, query):
     return '{} - http://youtube.com/watch?v={}'.format(info, vid)
 
 
-@core.rule(r'.*youtube\.com/watch\?v=([-_a-z0-9]+)')
-@core.rule(r'.*youtu\.be/([-_a-z0-9]+)')
+@core.rule(r'(?i).*youtube\.com/watch\?v=([-_a-z0-9]+)')
+@core.rule(r'(?i).*youtu\.be/([-_a-z0-9]+)')
 def youtube_lookup(inp):
     return get_youtube_video_info(inp.text)
 
