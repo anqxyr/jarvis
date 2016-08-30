@@ -32,8 +32,8 @@ def send(bot, text, private=False, notice=False):
     recipient = tr.nick if private or notice else tr.sender
     try:
         bot.sending.acquire()
-        for line in textwrap.wrap(text, width=420):
-            bot.write((mode, recipient), line)
+        text = textwrap.wrap(text, width=420)[0]
+        bot.write((mode, recipient), text)
     finally:
         bot.sending.release()
 
