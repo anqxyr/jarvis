@@ -83,8 +83,10 @@ def author_search(inp, func):
 def find_pages(
         pages, *, title, exclude, strict,
         tags, author, rating, created, fullname):
-    if tags:
-        pages = pages.tags(tags)
+    tags = tags or ''
+    for t in ['fragment', 'admin', 'template', '_sys']:
+        if t not in tags:
+            tags += ' -' + t
     if rating:
         pages = pages.with_rating(rating)
     if created:
