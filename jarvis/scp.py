@@ -184,7 +184,7 @@ def author_summary(name):
     """Compose author summary."""
     pages = core.pages.related(name)
     url = pages.tags('author')[0].url if pages.tags('author') else None
-    url = ' ({})'.format(url) if url else ''
+    url = ' ( {} )'.format(url) if url else ''
     pages = pages.articles
     if not pages:
         return lex.not_found.author
