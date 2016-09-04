@@ -256,6 +256,7 @@ def errors(inp):
         yield lex.errors.done
 
 
+@core.require(channel=core.config.irc.sssc)
 @core.command
 @core.cooldown(7200)
 @core.multiline
