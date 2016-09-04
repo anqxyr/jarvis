@@ -71,6 +71,7 @@ def updatebans(inp):
 
 
 def autoban(inp, name, host):
+    inp.user = 'OP Alert'
     if not core.config.debug and inp.channel != '#site19':
         return
     if any(word in name.lower() for word in PROFANITY):
