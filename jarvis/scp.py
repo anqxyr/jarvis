@@ -87,6 +87,7 @@ def find_pages(
     for t in ['fragment', 'admin', 'template', '_sys']:
         if t not in tags:
             tags += ' -' + t
+    pages = pages.tags(tags)
     if rating:
         pages = pages.with_rating(rating)
     if created:
