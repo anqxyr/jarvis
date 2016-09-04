@@ -64,8 +64,10 @@ class CommandWrapper:
 
 class PositionalArgument:
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parser, *args, **kwargs):
+        self.parser = parser
         self.name = args[0].lstrip('-')
+        self.flags = []
 
         self.is_optional = False
 
@@ -128,6 +130,9 @@ class PositionalArgument:
         for bit in unparsed:
             if self.name != 'mode':
                 assert bit != '--usage'
+            # do not consume other optional args
+            if bit in [f for i in self.parser._args for f in i.flags]:
+                break
             if len(parsed) >= self._max:
                 break
             try:
@@ -159,9 +164,9 @@ class PositionalArgument:
 
 class OptionalArgument(PositionalArgument):
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parser, *args, **kwargs):
         kwargs.setdefault('nargs', 0)
-        super().__init__(*args, **kwargs)
+        super().__init__(parser, *args, **kwargs)
         self.is_optional = True
         self.flags = args
 
@@ -232,7 +237,7 @@ class ArgumentParser:
             cls = OptionalArgument
         else:
             cls = PositionalArgument
-        self._args.append(cls(*args, **kwargs))
+        self._args.append(cls(self, *args, **kwargs))
 
     def exclusive(self, *args, required=False):
         self._egroups.append(ExclusiveGroup(args, required))
