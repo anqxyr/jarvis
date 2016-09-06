@@ -168,6 +168,15 @@ def help(inp, *, command, elemental):
     url = 'http://scp-stats.wikidot.com/jarvis'
     return url if not command else url + '#' + command.replace(' ', '-')
 
+
+@core.require(channel=core.config.irc.sssc)
+@core.command
+def reloadtitles(inp):
+    core.wiki.titles.cache_clear()
+    core.wiki.titles()
+    yield lex.reloadtitles
+
+
 ###############################################################################
 
 
