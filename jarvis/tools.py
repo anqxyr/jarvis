@@ -89,20 +89,11 @@ def choose(inp):
     return random.choice(options)
 
 
-def get_throw(throw):
-    count, sides = throw.split('d')
-    count = int(count) if count else 1
-
-    if count > 5000:
-        raise ValueError
-
+def get_throw(count, sides):
     if sides == 'f':
         die = {-1: '\x034-\x0F', 0: '0', 1: '\x033+\x0F'}
     else:
         die = {i: str(i) for i in range(1, int(sides) + 1)}
-
-    if len(die) < 2:
-        return lex.dice.not_enough_sides
 
     if count < 0:
         count = -count
@@ -124,10 +115,13 @@ def dice(inp, *, throws, bonus, text, expand):
     expanded = {}
 
     for throw in throws:
-        try:
-            subtotal, subexp = get_throw(throw)
-        except ValueError:
+        count, sides = throw.split('d')
+        count = int(count) if count else 1
+        if int(count) > 5000:
             return lex.dice.too_many_dice
+        if sides != 'f' and not 2 <= int(sides) <= 5000:
+            return lex.dice.bad_side_count
+        subtotal, subexp = get_throw(count, sides)
         total += subtotal
         expanded[throw] = subexp
 

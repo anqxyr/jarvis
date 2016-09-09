@@ -272,7 +272,7 @@ cleantitles:
 version: v{version} python IRC bot, created and maintained by anqxyr, powered by sopel and pyscp. Source code and changelog are available at https://github.com/anqxyr/jarvis . Uptime is {days} days, {hours} hours and {minutes} minutes. Contact anqxyr for bug reports and feature requests.
 rejoin: Entering {channel} ... now.
 dice:
-    not_enough_sides: |-
+    bad_side_count: |-
         What the hell kind of die that is? I can't throw that.
         That's an interesting thing to ask for, but I'm not gonna do it.
         Nah.
