@@ -5,6 +5,7 @@
 ###############################################################################
 
 import arrow
+import collections
 import functools
 import logbook
 import pyscp
@@ -130,19 +131,23 @@ def dispatcher(inp):
     name is used, or returning a disambiguation prompt if multiple commands
     match the partial input.
     """
-    funcs = {}
+    funcs = collections.OrderedDict()
 
     name = inp.text.split(' ')[0]
-    if name[0] in '.!':
+    if name and name[0] in '.!' and len(name) > 1:
+        name = name[1:]
         text = ' '.join(inp.text.split(' ')[1:])
-        funcs = {v: text for k, v in COMMANDS.items() if k == name[1:]}
-        if not funcs:
-            funcs = {
-                v: text for k, v in COMMANDS.items()
-                if v not in funcs.values() and k.startswith(name[1:])}
-    if len(funcs) > 1:
-        inp.send(choose_input([k.__name__ for k, v in funcs.items()]))
-        funcs = {}
+
+        if name in COMMANDS:
+            # don't try to autocomplete exact matches
+            matches = [COMMANDS[name]]
+        else:
+            matches = [v for k, v in COMMANDS.items() if k.startswith(name)]
+
+        if len(matches) > 1:
+            inp.send(choose_input([f.__name__ for f in matches]))
+        else:
+            funcs[matches[0]] = text
 
     for k, v in RULES:
         match = re.match(k, inp.text)
