@@ -146,7 +146,7 @@ def dispatcher(inp):
 
         if len(matches) > 1:
             inp.send(choose_input([f.__name__ for f in matches]))
-        else:
+        elif matches:
             funcs[matches[0]] = text
 
     for k, v in RULES:
