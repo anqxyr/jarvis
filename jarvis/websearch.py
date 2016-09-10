@@ -114,7 +114,6 @@ def get_youtube_video_info(video_id=None):
 @core.alias('w')
 @parser.websearch
 def wikipedia(inp, *, query):
-    print(query)
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -125,7 +124,6 @@ def wikipedia(inp, *, query):
     except wiki.exceptions.PageError:
         return lex.not_found.generic
     except wiki.exceptions.DisambiguationError as e:
-        print(e.options)
         tools.save_results(
             inp, e.options, lambda x: wikipedia(inp, query=x))
         return tools.choose_input(e.options)

@@ -139,7 +139,7 @@ def dispatcher(inp):
 
     if name in COMMANDS:
         funcs[COMMANDS[name]] = text
-    else:
+    elif name:
         cmds = {v for k, v in COMMANDS.items() if k.startswith(name)}
         if len(cmds) > 1:
             inp.send(choose_input([f.__name__ for f in cmds]))
