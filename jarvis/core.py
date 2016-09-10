@@ -138,11 +138,7 @@ def dispatcher(inp):
         name = name[1:]
         text = ' '.join(inp.text.split(' ')[1:])
 
-        if name in COMMANDS:
-            # don't try to autocomplete exact matches
-            matches = [COMMANDS[name]]
-        else:
-            matches = [v for k, v in COMMANDS.items() if k.startswith(name)]
+        matches = list({v for k, v in COMMANDS.items() if k.startswith(name)})
 
         if len(matches) > 1:
             inp.send(choose_input([f.__name__ for f in matches]))
