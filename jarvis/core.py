@@ -134,16 +134,17 @@ def dispatcher(inp):
     funcs = collections.OrderedDict()
 
     name = inp.text.split(' ')[0]
-    if name and name[0] in '.!' and len(name) > 1:
-        name = name[1:]
-        text = ' '.join(inp.text.split(' ')[1:])
+    name = name[1:] if name[0] in '.!' else None
+    text = ' '.join(inp.text.split(' ')[1:])
 
-        matches = list({v for k, v in COMMANDS.items() if k.startswith(name)})
-
-        if len(matches) > 1:
-            inp.send(choose_input([f.__name__ for f in matches]))
-        elif matches:
-            funcs[matches[0]] = text
+    if name in COMMANDS:
+        funcs[COMMANDS[name]] = text
+    else:
+        cmds = {v for k, v in COMMANDS.items() if k.startswith(name)}
+        if len(cmds) > 1:
+            inp.send(choose_input([f.__name__ for f in cmds]))
+        elif cmds:
+            funcs[next(iter(cmds))] = text
 
     for k, v in RULES:
         match = re.match(k, inp.text)
