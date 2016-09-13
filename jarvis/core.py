@@ -18,7 +18,7 @@ from . import ext, lex
 # Logging
 ###############################################################################
 
-logbook.FileHandler('jarvis.log').push_application()
+logbook.FileHandler('logs/jarvis.log').push_application()
 log = logbook.Logger(__name__)
 
 ###############################################################################
@@ -100,8 +100,7 @@ class Inp:
 
         text = text if multiline else [text]
         for line in text:
-            if hasattr(line, 'compose'):
-                line = line.compose(self)
+            line = str(line)
             if self.user != self.channel and not (notice or private):
                 line = '{}: {}'.format(self.user, line)
             self._send(line, private=private, notice=notice)

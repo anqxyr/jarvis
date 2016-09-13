@@ -25,7 +25,7 @@ from . import core, lex, parser
 ###############################################################################
 
 
-db = playhouse.sqlite_ext.SqliteExtDatabase('jarvis.db', journal_mode='WAL')
+db = playhouse.sqlite_ext.SqliteExtDatabase(None, journal_mode='WAL')
 
 
 class BaseModel(peewee.Model):
@@ -96,14 +96,15 @@ class Alert(BaseModel):
 ###############################################################################
 
 
-def init():
+def init(path):
     """Initialize the database, create missing tables."""
+    db.init(path)
     db.connect()
     db.create_tables(
         [Tell, Message, Quote, Subscriber, Restricted, Alert], safe=True)
 
 
-init()
+init('jarvis.db')
 
 
 @core.rule(r'(.*)')

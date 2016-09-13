@@ -27,6 +27,15 @@ class Lexicon:
         return '<{} {}>'.format(
             self.__class__.__qualname__, '.'.join(self.path))
 
+    def __eq__(self, other):
+        if not hasattr(other, 'path'):
+            return False
+        if self.path != other.path:
+            return False
+        print(self.kwargs)
+        print(other.kwargs)
+        return self.kwargs == other.kwargs
+
     def __getattr__(self, value):
         return self.__class__(self.path + [value])
 

@@ -24,6 +24,9 @@ class PageView:
     def __len__(self):
         return len(self.pages)
 
+    def __eq__(self, other):
+        return self.pages == other
+
     def __iter__(self):
         return iter(self.pages)
 
