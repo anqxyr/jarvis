@@ -5,7 +5,7 @@
 ###############################################################################
 
 from jarvis import scp, lex, tools
-from jarvis.tests.utils import run
+from jarvis.tests.utils import run, samples
 
 ###############################################################################
 
@@ -23,6 +23,18 @@ def test_author_ambiguous():
 
 def test_author_not_found():
     assert run('.au fakeauthorname') == lex.not_found.author
+
+
+def test_author_default():
+    assert run('.au', _user='anqxyr') == scp.author_summary('anqxyr')
+
+
+def test_author_output():
+    assert str(run('.au anqxyr')) == samples.author.anqxyr
+
+
+def test_author_output_rewrites():
+    assert str(run('.au voct')) == samples.author.voct
 
 
 

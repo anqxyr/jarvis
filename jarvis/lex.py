@@ -12,7 +12,7 @@ import sys
 ###############################################################################
 
 with (pathlib.Path(__file__).parent / 'lexicon.yaml').open() as file:
-    DATA = yaml.load(file)
+    DATA = yaml.safe_load(file)
 
 ###############################################################################
 
@@ -24,16 +24,16 @@ class Lexicon:
         self.kwargs = {}
 
     def __repr__(self):
-        return '<{} {}>'.format(
-            self.__class__.__qualname__, '.'.join(self.path))
+        return '<{} {} {}>'.format(
+            self.__class__.__qualname__,
+            '.'.join(self.path),
+            repr(self.kwargs))
 
     def __eq__(self, other):
         if not hasattr(other, 'path'):
             return False
         if self.path != other.path:
             return False
-        print(self.kwargs)
-        print(other.kwargs)
         return self.kwargs == other.kwargs
 
     def __getattr__(self, value):

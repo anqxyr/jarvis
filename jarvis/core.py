@@ -111,7 +111,7 @@ class Inp:
 
 
 def choose_input(options):
-    options = list(map('\x02{}\x02'.format, options))
+    options = list(map('\x02{}\x02'.format, sorted(options)))
     if len(options) <= 5:
         head, tail = options[:-1], options[-1]
         msg = lex.input.options
@@ -119,6 +119,38 @@ def choose_input(options):
         head, tail = options[:5], len(options[5:])
         msg = lex.input.cropped_options
     return msg(head=', '.join(head), tail=tail)
+
+
+def _call_func(inp, func, text):
+    inp.text = text
+    inp.private = inp.notice = inp.multiline = False
+    try:
+        inp.send(func(inp))
+    except Exception as e:
+        if config.debug:
+            raise e
+        log.exception(e)
+        inp.send(lex.error, private=False, notice=False, multiline=False)
+
+
+def _get_command_func(inp):
+    name = re.match(r'[\.!]([^\s]+)', inp.text.lower())
+    if not name:
+        return
+    name = name.group(1)
+
+    if name in COMMANDS:
+        return COMMANDS[name]
+
+    commands = [k for k in COMMANDS if k.startswith(name)]
+    commands = list({COMMANDS[k] for k in commands})
+
+    if not commands:
+        return
+    if len(commands) == 1:
+        return commands[0]
+    if len(commands) > 1:
+        inp.send(choose_input([f.__name__ for f in commands]))
 
 
 def dispatcher(inp):
@@ -132,18 +164,9 @@ def dispatcher(inp):
     """
     funcs = collections.OrderedDict()
 
-    name = inp.text.split(' ')[0]
-    name = name[1:] if name[0] in '.!' else None
-    text = ' '.join(inp.text.split(' ')[1:])
-
-    if name in COMMANDS:
-        funcs[COMMANDS[name]] = text
-    elif name:
-        cmds = {v for k, v in COMMANDS.items() if k.startswith(name)}
-        if len(cmds) > 1:
-            inp.send(choose_input([f.__name__ for f in cmds]))
-        elif cmds:
-            funcs[next(iter(cmds))] = text
+    command = _get_command_func(inp)
+    if command:
+        funcs[command] = ' '.join(inp.text.split(' ')[1:])
 
     for k, v in RULES:
         match = re.match(k, inp.text)
@@ -151,15 +174,7 @@ def dispatcher(inp):
             funcs[v] = match.group(1)
 
     for func, text in funcs.items():
-        inp.text = text
-        inp.private = inp.notice = inp.multiline = False
-        try:
-            inp.send(func(inp))
-        except Exception as e:
-            if config.debug:
-                raise e
-            log.exception(e)
-            inp.send(lex.error, private=False, notice=False, multiline=False)
+        _call_func(inp, func, text)
 
 
 ###############################################################################

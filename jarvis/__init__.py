@@ -8,4 +8,5 @@ from . import (
     notes,
     tools,
     websearch,
-    autoban)
+    autoban,
+    utils)

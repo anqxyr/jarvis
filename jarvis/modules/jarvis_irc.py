@@ -22,6 +22,7 @@ import jarvis
 
 def send(bot, text, private=False, notice=False):
     """Send irc message."""
+    text = str(text)
     tr = bot._trigger
     jarvis.notes.Message.create(
         user=bot.config.core.nick,

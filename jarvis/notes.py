@@ -146,8 +146,9 @@ def tell(inp, *, user, topic, message):
         topic=topic)
     Tell.insert_many(dict(recipient=i, **data) for i in users).execute()
 
-    msg = lex.topic.send if topic else lex.tell.send
-    return msg(count=len(users))
+    if topic:
+        return lex.topic.send(count=len(users))
+    return lex.tell.send
 
 
 @core.rule(r'(.*)')
@@ -160,19 +161,24 @@ def get_tells(inp):
 
     if tells:
         inp._send(
-            lex.tell.new(count=len(tells)).compose(inp),
+            lex.tell.new(count=len(tells)),
             notice=True, private=False)
 
     for tell in tells:
 
         time = arrow.get(tell.time).humanize()
-        msg = lex.topic.get if tell.topic else lex.tell.get
 
-        yield msg(
-            name=tell.sender,
-            time=time,
-            topic=tell.topic,
-            text=tell.text)
+        if tell.topic:
+            yield lex.topic.get(
+                name=tell.sender,
+                time=time,
+                topic=tell.topic,
+                text=tell.text)
+        else:
+            yield lex.tell.get(
+                name=tell.sender,
+                time=time,
+                text=tell.text)
 
 
 @core.command
