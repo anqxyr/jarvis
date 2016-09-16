@@ -13,12 +13,19 @@ import yaml
 
 class Inp(jarvis.core.Inp):
 
-    def __init__(self, text, user, channel):
+    def __init__(self, text, user, channel, channels):
+        self.text = text.strip() if text else ''
+        self.user = str(user).strip().lower()
+        self.channel = str(channel).strip().lower()
+
         self.output = []
-        super().__init__(
-            text, user, channel,
-            lambda text, private=None, notice=None: self.output.append(text),
-            lambda: None, lambda: None)
+        self._send = (
+            lambda text, private=None, notice=None: self.output.append(text))
+        self.channels = channels or [channel]
+
+    @property
+    def privileges(self):
+        return {i: 4 for i in self.channels}
 
     def send(self, text, private=None, notice=None, multiline=None):
         multiline = multiline if multiline is not None else self.multiline
@@ -28,7 +35,10 @@ class Inp(jarvis.core.Inp):
             self.output.append(text)
 
 
-def run(text, *args, _user='test-user', _channel='test-channel', **kwargs):
+def run(
+        text, *args,
+        _user='test-user', _channel='test-channel', _channels=None,
+        **kwargs):
     """
     Run the input through the dispatcher and return the result.
 
@@ -42,7 +52,7 @@ def run(text, *args, _user='test-user', _channel='test-channel', **kwargs):
         text.append('--{} {}'.format(k, v))
     text = ' '.join(text)
 
-    inp = Inp(text, _user, _channel)
+    inp = Inp(text, _user, _channel, _channels)
     jarvis.core.dispatcher(inp)
 
     out = inp.output

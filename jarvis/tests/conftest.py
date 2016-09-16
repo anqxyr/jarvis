@@ -26,7 +26,3 @@ def prepare_databases():
     if db_path.exists():
         db_path.unlink()
     jarvis.notes.init(str(db_path))
-
-    yield
-
-    db_path.unlink()

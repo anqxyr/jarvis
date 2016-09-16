@@ -30,11 +30,26 @@ class Lexicon:
             repr(self.kwargs))
 
     def __eq__(self, other):
+        """
+        Compare lex objects to each other.
+
+        This comparison is unintuitive in the interests of practicality.
+        Saved arguments are compared, but only if they're present in
+        both objects. This means that all of the following is true:
+
+        lex.example(a=3) != lex.example(a=4)
+        lex.example(a=3, b=4) == lex.example(a=3)
+        lex.example == lex.example(a=3)
+        lex.example == lex.example(a=4)
+        """
         if not hasattr(other, 'path'):
             return False
         if self.path != other.path:
             return False
-        return self.kwargs == other.kwargs
+        for k, v in self.kwargs.items():
+            if other.kwargs.get(k, v) != v:
+                return False
+        return True
 
     def __getattr__(self, value):
         return self.__class__(self.path + [value])
