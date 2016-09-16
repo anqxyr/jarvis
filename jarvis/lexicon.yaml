@@ -103,24 +103,24 @@ tell:
         Still no tells.
         I don't recall anyone sending you anything.
     new: You have {count} new messages.
-    outbound:
-        empty: |-
-            You don't have any undelivered tells.
-            Everything you've sent, has been delivered
-            I've already delivered everything.
-            This place is empty.
-        count: |-
-            You have {count} outbound tells, including - {users}.
-            In the past, you've sent {count} tells that haven't been delivered yet. You sent them to {users}.
-            {count} tells - {users}.
-            I found some tells to {users}. In total - {count} tells.
-        purged: |-
-            You had {count} outbound tells, and now you have none.
-            {count} little tells, lost in the wind.
-            Your {count} tells will not be delivered.
-            I'm burning them in the fireplace, one by one, all {count} of them.
-        echo: |-
-            {time} to {user}: {message}
+outbound:
+    empty: |-
+        You don't have any undelivered tells.
+        Everything you've sent, has been delivered
+        I've already delivered everything.
+        This place is empty.
+    count: |-
+        You have {count} outbound tells, including - {users}.
+        In the past, you've sent {count} tells that haven't been delivered yet. You sent them to {users}.
+        {count} tells - {users}.
+        I found some tells to {users}. In total - {count} tells.
+    purged: |-
+        You had {count} outbound tells, and now you have none.
+        {count} little tells, lost in the wind.
+        Your {count} tells will not be delivered.
+        I'm burning them in the fireplace, one by one, all {count} of them.
+    echo: |-
+        {time} to {user}: {message}
 topic:
     send: |-
         I will pass it on to {count} users who are interested in that kind of stuff.
@@ -182,7 +182,7 @@ seen:
         {user} has been observed in this channel {total} times, {this_month} this month.
         {user} was seen here on {total} ocassions, {this_month} which had happened this month.
         I have seen {user} {this_month} times this month, and {total} times in all recorded history.
-        {user}: {total} total entries found. {this_month} entries durring this month.
+        {user}: {total} total entries found. {this_month} entries during this month.
         {user} has said a total of {total} lines. Recently, they've been seen {this_month} times.
     self: |-
         I see myself every morning in the mirror. It's not a pretty sight.
@@ -401,6 +401,6 @@ templates:
         
         ----
         [[size 75%]]
-        This automated message was sent on behalf of {user}. Please do not reply to this message or send other messages to this bot. Contact {user} in regard to this message. If you believe that you are not the intended recipient of this message, that the image was deliverred incorrectly, or have other concerns about this bot, please contact [[user anqxyr]].
+        This automated message was sent on behalf of {user}. Please do not reply to this message or send other messages to this bot. Contact {user} in regard to this message. If you believe that you are not the intended recipient of this message, that the image was delivered incorrectly, or have other concerns about this bot, please contact [[user anqxyr]].
         [[/size]]
 

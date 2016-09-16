@@ -339,7 +339,9 @@ def tell(pr):
 
 @parser
 def outbound(pr):
-    pr.add_argument('action', choices=['count', 'purge', 'echo'])
+    pr.add_argument('--purge', '-p', nargs='?', type=str.lower)
+    pr.add_argument('--echo', '-e')
+    pr.exclusive('purge', 'echo')
 
 
 @parser

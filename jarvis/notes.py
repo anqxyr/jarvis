@@ -193,7 +193,7 @@ def showtells(inp):
 @core.command
 @core.notice
 @parser.outbound
-def outbound(inp, *, action):
+def outbound(inp, *, purge, echo):
     """
     Access outbound tells.
 
@@ -205,20 +205,26 @@ def outbound(inp, *, action):
     query = Tell.select().where(Tell.sender == inp.user, Tell.topic.is_null())
 
     if not query.exists():
-        return lex.tell.outbound.empty
+        return lex.outbound.empty
 
-    if action == 'count':
-        msg = lex.tell.outbound.count
-    elif action == 'purge':
+    if purge is True:
         Tell.delete().where(
             Tell.sender == inp.user, Tell.topic.is_null()).execute()
-        msg = lex.tell.outbound.purged
-    elif action == 'echo':
+        msg = lex.outbound.purged
+    elif purge:
+        Tell.delete().where(
+            Tell.sender == inp.user,
+            Tell.topic.is_null(),
+            Tell.recipient == purge).execute()
+        msg = lex.outbound.purged
+    elif echo:
         inp.multiline = True
-        msg = lex.tell.outbound.echo
+        msg = lex.outbound.echo
         return [msg(
             time=arrow.get(t.time).humanize(),
             user=t.recipient, message=t.text) for t in query]
+    else:
+        msg = lex.outbound.count
 
     users = ', '.join(sorted({i.recipient for i in query}))
     return msg(count=query.count(), users=users)
