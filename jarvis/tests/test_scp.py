@@ -4,9 +4,11 @@
 # Module Imports
 ###############################################################################
 
-from jarvis import scp, lex, tools
-from jarvis.tests.utils import run, samples
+from jarvis import core, scp, lex, tools
+from jarvis.tests.utils import run, samples, page
 
+###############################################################################
+# Author
 ###############################################################################
 
 
@@ -37,46 +39,71 @@ def test_author_output_rewrites():
     assert str(run('.au voct')) == samples.author.voct
 
 
-
-#def test_update_author_details():
-#    r = jarvis.scp.update_author_details('anqxyr', 'test-channel')
-#    assert r == 'http://scp-stats.wikidot.com/user:anqxyr'
-#    r = jarvis.scp.update_author_details('VOCT', 'test-channel')
-#    assert r == 'http://scp-stats.wikidot.com/user:voct'
-#    r = jarvis.scp.update_author_details('gears', 'test-channel')
-#    inlex(
-#        r, 'input', 'options',
-#        head='\x02Dr Gears\x02', tail='\x02TwistedGears\x02')
-#    r = jarvis.tools.recall(1, 'test-channel')
-#    assert r == 'http://scp-stats.wikidot.com/user:dr-gears'
-#    r = jarvis.scp.update_author_details('!!!', 'test-channel')
-#    assert inlex(r, 'not_found', 'author')
-#    r = jarvis.scp.update_author_details(None, 'test-channel')
-#    assert inlex(r, 'input', 'missing')
+###############################################################################
+# Search
+###############################################################################
 
 
-#def test_find_page_by_title():
-#    jarvis.scp.find_page_by_title('routine', 'test-channel')
-#    jarvis.scp.find_page_by_title('scp-', 'test-channel')
-#    jarvis.scp.find_page_by_title('белки', 'test-channel')
-#    jarvis.scp.find_page_by_title('paradise mobile', 'test-channel')
-#    jarvis.scp.find_page_by_title('', 'test-channel')
-#    jarvis.scp.find_page_by_title(None, 'test-channel')
+def test_search_simple():
+    assert run('.s белки') == scp.show_page(page('scp-2797'))
 
 
-#def test_find_tale():
-#    jarvis.scp.find_tale_by_title('173', 'test-channel')
-#    jarvis.scp.find_tale_by_title('scp-', 'test-channel')
-#    jarvis.scp.find_tale_by_title('Kitten Flu', 'test-channel')
+def test_search_case_insensitive():
+    assert run('.s БЕЛКИ') == scp.show_page(page('scp-2797'))
 
 
-#def test_find_page_by_tags():
-#    jarvis.scp.find_page_by_tags('keter temporal', 'test-channel')
-#    jarvis.scp.find_page_by_tags('safe keter', 'test-channel')
-#    jarvis.scp.find_page_by_tags('blahblahblah', 'test-channel')
-#    jarvis.scp.find_page_by_tags('', 'test-channel')
-#    jarvis.scp.find_page_by_tags(None, 'test-channel')
+def test_search_rating_simple():
+    return
+    assert run('.s -r >250') == ''
 
 
-#def test_error_report():
-#    jarvis.scp.get_error_report()
+def test_search_rating_range():
+    return
+    assert run('.s -r 80..120') == ''
+
+
+def test_search_tags_simple():
+    return
+    assert run('.s -t keter') == ''
+
+
+def test_search_author():
+    return
+    assert run('.s -a anqxyr') == ''
+
+
+def test_search_created_exact_date():
+    assert run('.s -c 2015-10-01') == scp.show_page(page('scp-2523'))
+
+
+def test_seach_created_year_and_month():
+    return
+    assert run('.s -c 2015-10') == ''
+
+
+def test_search_fullname():
+    assert run('.s -f 1') == scp.show_page(page('1'))
+
+###############################################################################
+# Unused
+###############################################################################
+
+
+def test_unused_simple():
+    assert run('.unused') == 'http://www.scp-wiki.net/scp-739'
+
+
+def test_unused_last():
+    assert run('.unused -l') == 'http://www.scp-wiki.net/scp-2973'
+
+
+def test_unused_prime():
+    assert run('.unused -p') == 'http://www.scp-wiki.net/scp-739'
+
+
+def test_unused_divisible():
+    assert run('.unused -d 10') == lex.not_found.unused
+
+
+def test_unused_count():
+    assert run('.unused -c') == lex.unused.count(count=225)

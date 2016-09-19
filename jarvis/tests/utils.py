@@ -22,6 +22,7 @@ class Inp(jarvis.core.Inp):
         self._send = (
             lambda text, private=None, notice=None: self.output.append(text))
         self.channels = channels or [channel]
+        self.private = self.notice = self.multiline = False
 
     @property
     def privileges(self):
@@ -57,6 +58,10 @@ def run(
 
     out = inp.output
     return out if len(out) > 1 else out[0] if out else None
+
+
+def page(name):
+    return next(p for p in jarvis.core.pages if p.name == name)
 
 
 ###############################################################################

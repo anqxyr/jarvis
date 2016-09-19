@@ -4,11 +4,19 @@
 # Module Imports
 ###############################################################################
 
-
+import arrow
 import pyscp
 import pytest
 import jarvis
 import pathlib
+import random
+
+from playhouse import dataset
+
+###############################################################################
+
+
+random.seed(200)
 
 
 ###############################################################################
@@ -16,11 +24,15 @@ import pathlib
 
 @pytest.fixture(scope='session', autouse=True)
 def prepare_databases():
-    snapshot_path = pathlib.Path('jarvis/tests/resources/snapshot.db')
-    jarvis.core.wiki = pyscp.snapshot.Wiki(
-        'www.scp-wiki.net', str(snapshot_path))
-    jarvis.core.pages = jarvis.ext.PageView(
-        jarvis.core.wiki.list_pages(limit=1))
+    db = dataset.DataSet('sqlite:///jarvis/tests/resources/snapshot.db')
+    pages = []
+    for p in db['page'].all():
+        page = jarvis.core.wiki(p['url'])
+        for k, v in p.items():
+            page._body[k] = v
+        pages.append(page)
+    jarvis.core.pages = jarvis.ext.PageView(pages)
+    jarvis.core.wiki.titles = lambda: {}
 
     db_path = pathlib.Path('jarvis/tests/resources/jarvis.db')
     if db_path.exists():

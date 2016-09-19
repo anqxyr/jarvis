@@ -5,7 +5,7 @@
 ###############################################################################
 
 from jarvis import core, scp, lex, tools
-from jarvis.tests.utils import run
+from jarvis.tests.utils import run, page
 
 ###############################################################################
 
@@ -19,7 +19,7 @@ def test_dispatcher_ambigious():
 
 
 def test_dispatcher_override():
-    assert run('.s белки') == scp.show_page(core.wiki('scp-2797'))
+    assert run('.s белки') == scp.show_page(page('scp-2797'))
 
 
 def test_dispatcher_not_a_command():

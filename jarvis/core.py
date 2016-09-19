@@ -52,10 +52,8 @@ def refresh():
     kwargs = dict(body='title created_by created_at rating tags', category='*')
     if config.debug:
         pyscp.utils.default_logging(True)
-        data = wiki._list_pages_parsed(author='anqxyr', **kwargs)
     else:
-        data = wiki.list_pages(**kwargs)
-    pages = ext.PageView(data)
+        pages = ext.PageView(wiki.list_pages(**kwargs))
     wiki.titles.cache_clear()
     wiki.metadata.cache_clear()
 

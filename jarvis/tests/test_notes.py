@@ -107,12 +107,15 @@ def test_outbound_purge_case_insensitive():
 
 
 def test_seen_simple():
-    assert run('.seen user') == lex.seen.last(user='user', text='.st')
+    run('1', _user='user3')
+    run('2', _user='user3')
+    assert run('.seen user3') == lex.seen.last(user='user3', text='2')
 
 
 def test_seen_first():
-    assert run('.seen test-user -f') == lex.seen.first(
-        user='test-user', text='!tell user test1')
+    run('1', _user='user4')
+    run('2', _user='user4')
+    assert run('.seen user4 -f') == lex.seen.first(user='user4', text='1')
 
 
 def test_seen_self():
@@ -124,8 +127,7 @@ def test_seen_case_insensitive():
 
 
 def test_seen_total():
-    assert run('.seen test-user -t') == lex.seen.total(
-        user='test-user', total=75)
+    assert run('.seen test-user -t') == lex.seen.total(user='test-user')
 
 
 def test_seen_never():

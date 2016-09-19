@@ -22,9 +22,8 @@ def show_page(page, rating=True):
         group_templates=lex.show_page.group_templates._raw)
     out = lex.show_page.summary if rating else lex.show_page.nr_summary
     if page.name == 'scp-1848':
-        rand.seed(int(arrow.now().format('YYYYMMDDHH')))
-        rating = rand.randrange(-160, -140)
-        rand.seed()
+        r = rand.Random(int(arrow.now().format('YYYYMMDDHH')))
+        rating = r.randrange(-160, -140)
     else:
         rating = page.rating
     return out(page=page, rating=rating, attribution=attribution)
@@ -341,7 +340,7 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible):
         numbers = [i for i in numbers if i % divisible == 0]
 
     slots = ['scp-{:03d}'.format(i) for i in numbers]
-    used_slots = {p._body['fullname'] for p in core.pages.tags('scp')}
+    used_slots = {p.name for p in core.pages.tags('scp')}
     unused_slots = [i for i in slots if i not in used_slots]
 
     if not unused_slots:

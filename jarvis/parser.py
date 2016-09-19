@@ -461,7 +461,7 @@ def showmore(pr):
 @parser
 def dice(pr):
     pr.add_argument(
-        'throws', nargs='+', re=r'(?i)[+-]?[0-9]*d([0-9]+|f)', type=str.lower)
+        'throws', nargs='+', re=r'(?i)[+-]?[0-9]*d([0-9]+|f)$', type=str.lower)
     pr.add_argument('bonus', nargs='?', type=int)
     pr.add_argument('text', nargs='*', action='join')
     pr.add_argument('--expand', '-e')
