@@ -16,7 +16,7 @@ def test_author_simple():
     # the call to scp here is a code smell
     # run results should be always compared to lex objects directly
     # if they can't be, it means the output is too complicated
-    assert run('.au anq') == scp.author_summary('anqxyr')
+    assert run('.au anq') == lex.summary.author(name='anqxyr')
 
 
 def test_author_ambiguous():
@@ -28,15 +28,7 @@ def test_author_not_found():
 
 
 def test_author_default():
-    assert run('.au', _user='anqxyr') == scp.author_summary('anqxyr')
-
-
-def test_author_output():
-    assert str(run('.au anqxyr')) == samples.author.anqxyr
-
-
-def test_author_output_rewrites():
-    assert str(run('.au voct')) == samples.author.voct
+    assert run('.au', _user='anqxyr') == lex.summary.author(name='anqxyr')
 
 
 ###############################################################################
@@ -53,23 +45,19 @@ def test_search_case_insensitive():
 
 
 def test_search_rating_simple():
-    return
-    assert run('.s -r >250') == ''
+    assert run('.s -r >250') == lex.search.default(count=260)
 
 
 def test_search_rating_range():
-    return
-    assert run('.s -r 80..120') == ''
+    assert run('.s -r 80..120') == lex.search.default(count=915)
 
 
 def test_search_tags_simple():
-    return
-    assert run('.s -t keter') == ''
+    assert run('.s -t keter') == lex.search.default(count=374)
 
 
 def test_search_author():
-    return
-    assert run('.s -a anqxyr') == ''
+    assert run('.s -a anqxyr') == lex.search.default(count=25)
 
 
 def test_search_created_exact_date():
@@ -77,8 +65,7 @@ def test_search_created_exact_date():
 
 
 def test_seach_created_year_and_month():
-    return
-    assert run('.s -c 2015-10') == ''
+    assert run('.s -c 2015-10') == lex.search.default(count=33)
 
 
 def test_search_fullname():

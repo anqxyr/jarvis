@@ -7,7 +7,9 @@
 
 import arrow
 import random as rand
+import functools
 import re
+import jinja2
 
 from . import core, ext, parser, lex, stats, tools
 
@@ -29,6 +31,30 @@ def show_page(page, rating=True):
     return out(page=page, rating=rating, attribution=attribution)
 
 
+def guess_author(func):
+    """
+    Decorator for guessing the author based on partial input.
+
+    If no input is given, attempts to use the name of the user who
+    issued the command as the name of the author.
+    """
+    @functools.wraps(func)
+    def inner(inp, *args, **kwargs):
+        text = (inp.text or inp.user).lower()
+        authors = {i for p in core.pages for i in p.metadata}
+        authors = sorted(i for i in authors if text in i.lower())
+
+        if not authors:
+            return lex.not_found.author
+        elif len(authors) == 1:
+            return func(inp, *args, author=authors[0], **kwargs)
+        else:
+            tools.save_results(inp, authors, func)
+            return tools.choose_input(authors)
+
+    return inner
+
+
 ###############################################################################
 # Find And Lookup Functions
 ###############################################################################
@@ -42,12 +68,7 @@ def show_search_results(inp, results):
         return show_page(results[0])
     else:
         tools.save_results(inp, results, show_page)
-        results = [p.title for p in results]
-        head, tail = results[:3], results[3:]
-        output = ', '.join('\x02{}\x02'.format(i) for i in head)
-        if tail:
-            output += ' and {} more...'.format(len(tail))
-        return output
+        return lex.search.default(results=results, count=len(results))
 
 
 def show_search_summary(inp, results):
@@ -63,20 +84,6 @@ def show_search_summary(inp, results):
         last=arrow.get(pages[-1].created).humanize(),
         top_title=pages.sorted('rating')[-1].title,
         top_rating=pages.sorted('rating')[-1].rating)
-
-
-def author_search(inp, func):
-    """Find author via partial name, and process results."""
-    text = (inp.text or inp.user).lower()
-    authors = {i for p in core.pages for i in p.metadata}
-    results = sorted(i for i in authors if text in i.lower())
-    if not results:
-        return lex.not_found.author
-    elif len(results) == 1:
-        return func(results[0])
-    else:
-        tools.save_results(inp, results, func)
-        return tools.choose_input(results)
 
 
 def find_pages(
@@ -157,34 +164,9 @@ def name_lookup(inp):
 
 @core.command
 @core.alias('au')
-def author(inp):
-    return author_search(inp, author_summary)
-
-
-@core.command
-@core.alias('ad')
-def authordetails(inp):
-    return author_search(inp, stats.update_user)
-
-
-###############################################################################
-# Output Generation Functions
-###############################################################################
-
-
-def search_results(results):
-    """Display search results."""
-    results = [p.title for p in results]
-    head, tail = results[:3], results[3:]
-    output = ', '.join('\x02{}\x02'.format(i) for i in head)
-    if tail:
-        output += ' and {} more...'.format(len(tail))
-    return output
-
-
-def author_summary(name):
-    """Compose author summary."""
-    pages = core.pages.related(name)
+@guess_author
+def author(inp, author):
+    pages = core.pages.related(author)
     url = pages.tags('author')[0].url if pages.tags('author') else None
     url = ' ( {} )'.format(url) if url else ''
     pages = pages.articles
@@ -192,11 +174,18 @@ def author_summary(name):
         return lex.not_found.author
     template = '\x02{1.count}\x02 {0}'.format
     tags = ', '.join(template(*i) for i in pages.split_page_type().items())
-    rels = ', '.join(template(*i) for i in pages.split_relation(name).items())
+    rels = ', '.join(template(*i) for i in pages.split_relation(author).items())
     last = sorted(pages, key=lambda x: x.created, reverse=True)[0]
     return lex.summary.author(
-        name=name, url=url, pages=pages, rels=rels, tags=tags,
-        primary=pages.primary(name), last=last)
+        name=author, url=url, pages=pages, rels=rels, tags=tags,
+        primary=pages.primary(author), last=last)
+
+
+@core.command
+@core.alias('ad')
+@guess_author
+def authordetails(inp, author):
+    return stats.update_user(author)
 
 
 ###############################################################################

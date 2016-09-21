@@ -108,8 +108,7 @@ def test_outbound_purge_case_insensitive():
 
 def test_seen_simple():
     run('1', _user='user3')
-    run('2', _user='user3')
-    assert run('.seen user3') == lex.seen.last(user='user3', text='2')
+    assert run('.seen user3') == lex.seen.last(user='user3', text='1')
 
 
 def test_seen_first():
@@ -123,7 +122,7 @@ def test_seen_self():
 
 
 def test_seen_case_insensitive():
-    assert run('.seen USER') == lex.seen.last(user='user', text='.st')
+    assert run('.seen USER') == lex.seen.last(user='user')
 
 
 def test_seen_total():
@@ -205,3 +204,72 @@ def test_quote_get_cross_channel():
 ###############################################################################
 # Memos
 ###############################################################################
+
+
+def test_memo_add():
+    assert run('.memo add user1 memo1') == lex.memo.added
+
+
+def test_memo_add_no_overwrite():
+    assert run('.memo add user1 memo2') == lex.memo.already_exists
+
+
+def test_memo_add_quick():
+    assert run('.rem user2 memo2') == lex.memo.added
+
+
+def test_memo_get():
+    assert run('.memo user1') == lex.memo.get(text='memo1')
+
+
+def test_memo_get_quick():
+    assert run('?user1') == lex.memo.get(text='memo1')
+
+
+def test_memo_get_case_insensitive():
+    assert run('.memo USER1') == lex.memo.get(text='memo1')
+
+
+def test_memo_get_quick_case_insensitive():
+    assert run('?USER1') == lex.memo.get(text='memo1')
+
+
+def test_memo_add_case_insensitive():
+    run('.memo add USER3 memo3')
+    assert run('?user3') == lex.memo.get(text='memo3')
+
+
+def test_memo_append():
+    assert run('.memo append user1 part2') == lex.memo.added
+    assert run('?user1') == lex.memo.get(text='memo1 part2')
+
+
+def test_memo_append_case_insensitive():
+    assert run('.MEMO APPEND USER1 part3') == lex.memo.added
+    assert run('?user1') == lex.memo.get(text='memo1 part2 part3')
+
+
+def test_memo_not_found():
+    assert run('?user4') == lex.memo.not_found
+
+
+def test_memo_delete():
+    assert run('.memo del user1 memo1 part2 part3') == lex.memo.deleted
+    assert run('?user1') == lex.memo.not_found
+
+
+def test_memo_delete_case_insensitive():
+    assert run('.memo del USER2 MEMO2') == lex.memo.deleted
+    assert run('?user2') == lex.memo.not_found
+
+
+def test_memo_delete_text_mismatch():
+    assert run('.memo del user3 wrong text') == lex.memo.not_found
+
+
+def test_memo_delete_not_found():
+    assert run('.memo del user5 whatever') == lex.memo.not_found
+
+
+def test_memo_count():
+    assert run('.memo count') == lex.memo.count

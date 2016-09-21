@@ -38,6 +38,21 @@ STATUS = [
 
 
 ###############################################################################
+# Jinja Filters
+###############################################################################
+
+
+def imgstatuscolor(value):
+    if value not in STATUS:
+        return value
+    color = '33222444'[STATUS.index(value)]
+    return '\x02\x030,{} {} \x03\x02'.format(color, value)
+
+
+lex.jinja2.filters['imgstatuscolor'] = imgstatuscolor
+
+
+###############################################################################
 # Internal Functions
 ###############################################################################
 
@@ -51,15 +66,6 @@ class Image:
         self.source = kwargs.get('source') or ''
         self.status = kwargs.get('status') or ''
         self.notes = kwargs.get('notes') or []
-
-    @property
-    def status_col(self):
-        if self.status:
-            colors = '33222444'
-            colors = {a: b for a, b in zip(range(len(colors)), colors)}
-            color = colors[STATUS.index(self.status)]
-            return'\x02\x030,{} {} \x03\x02'.format(color, self.status)
-        return ''
 
     @property
     def url_t(self):
@@ -261,7 +267,9 @@ def update(inp, *, images, url, page, source, status, notes):
 @targeted(5)
 def list_images(inp, *, images, terse):
     out = lex.images.list.terse if terse else lex.images.list.verbose
-    yield from [out(image=i) for i in images]
+    yield from [
+        out(url=i.url, page=i.page, source=i.source, status=i.status)
+        for i in images]
 
 
 @core.require(channel=core.config.irc.imageteam, level=4)

@@ -231,6 +231,15 @@ alert:
 ###############################################################################
 # SCP
 ###############################################################################
+search:
+    default: |
+        {% if count >= 5 %}
+            {{ results[:5]|map(attribute='title')|map('bold')|join(', ') }} and {{ count - 5 }} more...
+        {% else %}
+            {{ results[:-1]|map(attribute='title')|map('bold')|join(', ') }} and {{ results[-1].title|bold }}.
+        {% endif %}
+author: |
+    {{ author|bold }}{{ author_page_url|format(' ({})') }}
 show_page:
     templates:
         author: written {hdate} by {user}
@@ -357,7 +366,7 @@ images:
     list:
         all: "The list of all currently indexed images is available here: http://scp-stats.wikidot.com/images"
         terse: "{image.url_t} - {image.source_t} - {image.status_col}"
-        verbose: "{image.url} - {image.page} - {image.source} - {image.status_col}"
+        verbose: "{{ [url, page, source, status|imgstatuscolor ]|reject('none')|join(' - ') }}"
     notes:
         append: Note appended.
         purge: All notes have been purged.

@@ -12,6 +12,7 @@ import pyscp
 import re
 import yaml
 
+from playhouse import dataset
 from . import ext, lex
 
 ###############################################################################
@@ -51,10 +52,19 @@ def refresh():
     global wlpages
     kwargs = dict(body='title created_by created_at rating tags', category='*')
     if config.debug:
+        db = dataset.DataSet('sqlite:///jarvis/tests/resources/snapshot.db')
+        pages = []
+        for p in db['page'].all():
+            page = wiki(p['url'])
+            for k, v in p.items():
+                page._body[k] = v
+            pages.append(page)
+        wiki.titles = lambda: {}
         pyscp.utils.default_logging(True)
     else:
-        pages = ext.PageView(wiki.list_pages(**kwargs))
-    wiki.titles.cache_clear()
+        pages = wiki.list_pages(**kwargs)
+        wiki.titles.cache_clear()
+    pages = ext.PageView(pages)
     wiki.metadata.cache_clear()
 
     if not config.debug:

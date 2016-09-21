@@ -9,4 +9,5 @@ from . import (
     tools,
     websearch,
     autoban,
+    images,
     utils)

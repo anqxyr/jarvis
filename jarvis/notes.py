@@ -101,7 +101,7 @@ def init(path):
     db.init(path)
     db.connect()
     db.create_tables(
-        [Tell, Message, Quote, Subscriber, Restricted, Alert], safe=True)
+        [Tell, Message, Quote, Memo, Subscriber, Restricted, Alert], safe=True)
 
 
 init('jarvis.db')
@@ -366,7 +366,9 @@ def add_memo(inp, *, user, message):
 @memo.subcommand('del')
 def delete_memo(inp, *, user, message):
     memo = Memo.select().where(
-        Memo.user == user, Memo.channel == inp.channel, Memo.text == message)
+        Memo.user == user,
+        Memo.channel == inp.channel,
+        peewee.fn.lower(Memo.text) == message.lower())
     if not memo.exists():
         return lex.memo.not_found
 
@@ -402,7 +404,7 @@ def rem(inp, *, user, message):
 @core.rule(r'^\?([^\s]+)\s*$')
 def peek_memo(inp):
     if inp.channel not in core.config.irc.noquotes:
-        return get_memo(inp, user=inp.text)
+        return get_memo(inp, user=inp.text.lower())
 
 
 ###############################################################################

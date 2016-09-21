@@ -8,6 +8,7 @@ import pathlib
 import yaml
 import random
 import sys
+import jinja2
 
 ###############################################################################
 
@@ -60,8 +61,9 @@ class Lexicon:
         return new
 
     def __str__(self):
-        text = random.choice(self._raw.split('\n')).replace('*', '\x02')
-        return text.format(**self.kwargs)
+        text = env.from_string(self._raw).render(**self.kwargs).strip()
+        text = random.choice(text.split('\n'))
+        return text.strip().format(**self.kwargs)
 
     @property
     def _raw(self):
@@ -70,8 +72,20 @@ class Lexicon:
             out = out[i]
         return out
 
+    @property
+    def jinja2(self):
+        return env
+
     def compose(self, inp):
         return str(self)
 
 
-sys.modules[__name__] = Lexicon()
+###############################################################################
+
+
+lex = Lexicon()
+env = jinja2.Environment()
+env.globals['lex'] = lex
+env.filters['bold'] = lambda x: '\x02{}\x02'.format(x)
+
+sys.modules[__name__] = lex
