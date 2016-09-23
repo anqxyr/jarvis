@@ -310,25 +310,17 @@ def purge(inp, *, images):
 @targeted(1)
 def search(inp, *, images):
     image = images[0]
-    yield 'http://tineye.com/search?url=' + image.url
-    yield 'http://www.google.com/searchbyimage?image_url=' + image.url
+    yield lex.images.search.tineye(url=image.url)
+    yield lex.images.search.google(url=image.url)
 
 
 @images.subcommand('stats')
 def stats(inp, *, category):
     images = [i for i in IMAGES if i.category == category]
-    per_status = []
-    for s in STATUS:
-        img = [i for i in images if i.status == s]
-        if not img:
-            continue
-        per_status.append('{} - {}'.format(img[0].status_col, len(img)))
-    per_status = ', '.join(per_status)
-    not_reviewed = len([i for i in images if not i.status])
     return lex.images.stats(
         count=len(images),
-        per_status=per_status,
-        not_reviewed=not_reviewed)
+        images=[i for i in images if i.status],
+        not_reviewed=len([i for i in images if not i.status]))
 
 
 @core.require(channel=core.config.irc.imageteam, level=4)

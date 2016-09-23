@@ -9,6 +9,7 @@ import googleapiclient.discovery as googleapi
 import requests
 import warnings
 import wikipedia as wiki
+import textwrap
 
 from . import core, parser, lex, tools
 
@@ -56,9 +57,7 @@ def gis(inp, *, query):
 @parser.websearch
 def youtube(inp, *, query):
     youtube = googleapi.build(
-        'youtube',
-        'v3',
-        developerKey=core.config.google.apikey)
+        'youtube', 'v3', developerKey=core.config.google.apikey)
     results = youtube.search().list(
         q=query,
         maxResults=1,
@@ -66,46 +65,36 @@ def youtube(inp, *, query):
         type='video').execute()
     if not results.get('items'):
         return lex.not_found.generic
-    vid = results['items'][0]['id']['videoId']
-    info = get_youtube_video_info(vid)
-    return '{} - http://youtube.com/watch?v={}'.format(info, vid)
+    video_id = results['items'][0]['id']['videoId']
+    return lex.youtube.result(video_id=video_id, **_youtube_info(video_id))
 
 
 @core.rule(r'(?i).*youtube\.com/watch\?v=([-_a-z0-9]+)')
 @core.rule(r'(?i).*youtu\.be/([-_a-z0-9]+)')
 def youtube_lookup(inp):
-    return get_youtube_video_info(inp.text)
+    return lex.youtube.result(**_youtube_info(inp.text))
 
 
-def get_youtube_video_info(video_id=None):
+def _youtube_info(video_id=None):
     youtube = googleapi.build(
-        'youtube',
-        'v3',
-        developerKey=core.config.google.apikey)
-    vdata = youtube.videos().list(
+        'youtube', 'v3', developerKey=core.config.google.apikey)
+    data = youtube.videos().list(
         part='contentDetails,snippet,statistics',
         id=video_id,
         maxResults=1).execute()
-    if not vdata.get('items'):
+
+    if not data.get('items'):
         return lex.not_found.generic
-    vdata = vdata['items'][0]
+    data = data['items'][0]
 
-    template = ' '.join("""
-    \x02{snippet[title]}\x02 - length \x02{duration}\x02 -
-    {likes} {views} \x02{snippet[channelTitle]}\x02 on
-    \x02{snippet[publishedAt]:.10}\x02""".split())
-
-    duration = vdata['contentDetails']['duration'][2:].lower()
-    likes, views = '', ''
-    if 'likeCount' in vdata['statistics']:
-        likes = '{likeCount}↑{dislikeCount}↓ -'.format(**vdata['statistics'])
-    if 'viewCount' in vdata['statistics']:
-        views = '\x02{:,}\x02 views -'.format(
-            int(vdata['statistics']['viewCount']))
-
-    return template.format(
-        duration=duration, likes=likes, views=views, **vdata)
-
+    return dict(
+        title=data['snippet']['title'],
+        duration=data['contentDetails']['duration'][2:].lower(),
+        likes=data['statistics'].get('likeCount'),
+        dislikes=data['statistics'].get('dislikeCount'),
+        views=data['statistics']['viewCount'],
+        channel=data['snippet']['channelTitle'],
+        date=data['snippet']['publishedAt'][:10])
 
 ###############################################################################
 
@@ -115,18 +104,15 @@ def get_youtube_video_info(video_id=None):
 @parser.websearch
 def wikipedia(inp, *, query):
     try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            url = wiki.page(query).url
-            summary = wiki.summary(query, sentences=1)
-            summary = summary[:360]
-            return '{} - {}'.format(summary, url)
+        page = wiki.page(query)
     except wiki.exceptions.PageError:
-        return lex.not_found.generic
+        return lex.wikipedia.not_found
     except wiki.exceptions.DisambiguationError as e:
-        tools.save_results(
-            inp, e.options, lambda x: wikipedia(inp, query=x))
-        return tools.choose_input(e.options)
+        tools.save_results(inp, e.options, lambda x: wikipedia(inp, query=x))
+        return lex.options(options=e.options)
+
+    text = textwrap.shorten(page.content, width=240)
+    return lex.wikipedia.result(title=page.title, url=page.url, text=text)
 
 
 @core.command

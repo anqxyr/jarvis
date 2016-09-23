@@ -1,6 +1,24 @@
 ###############################################################################
-# Global
+# Generics
 ###############################################################################
+options: |
+    {% set options = options|sorted|map('bold') %}
+    {% set first = options[:-1] %}
+    {% set last = options[-1] %}
+    {% if options|length <= 5 %}
+        Did you mean {{ first|join(', ') }} or {{ last }}?
+        Do you want {{ first|join(' or ') }} or maybe {{ last }}?
+        {{ first|join(', ') }} or {{ last }}. Pick one.
+        Ambiguous input. Possible variants: {{ options|join(', ') }}.
+        I'm not sure whether you meant {{ first|join(', ') }} or {{ last }}.
+        Not quite sure what you wanted here. Was it {{ first|join(', ') }} or {{ last }}?
+    {% else %}
+        {% set count = options|length - 5 %}
+        I have so many choices for you: {{ options|join(', ') }} and another {{ count }}! Isn't it wonderful?
+        Unclear. Clarify. Options: {{ options|join(', ') }}. Number of additional options: {{ count }}
+        Did you mean {{ first|join(', ') }} or {{ last }}? You can use !showmore to check another {{ count }} matches.
+        Now you choose: {{ options|join(', ') }}. ({tail} more)
+    {% endif %}
 input:
     incorrect: |-
         Repeat that again. Carefully this time.
@@ -331,6 +349,11 @@ tweet:
 ###############################################################################
 # Websearch
 ###############################################################################
+wikipedia:
+    result: "{{ title|bold }} - {{ url }} - {{ text }}"
+    not_found: "{{ lex.not_found.generic }}"
+youtube:
+    result: "{{ title|bold }} - length {{ duration|bold }} - {{ likes ~ '↑' ~ dislikes ~ '↓ - ' if likes and dislikes }}{{ '{:,}'.format(views|int)|bold }} views - {{ channel|bold }} on {{ date|bold }}{{' - http://youtube.com/watch?v=' ~ video_id if video_id }}"
 tvtropes:
     not_found: I couldn't find this trope. Either you misspelled it, it doesn't have a laconic description, or it doesn't exist.
 ###############################################################################
@@ -366,7 +389,7 @@ images:
     list:
         all: "The list of all currently indexed images is available here: http://scp-stats.wikidot.com/images"
         terse: "{image.url_t} - {image.source_t} - {image.status_col}"
-        verbose: "{{ [url, page, source, status|imgstatuscolor ]|reject('none')|join(' - ') }}"
+        verbose: "{{ [ url, page, source, status|imgstatuscolor ]|reject('none')|join(' - ') }}"
     notes:
         append: Note appended.
         purge: All notes have been purged.
@@ -377,7 +400,10 @@ images:
     too_many: Specified page includes {count} images. Please specify which image you wish to see.
     not_found: The image is not found in the index.
     purge: Purged {count} record(s).
-    stats: "{count} indexed images in this category ({per_status}). Not reviewed - {not_reviewed}."
+    search:
+        tineye: "http://tineye.com/search?url={{ url }}"
+        google: "http://www.google.com/searchbyimage?image_url={{ url }}"
+    stats: "{{ count }} indexed images in this category ({% for gr in images|groupby('status') %}{{ gr.grouper|imgstatuscolor }} - {{ gr.list|length }}{{ ',' if not loop.last }}{% endfor %}). Not reviewed - {{ not_reviewed }}."
     sync: Page index synchronized.
     remove:
         page_edited: Image code removed.

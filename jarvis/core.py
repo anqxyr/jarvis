@@ -118,17 +118,6 @@ class Inp:
         return self._priv()
 
 
-def choose_input(options):
-    options = list(map('\x02{}\x02'.format, sorted(options)))
-    if len(options) <= 5:
-        head, tail = options[:-1], options[-1]
-        msg = lex.input.options
-    else:
-        head, tail = options[:5], len(options[5:])
-        msg = lex.input.cropped_options
-    return msg(head=', '.join(head), tail=tail)
-
-
 def _call_func(inp, func, text):
     inp.text = text
     inp.private = inp.notice = inp.multiline = False
@@ -153,12 +142,10 @@ def _get_command_func(inp):
     commands = [k for k in COMMANDS if k.startswith(name)]
     commands = list({COMMANDS[k] for k in commands})
 
-    if not commands:
-        return
     if len(commands) == 1:
         return commands[0]
     if len(commands) > 1:
-        inp.send(choose_input([f.__name__ for f in commands]))
+        inp.send(lex.options(options={f.__name__ for f in commands}))
 
 
 def dispatcher(inp):
