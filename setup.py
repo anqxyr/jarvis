@@ -22,6 +22,7 @@ setuptools.setup(
         'Programming Language :: Python :: 3.4'],
     packages=['jarvis', 'jarvis/modules'],
     package_data={'jarvis': ['lexicon.yaml']},
+    tests_require=['pytest>=3.0.2'],
     install_requires=[
         'pyscp',
         'sopel',
