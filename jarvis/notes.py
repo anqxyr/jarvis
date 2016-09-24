@@ -105,6 +105,7 @@ def showtells(inp):
 
 @core.command
 @core.notice
+@core.multiline
 @parser.outbound
 def outbound(inp, *, purge, echo):
     """
@@ -118,25 +119,25 @@ def outbound(inp, *, purge, echo):
     query = db.Tell.find(sender=inp.user, topic=None)
 
     if not query.exists():
-        return lex.outbound.empty
+        yield lex.outbound.empty
 
-    if purge is True:
+    elif purge is True:
         db.Tell.purge(sender=inp.user, topic=None)
-        msg = lex.outbound.purged
+        yield lex.outbound.purged(count=query.count())
+
     elif purge:
         db.Tell.purge(sender=inp.user, topic=None, recipient=purge)
-        msg = lex.outbound.purged
-    elif echo:
-        inp.multiline = True
-        msg = lex.outbound.echo
-        return [msg(
-            time=arrow.get(t.time).humanize(),
-            user=t.recipient, message=t.text) for t in query]
-    else:
-        msg = lex.outbound.count
+        yield lex.outbound.purged(count=query.count())
 
-    users = ', '.join(sorted({i.recipient for i in query}))
-    return msg(count=query.count(), users=users)
+    elif echo:
+        for tell in query:
+            yield lex.outbound.echo(
+                time=arrow.get(tell.time).humanize(),
+                user=tell.recipient, message=tell.text)
+
+    else:
+        yield lex.outbound.count(
+            count=query.count(), users={i.recipient for i in query})
 
 
 ###############################################################################

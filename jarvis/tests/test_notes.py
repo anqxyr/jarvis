@@ -70,7 +70,7 @@ def test_outbound_empty():
 
 def test_outbound_simple():
     run('.tell user test3')
-    assert run('.out') == lex.outbound.count(count=1, users='user')
+    assert run('.out') == lex.outbound.count(count=1, users={'user'})
 
 
 def test_outbound_echo_one():
@@ -93,7 +93,7 @@ def test_outbound_purge_one():
     run('.tell user test5')
     run('.tell user2 test6')
     assert run('.out -p user') == lex.outbound.purged(user='user')
-    assert run('.out') == lex.outbound.count(count=1, users='user2')
+    assert run('.out') == lex.outbound.count(count=1, users={'user2'})
 
 
 def test_outbound_purge_case_insensitive():

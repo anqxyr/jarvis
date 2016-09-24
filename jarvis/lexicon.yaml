@@ -128,17 +128,18 @@ outbound:
         I've already delivered everything.
         This place is empty.
     count: |-
-        You have {count} outbound tells, including - {users}.
-        In the past, you've sent {count} tells that haven't been delivered yet. You sent them to {users}.
-        {count} tells - {users}.
-        I found some tells to {users}. In total - {count} tells.
+        {% set uses = users|sorted|join(', ') %}
+        You have {{ count }} outbound tells, including - {{ users }}.
+        In the past, you've sent {{ count }} tells that haven't been delivered yet. You sent them to {{ users }}.
+        {{ count }} tells - {{ users }}.
+        I found some tells to {{ users }}. In total - {{ count }} tells.
     purged: |-
-        You had {count} outbound tells, and now you have none.
-        {count} little tells, lost in the wind.
-        Your {count} tells will not be delivered.
-        I'm burning them in the fireplace, one by one, all {count} of them.
+        You had {{ count }} outbound tells, and now you have none.
+        {{ count }} little tells, lost in the wind.
+        Your {{ count }} tells will not be delivered.
+        I'm burning them in the fireplace, one by one, all {{ count }} of them.
     echo: |-
-        {time} to {user}: {message}
+        {{ time }} to {{ user }}: {{ message }}
 topic:
     send: |-
         I will pass it on to {count} users who are interested in that kind of stuff.
