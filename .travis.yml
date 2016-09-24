@@ -4,6 +4,6 @@ python:
 before_install:
   - sudo apt-get install -y enchant
 install:
-  - pip install --user --upgrade https://github.com/anqxyr/pyscp/zipball/master
+  - pip install https://github.com/anqxyr/pyscp/zipball/master
   - pip install -e .
 script: py.test
