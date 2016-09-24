@@ -62,7 +62,7 @@ class Lexicon:
 
     def __str__(self):
         text = env.from_string(self._raw).render(**self.kwargs).strip()
-        text = random.choice(text.split('\n'))
+        text = random.choice(text.split('\n')).replace('*', '\x02')
         return text.strip().format(**self.kwargs)
 
     @property
