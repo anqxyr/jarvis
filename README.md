@@ -1,6 +1,10 @@
-[![Build Status](https://travis-ci.org/anqxyr/jarvis.svg?branch=master)](https://travis-ci.org/anqxyr/jarvis)
-
 # jarvis
+[![GitHub tag](https://img.shields.io/github/tag/anqxyr/jarvis.svg?maxAge=2592000)]()
+[![Build Status](https://travis-ci.org/anqxyr/jarvis.svg?branch=master)](https://travis-ci.org/anqxyr/jarvis)
+[![Coverage Status](http://img.shields.io/coveralls/anqxyr/jarvis.svg)](https://coveralls.io/r/anqxyr/jarvis)
+[![Python version](https://img.shields.io/badge/python-3.4-blue.svg)]()
+[![license](https://img.shields.io/github/license/anqxyr/jarvis.svg?maxAge=2592000)]()
+
 IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 ## Changelog
