@@ -23,4 +23,4 @@ def prepare_databases():
     db_path = pathlib.Path('jarvis/tests/resources/jarvis.db')
     if db_path.exists():
         db_path.unlink()
-    jarvis.notes.init(str(db_path))
+    jarvis.db.init(str(db_path))

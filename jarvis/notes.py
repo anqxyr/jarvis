@@ -12,105 +12,20 @@ logging, tells, and quotes.
 import arrow
 import random
 import re
-import peewee
-import playhouse.sqlite_ext
-import playhouse.migrate
-import itertools
 
-from . import core, lex, parser
+from . import core, lex, parser, db
 
 
 ###############################################################################
-# Database ORM Classes
-###############################################################################
 
 
-db = playhouse.sqlite_ext.SqliteExtDatabase(None, journal_mode='WAL')
-
-
-class BaseModel(peewee.Model):
-    """Peewee Base Table/Model Class."""
-
-    class Meta:
-        """Bind Model definitions to the database."""
-
-        database = db
-
-
-class Tell(BaseModel):
-    """Database Tell Table."""
-
-    sender = peewee.CharField()
-    recipient = peewee.CharField(index=True)
-    topic = peewee.CharField(null=True)
-    text = peewee.TextField()
-    time = peewee.DateTimeField()
-
-
-class Message(BaseModel):
-    """Database Message Table."""
-
-    user = peewee.CharField(index=True, null=True)
-    channel = peewee.CharField(index=True)
-    time = peewee.DateTimeField()
-    text = peewee.TextField()
-
-
-class Quote(BaseModel):
-    """Database Quote Table."""
-
-    user = peewee.CharField(index=True)
-    channel = peewee.CharField()
-    time = peewee.DateTimeField()
-    text = peewee.TextField()
-
-
-class Memo(BaseModel):
-    """Database Memo Table."""
-
-    user = peewee.CharField(index=True)
-    channel = peewee.CharField()
-    text = peewee.TextField()
-
-
-class Subscriber(BaseModel):
-    """Database Subscriber Table."""
-
-    user = peewee.CharField()
-    topic = peewee.CharField(index=True)
-
-
-class Restricted(BaseModel):
-    """Database Restricted Table."""
-
-    topic = peewee.CharField(index=True)
-
-
-class Alert(BaseModel):
-    """Database Alert Table."""
-
-    user = peewee.CharField(index=True)
-    time = peewee.DateTimeField()
-    text = peewee.TextField()
-
-###############################################################################
-
-
-def init(path):
-    """Initialize the database, create missing tables."""
-    db.init(path)
-    db.connect()
-    db.create_tables(
-        [Tell, Message, Quote, Memo, Subscriber, Restricted, Alert], safe=True)
-
-
-init('jarvis.db')
+db.init('jarvis.db')
 
 
 @core.rule(r'(.*)')
 def logevent(inp):
     """Log input into the database."""
-    Message.create(
+    db.Message.create(
         user=inp.user, channel=inp.channel,
         time=arrow.utcnow().timestamp, text=inp.text)
 
@@ -132,8 +47,7 @@ def tell(inp, *, user, topic, message):
     moment the tell it sent will recieve the message.
     """
     if topic:
-        users = Subscriber.select().where(Subscriber.topic == topic)
-        users = [i.user for i in users]
+        users = [i.user for i in db.Subscriber.find(topic=topic)]
         if not users:
             return lex.topic.no_subscribers
     else:
@@ -144,7 +58,7 @@ def tell(inp, *, user, topic, message):
         text=message,
         time=arrow.utcnow().timestamp,
         topic=topic)
-    Tell.insert_many(dict(recipient=i, **data) for i in users).execute()
+    db.Tell.insert_many(dict(recipient=i, **data) for i in users).execute()
 
     if topic:
         return lex.topic.send(count=len(users))
@@ -156,8 +70,8 @@ def tell(inp, *, user, topic, message):
 @core.multiline
 def get_tells(inp):
     """Retrieve incoming messages."""
-    tells = list(Tell.select().where(Tell.recipient == inp.user))
-    Tell.delete().where(Tell.recipient == inp.user).execute()
+    tells = list(db.Tell.find(recipient=inp.user))
+    db.Tell.purge(recipient=inp.user)
 
     if tells:
         inp._send(
@@ -185,8 +99,7 @@ def get_tells(inp):
 @core.alias('st')
 @core.notice
 def showtells(inp):
-    query = Tell.select().where(Tell.recipient == inp.user)
-    if not query.exists():
+    if not db.Tell.find_one(recipient=inp.user):
         return lex.tell.no_new
 
 
@@ -202,20 +115,16 @@ def outbound(inp, *, purge, echo):
 
     Ignores messages sent to tell topics.
     """
-    query = Tell.select().where(Tell.sender == inp.user, Tell.topic.is_null())
+    query = db.Tell.find(sender=inp.user, topic=None)
 
     if not query.exists():
         return lex.outbound.empty
 
     if purge is True:
-        Tell.delete().where(
-            Tell.sender == inp.user, Tell.topic.is_null()).execute()
+        db.Tell.purge(sender=inp.user, topic=None)
         msg = lex.outbound.purged
     elif purge:
-        Tell.delete().where(
-            Tell.sender == inp.user,
-            Tell.topic.is_null(),
-            Tell.recipient == purge).execute()
+        db.Tell.purge(sender=inp.user, topic=None, recipient=purge)
         msg = lex.outbound.purged
     elif echo:
         inp.multiline = True
@@ -242,19 +151,19 @@ def seen(inp, *, user, first, total):
     if user == core.config.irc.nick:
         return lex.seen.self
 
-    query = Message.select().where(
-        Message.user == user, Message.channel == inp.channel)
+    query = db.Message.find(user=user, channel=inp.channel)
     if not query.exists():
         return lex.seen.never
 
     if total:
         total = query.count()
         time = arrow.get(arrow.now().format('YYYY-MM'), 'YYYY-MM')
-        this_month = query.where(Message.time > time.timestamp).count()
+        this_month = query.where(db.Message.time > time.timestamp).count()
         return lex.seen.total(
             user=user, total=total, this_month=this_month)
 
-    seen = query.order_by(Message.time if first else Message.time.desc()).get()
+    seen = query.order_by(
+        db.Message.time if first else db.Message.time.desc()).get()
     time = arrow.get(seen.time).humanize()
     msg = lex.seen.first if first else lex.seen.last
     return msg(user=user, time=time, text=seen.text)
@@ -279,9 +188,10 @@ def get_quote(inp, *, user, index):
     if index is not None and index <= 0:
         return lex.input.bad_index
 
-    query = Quote.select().where(Quote.channel == inp.channel)
     if user:
-        query = query.where(Quote.user == user)
+        query = db.Quote.find(channel=inp.channel, user=user)
+    else:
+        query = db.Quote.find(channel=inp.channel)
 
     if not query.exists():
         return lex.quote.none_saved
@@ -289,7 +199,7 @@ def get_quote(inp, *, user, index):
     index = index or random.randint(1, query.count())
     if index > query.count():
         return lex.input.bad_index
-    quote = query.order_by(Quote.time).limit(1).offset(index - 1)[0]
+    quote = query.order_by(db.Quote.time).limit(1).offset(index - 1)[0]
 
     return lex.quote.get(
         index=index,
@@ -301,13 +211,10 @@ def get_quote(inp, *, user, index):
 
 @quote.subcommand('add')
 def add_quote(inp, *, date, user, message):
-    if Quote.select().where(
-            Quote.user == user,
-            Quote.channel == inp.channel,
-            Quote.text == message).exists():
+    if db.Quote.find_one(user=user, channel=inp.channel, text=message):
         return lex.quote.already_exists
 
-    Quote.create(
+    db.Quote.create(
         user=user,
         channel=inp.channel,
         time=(date or arrow.utcnow()).format('YYYY-MM-DD'),
@@ -318,15 +225,12 @@ def add_quote(inp, *, date, user, message):
 
 @quote.subcommand('del')
 def delete_quote(inp, *, user, message):
-    query = Quote.select().where(
-        Quote.user == user,
-        Quote.channel == inp.channel,
-        Quote.text == message)
+    quote = db.Quote.find_one(user=user, channel=inp.channel, text=message)
 
-    if not query.exists():
+    if not quote:
         return lex.quote.not_found
 
-    query.get().delete_instance()
+    quote.delete_instance()
     return lex.quote.deleted
 
 
@@ -345,44 +249,40 @@ def memo(inp, mode, **kwargs):
 
 @memo.subcommand()
 def get_memo(inp, *, user):
-    memo = Memo.select().where(Memo.user == user, Memo.channel == inp.channel)
+    memo = db.Memo.find_one(user=user, channel=inp.channel)
 
-    if memo.exists():
-        return lex.memo.get(user=user, text=memo.get().text)
+    if memo:
+        return lex.memo.get(user=user, text=memo.text)
     else:
         return lex.memo.not_found
 
 
 @memo.subcommand('add')
 def add_memo(inp, *, user, message):
-    memo = Memo.select().where(Memo.user == user, Memo.channel == inp.channel)
-    if memo.exists():
+    if db.Memo.find_one(user=user, channel=inp.channel):
         return lex.memo.already_exists
 
-    Memo.create(user=user, channel=inp.channel, text=message)
+    db.Memo.create(user=user, channel=inp.channel, text=message)
     return lex.memo.added
 
 
 @memo.subcommand('del')
 def delete_memo(inp, *, user, message):
-    memo = Memo.select().where(
-        Memo.user == user,
-        Memo.channel == inp.channel,
-        peewee.fn.lower(Memo.text) == message.lower())
-    if not memo.exists():
+    memo = db.Memo.find_one(
+        user=user, channel=inp.channel, text_lower=message)
+    if not memo:
         return lex.memo.not_found
 
-    memo.get().delete_instance()
+    memo.delete_instance()
     return lex.memo.deleted
 
 
 @memo.subcommand('append')
 def append_memo(inp, *, user, message):
-    memo = Memo.select().where(Memo.user == user, Memo.channel == inp.channel)
-    if not memo.exists():
+    memo = db.Memo.find_one(user=user, channel=inp.channel)
+    if not memo:
         return lex.memo.not_found
 
-    memo = memo.get()
     memo.text += ' ' + message
     memo.save()
     return lex.memo.added
@@ -390,8 +290,7 @@ def append_memo(inp, *, user, message):
 
 @memo.subcommand('count')
 def count_memos(inp):
-    count = Memo.select().where(Memo.channel == inp.channel).count()
-    return lex.memo.count(count=count)
+    return lex.memo.count(count=db.Memo.find(channel=inp.channel).count())
 
 
 @core.command
@@ -406,78 +305,6 @@ def peek_memo(inp):
     if inp.channel not in core.config.irc.noquotes:
         return get_memo(inp, user=inp.text.lower())
 
-
-###############################################################################
-# Topics
-###############################################################################
-
-
-@core.command
-@parser.topic
-def topic(inp, *, topic, action):
-
-    if action == 'list':
-        return topic_list(inp)
-
-    if action in ['unsubscribe', 'unsub']:
-        return topic_sub(inp, topic, True)
-
-    if action in ['subscribe', 'sub']:
-        return topic_sub(inp, topic, False)
-
-    if action in ['restrict', 'res']:
-        return topic_restrict(inp, topic, False)
-
-    if action in ['unrestrict', 'unres']:
-        return topic_restrict(inp, topic, True)
-
-
-@core.notice
-def topic_list(inp):
-    query = Subscriber.select().where(Subscriber.user == inp.user)
-
-    if not query.exists():
-        return lex.topic.user_has_no_topics
-
-    topics = [i.topic for i in query]
-    return lex.topic.count(topics=', '.join(topics))
-
-
-def topic_sub(inp, topic, remove):
-    if (inp.channel != core.config.irc.sssc and
-        Restricted.select().where(Restricted.topic == topic).exists() and
-            not remove):
-        return lex.denied
-
-    query = Subscriber.select().where(
-        Subscriber.user == inp.user, Subscriber.topic == topic)
-
-    if remove:
-        if not query.exists():
-            return lex.topic.not_subscribed
-        query.get().delete_instance()
-        return lex.topic.unsubscribed(topic=topic)
-    else:
-        if query.exists():
-            return lex.topic.already_subscribed
-        Subscriber.create(user=inp.user, topic=topic)
-        return lex.topic.subscribed(topic=topic)
-
-
-@core.require(channel=core.config.irc.sssc)
-def topic_restrict(inp, topic, remove):
-    query = Restricted.select().where(Restricted.topic == topic)
-
-    if remove:
-        if not query.exists():
-            return lex.topic.not_restricted
-        query.get().delete_instance()
-        return lex.topic.unrestricted
-    else:
-        if query.exists():
-            return lex.topic.already_restricted
-        Restricted.create(topic=topic)
-        return lex.topic.restricted
 
 ###############################################################################
 # Alerts
@@ -497,7 +324,7 @@ def alert(inp, *, date, span, message):
             unit = dict(d='days', h='hours', m='minutes')[unit]
             date = date.replace(**{unit: int(length)})
 
-    Alert.create(user=inp.user, time=date.timestamp, text=message)
+    db.Alert.create(user=inp.user, time=date.timestamp, text=message)
     return lex.alert.set
 
 
@@ -507,42 +334,7 @@ def alert(inp, *, date, span, message):
 def get_alerts(inp):
     """Retrieve stored alerts."""
     now = arrow.utcnow().timestamp
-    where = ((Alert.user == inp.user) & (Alert.time < now))
-    alerts = [i.text for i in Alert.select().where(where)]
-    Alert.delete().where(where).execute()
+    where = ((db.Alert.user == inp.user) & (db.Alert.time < now))
+    alerts = [i.text for i in db.Alert.select().where(where)]
+    db.Alert.delete().where(where).execute()
     return alerts
-
-
-def backport(name):
-    start = arrow.now()
-
-    def parse_line(line):
-        line = line.split()
-        time = arrow.get(line[0]).timestamp
-        if line[1].startswith('<') and line[1].endswith('>'):
-            user = line[1][1:-1]
-            text = line[2:]
-        else:
-            user = None
-            text = line[1:]
-        text = ' '.join(text)
-        return time, user, text
-
-    with open(name) as file:
-        lines = (parse_line(i) for i in file)
-        lines = (
-            {'time': a, 'user': b, 'text': c, 'channel': name}
-            for a, b, c in lines)
-
-        idx = 0
-        chunk = list(itertools.islice(lines, 500))
-        with db.atomic():
-            while chunk:
-                print(idx)
-                idx += 500
-                Message.insert_many(chunk).execute()
-                chunk = list(itertools.islice(lines, 500))
-            print(arrow.now() - start)
-
-    print('Done!')
-    print(arrow.now() - start)

@@ -379,12 +379,16 @@ def memo(pr):
     pr.subparser().add_argument('user', type=str.lower)
 
     add = pr.subparser('add')
-    append = pr.subparser('append')
-    delete = pr.subparser('del')
+    add.add_argument('user', type=str.lower)
+    add.add_argument('message', nargs='+', action='join')
 
-    for subpr in (add, append, delete):
-        subpr.add_argument('user', type=str.lower)
-        subpr.add_argument('message', nargs='+', action='join')
+    append = pr.subparser('append')
+    append.add_argument('user', type=str.lower)
+    append.add_argument('message', nargs='+', action='join')
+
+    delete = pr.subparser('del')
+    delete.add_argument('user', type=str.lower)
+    delete.add_argument('message', nargs='+', action='join', type=str.lower)
 
     pr.subparser('count')
 
