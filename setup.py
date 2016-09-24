@@ -33,6 +33,4 @@ setuptools.setup(
         'tweepy',
         'jinja2',
         'google-api-python-client'],
-    dependency_links=[
-        'http://github.com/anqxyr/pyscp/tarball/master']
 )
