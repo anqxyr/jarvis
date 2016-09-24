@@ -9,6 +9,11 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 ## Changelog
 
+### 1.1
+
+* Unit tests, Travis and Coveralls integration.
+* Assorted bug fixes.
+
 ### 1.0.4
 
 Changes
