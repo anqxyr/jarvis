@@ -8,6 +8,8 @@ before_install:
 install:
 - pip install https://github.com/anqxyr/pyscp/zipball/master
 - pip install -e .
+- pip install pytest-cov
+- pip install python-coveralls
 script: py.test --cov=jarvis/ --cov-report=term-missing
 after_success:
 - coveralls
