@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/anqxyr/jarvis.svg?branch=master)](https://travis-ci.org/anqxyr/jarvis)
+
 # jarvis
 IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 

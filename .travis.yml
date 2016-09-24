@@ -8,4 +8,6 @@ before_install:
 install:
 - pip install https://github.com/anqxyr/pyscp/zipball/master
 - pip install -e .
+after_success:
+  - coveralls
 script: py.test
