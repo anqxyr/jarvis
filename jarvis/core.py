@@ -8,6 +8,7 @@ import arrow
 import collections
 import functools
 import logbook
+import pathlib
 import pyscp
 import re
 import yaml
@@ -19,6 +20,9 @@ from . import ext, lex
 # Logging
 ###############################################################################
 
+logdir = pathlib.Path('logs')
+if not logdir.exists():
+    logdir.mkdir()
 logbook.FileHandler('logs/jarvis.log').push_application()
 log = logbook.Logger(__name__)
 
