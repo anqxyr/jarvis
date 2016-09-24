@@ -27,7 +27,6 @@ setuptools.setup(
         'pytest-cov',
         'python-coveralls'],
     install_requires=[
-        'pyscp',
         'sopel',
         'wikipedia',
         'dominate',
