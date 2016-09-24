@@ -23,6 +23,7 @@ setuptools.setup(
     packages=['jarvis', 'jarvis/modules'],
     package_data={'jarvis': ['lexicon.yaml']},
     install_requires=[
+        'http://github.com/anqxyr/pyscp/tarball/master',
         'sopel',
         'wikipedia',
         'dominate',
@@ -30,5 +31,6 @@ setuptools.setup(
         'logbook',
         'natural',
         'tweepy',
+        'jinja2',
         'google-api-python-client'],
 )
