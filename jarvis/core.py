@@ -57,18 +57,18 @@ def refresh():
     kwargs = dict(body='title created_by created_at rating tags', category='*')
     if config.debug:
         db = dataset.DataSet('sqlite:///jarvis/tests/resources/snapshot.db')
-        pages = []
+        data = []
         for p in db['page'].all():
             page = wiki(p['url'])
             for k, v in p.items():
                 page._body[k] = v
-            pages.append(page)
+            data.append(page)
         wiki.titles = lambda: {}
         pyscp.utils.default_logging(True)
     else:
-        pages = wiki.list_pages(**kwargs)
+        data = wiki.list_pages(**kwargs)
         wiki.titles.cache_clear()
-    pages = ext.PageView(pages)
+    pages = ext.PageView(data)
     wiki.metadata.cache_clear()
 
     if not config.debug:
