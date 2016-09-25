@@ -5,67 +5,65 @@
 ###############################################################################
 
 import bs4
-import googleapiclient.discovery as googleapi
+import googleapiclient.discovery
 import requests
-import warnings
 import wikipedia as wiki
-import textwrap
 
 from . import core, parser, lex, tools
 
 ###############################################################################
 
 
+def googleapi(api, version, method, _container='items', **kwargs):
+    engine = googleapiclient.discovery.build(
+        api, version, developerKey=core.config.google.apikey)
+    if method:
+        engine = getattr(engine, method)()
+    return engine.list(**kwargs).execute().get(_container)
+
+
 @core.command
 @core.alias('g')
 @parser.websearch
 def google(inp, *, query):
-    google = googleapi.build(
-        'customsearch',
-        'v1',
-        developerKey=core.config.google.apikey).cse()
-    results = google.list(
-        q=query,
-        cx=core.config.google.cseid,
-        num=1).execute()
-    if not results.get('items'):
-        return lex.not_found.generic
-    return '\x02{title}\x02 ({link}) - {snippet}'.format(
-        **results['items'][0])
+    results = googleapi(
+        'customsearch', 'v1', 'cse',
+        q=query, cx=core.config.google.cseid, num=1)
+
+    if not results:
+        return lex.google.not_found
+
+    res = results[0]
+    return lex.google.result(
+        title=res['title'], url=res['link'], text=res['snippet'])
 
 
 @core.command
 @parser.websearch
 def gis(inp, *, query):
-    google = googleapi.build(
-        'customsearch',
-        'v1',
-        developerKey=core.config.google.apikey).cse()
-    results = google.list(
-        q=query,
-        cx=core.config.google.cseid,
-        searchType='image',
-        num=1,
-        safe='high').execute()
-    if not results.get('items'):
-        return lex.not_found.generic
-    return results['items'][0]['link']
+    results = googleapi(
+        'customsearch', 'v1', 'cse',
+        q=query, cx=core.config.google.cseid, searchType='image',
+        num=1, safe='high')
+
+    if not results:
+        return lex.gis.not_found
+
+    return lex.gis.result(url=results[0]['link'])
 
 
 @core.command
 @core.alias('yt')
 @parser.websearch
 def youtube(inp, *, query):
-    youtube = googleapi.build(
-        'youtube', 'v3', developerKey=core.config.google.apikey)
-    results = youtube.search().list(
-        q=query,
-        maxResults=1,
-        part='id',
-        type='video').execute()
-    if not results.get('items'):
-        return lex.not_found.generic
-    video_id = results['items'][0]['id']['videoId']
+    results = googleapi(
+        'youtube', 'v3', 'search',
+        q=query, maxResults=1, part='id', type='video')
+
+    if not results:
+        return lex.youtube.not_found
+
+    video_id = results[0]['id']['videoId']
     return lex.youtube.result(video_id=video_id, **_youtube_info(video_id))
 
 
@@ -75,26 +73,39 @@ def youtube_lookup(inp):
     return lex.youtube.result(**_youtube_info(inp.text))
 
 
-def _youtube_info(video_id=None):
-    youtube = googleapi.build(
-        'youtube', 'v3', developerKey=core.config.google.apikey)
-    data = youtube.videos().list(
-        part='contentDetails,snippet,statistics',
-        id=video_id,
-        maxResults=1).execute()
+def _youtube_info(video_id):
+    results = googleapi(
+        'youtube', 'v3', 'videos',
+        part='contentDetails,snippet,statistics', id=video_id, maxResults=1)
 
-    if not data.get('items'):
-        return lex.not_found.generic
-    data = data['items'][0]
+    if not results:
+        return lex.youtube.not_found
 
+    res = results[0]
     return dict(
-        title=data['snippet']['title'],
-        duration=data['contentDetails']['duration'][2:].lower(),
-        likes=data['statistics'].get('likeCount'),
-        dislikes=data['statistics'].get('dislikeCount'),
-        views=data['statistics']['viewCount'],
-        channel=data['snippet']['channelTitle'],
-        date=data['snippet']['publishedAt'][:10])
+        title=res['snippet']['title'],
+        duration=res['contentDetails']['duration'][2:].lower(),
+        likes=res['statistics'].get('likeCount'),
+        dislikes=res['statistics'].get('dislikeCount'),
+        views=res['statistics']['viewCount'],
+        channel=res['snippet']['channelTitle'],
+        date=res['snippet']['publishedAt'][:10])
+
+
+###############################################################################
+
+
+@core.command
+@parser.translate
+def translate(inp, *, lang, query):
+    """Powered by Yandex.Translate (http://translate.yandex.com/)."""
+    response = requests.get(
+        'https://translate.yandex.net/api/v1.5/tr.json/translate',
+        params=dict(key=core.config.yandex, lang=lang, text=query))
+    if response.status_code != 200:
+        reason = response.json()['message']
+        return lex.translate.error(reason=reason)
+    return lex.translate.result(**response.json())
 
 ###############################################################################
 
@@ -111,8 +122,8 @@ def wikipedia(inp, *, query):
         tools.save_results(inp, e.options, lambda x: wikipedia(inp, query=x))
         return lex.options(options=e.options)
 
-    text = textwrap.shorten(page.content, width=240)
-    return lex.wikipedia.result(title=page.title, url=page.url, text=text)
+    return lex.wikipedia.result(
+        title=page.title, url=page.url, text=page.content)
 
 
 @core.command

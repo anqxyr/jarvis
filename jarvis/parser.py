@@ -486,6 +486,12 @@ def websearch(pr):
     pr.add_argument('query', nargs='+', action='join')
 
 
+@parser
+def translate(pr):
+    pr.add_argument('lang')
+    pr.add_argument('query', nargs='+', action='join')
+
+
 ###############################################################################
 # Images
 ###############################################################################

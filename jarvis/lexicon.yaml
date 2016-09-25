@@ -350,11 +350,21 @@ tweet:
 ###############################################################################
 # Websearch
 ###############################################################################
-wikipedia:
-    result: "{{ title|bold }} - {{ url }} - {{ text }}"
+google:
+    result: "{{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
+    not_found: "{{ lex.not_found.generic }}"
+gis:
+    result: "{{ url }}"
     not_found: "{{ lex.not_found.generic }}"
 youtube:
     result: "{{ title|bold }} - length {{ duration|bold }} - {{ likes ~ '↑' ~ dislikes ~ '↓ - ' if likes and dislikes }}{{ '{:,}'.format(views|int)|bold }} views - {{ channel|bold }} on {{ date|bold }}{{' - http://youtube.com/watch?v=' ~ video_id if video_id }}"
+    not_found: "{{ lex.not_found.generic }}"
+translate:
+    result: "[{{ lang|bold }}] {{ text|join(', ')|shorten(width=200) }}"
+    error: "Could not perform the translation: {{ reason }}"
+wikipedia:
+    result: "{{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
+    not_found: "{{ lex.not_found.generic }}"
 tvtropes:
     not_found: I couldn't find this trope. Either you misspelled it, it doesn't have a laconic description, or it doesn't exist.
 ###############################################################################
