@@ -204,6 +204,7 @@ def get_page_category(page):
 
 
 @core.command
+@core.alias('im')
 @core.alias('img')
 @parser.images
 def images(inp, mode, **kwargs):

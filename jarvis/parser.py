@@ -492,6 +492,15 @@ def translate(pr):
     pr.add_argument('query', nargs='+', action='join')
 
 
+@parser
+def imdb(pr):
+    pr.add_argument('title', nargs='+', action='join')
+    pr.add_argument('--search', '-s', nargs='*', action='join')
+    pr.add_argument('--imdbid', '-i', nargs=1)
+    pr.exclusive('title', 'search', 'imdbid')
+    pr.add_argument('--year', '-y', nargs=1, type=int)
+
+
 ###############################################################################
 # Images
 ###############################################################################

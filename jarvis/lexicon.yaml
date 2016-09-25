@@ -2,10 +2,12 @@
 # Generics
 ###############################################################################
 options: |
-    {% set options = options|sorted|map('bold') %}
+    {% set count = options|length - 5 %}
+    {% set options = options|map('bold')|list %}
+    {% set options = options[:5] %}
     {% set first = options[:-1] %}
     {% set last = options[-1] %}
-    {% if options|length <= 5 %}
+    {% if count < 0 %}
         Did you mean {{ first|join(', ') }} or {{ last }}?
         Do you want {{ first|join(' or ') }} or maybe {{ last }}?
         {{ first|join(', ') }} or {{ last }}. Pick one.
@@ -13,11 +15,10 @@ options: |
         I'm not sure whether you meant {{ first|join(', ') }} or {{ last }}.
         Not quite sure what you wanted here. Was it {{ first|join(', ') }} or {{ last }}?
     {% else %}
-        {% set count = options|length - 5 %}
         I have so many choices for you: {{ options|join(', ') }} and another {{ count }}! Isn't it wonderful?
         Unclear. Clarify. Options: {{ options|join(', ') }}. Number of additional options: {{ count }}
         Did you mean {{ first|join(', ') }} or {{ last }}? You can use !showmore to check another {{ count }} matches.
-        Now you choose: {{ options|join(', ') }}. ({tail} more)
+        Now you choose: {{ options|join(', ') }}. ({{ count }} more)
     {% endif %}
 input:
     incorrect: |-
@@ -362,6 +363,9 @@ youtube:
 translate:
     result: "[{{ lang|bold }}] {{ text|join(', ')|shorten(width=200) }}"
     error: "Could not perform the translation: {{ reason }}"
+imdb:
+    result: "{{ title|bold }} ({{ year }}) - http://www.imdb.com/title/{{ imdbid }} - {{ director|bold }} - {{ runtime }} - {{ plot }}"
+    not_found: "{{ lex.not_found.generic }}"
 wikipedia:
     result: "{{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
     not_found: "{{ lex.not_found.generic }}"

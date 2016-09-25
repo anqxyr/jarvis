@@ -149,7 +149,8 @@ def _get_command_func(inp):
     if len(commands) == 1:
         return commands[0]
     if len(commands) > 1:
-        inp.send(lex.options(options={f.__name__ for f in commands}))
+        names = {f.__name__ for f in commands}
+        inp.send(lex.options(options=sorted(names)))
 
 
 def dispatcher(inp):

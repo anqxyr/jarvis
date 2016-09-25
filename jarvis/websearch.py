@@ -102,10 +102,38 @@ def translate(inp, *, lang, query):
     response = requests.get(
         'https://translate.yandex.net/api/v1.5/tr.json/translate',
         params=dict(key=core.config.yandex, lang=lang, text=query))
+
     if response.status_code != 200:
         reason = response.json()['message']
         return lex.translate.error(reason=reason)
+
     return lex.translate.result(**response.json())
+
+
+@core.command
+@parser.imdb
+def imdb(inp, *, title, search, imdbid, year):
+    params = dict(t=title, s=search, i=imdbid, y=year, plot='short', r='json')
+    params = {k: v for k, v in params.items() if v}
+    response = requests.get('http://www.omdbapi.com/', params=params).json()
+    data = {k.lower(): v for k, v in response.items()}
+
+    if 'search' in data:
+        results = data['search']
+
+        tools.save_results(
+            inp, [i['imdbID'] for i in results],
+            lambda x: imdb(inp, title=None, search=None, imdbid=x, year=None))
+
+        results = [(i['Title'], i['Year']) for i in results]
+        results = ['{} ({})'.format(title, year) for title, year in results]
+        return lex.options(options=results)
+
+    if 'error' in data:
+        return lex.imdb.not_found
+
+    return lex.imdb.result(**data)
+
 
 ###############################################################################
 
