@@ -349,7 +349,7 @@ def add(inp, *, url, page):
 def remove_image_component(source, image_url):
     name = image_url.split('/')[-1]
     regex = r'(?is)\[\[include\s+component:image-block.*{}.*\]\]'
-    regex = regex.format(name)
+    regex = regex.format(re.escape(name))
 
     bracketed = re.search(regex, source).group(0)
 

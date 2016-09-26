@@ -78,3 +78,12 @@ def test_imdb_search():
 
 def test_imdb_not_found():
     assert run('.imdb whatever -y 2100') == lex.imdb.not_found
+
+
+###############################################################################
+
+
+def test_twitter_lookup_simple():
+    assert (
+        run('https://twitter.com/MeetAnimals/status/778453962970107904') ==
+        lex.twitter_lookup(name='Animal Life'))

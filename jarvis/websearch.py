@@ -4,9 +4,11 @@
 # Module Imports
 ###############################################################################
 
+import arrow
 import bs4
 import googleapiclient.discovery
 import requests
+import tweepy
 import wikipedia as wiki
 
 from . import core, parser, lex, tools
@@ -133,6 +135,20 @@ def imdb(inp, *, title, search, imdbid, year):
         return lex.imdb.not_found
 
     return lex.imdb.result(**data)
+
+
+@core.rule(r'https?://twitter.com/[^/]+/status/([0-9]+)')
+def twitter_lookup(inp):
+    tw = core.config.twitter
+    auth = tweepy.OAuthHandler(tw.key, tw.secret)
+    auth.set_access_token(tw.token, tw.token_secret)
+    api = tweepy.API(auth)
+
+    tweet = api.get_status(inp.text)
+    return lex.twitter_lookup(
+        name=tweet.user.name, text=tweet.text,
+        date=arrow.get(tweet.created_at).format('YYYY-MM-DD'),
+        favorites=tweet.favorite_count)
 
 
 ###############################################################################

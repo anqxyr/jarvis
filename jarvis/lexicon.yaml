@@ -366,6 +366,7 @@ translate:
 imdb:
     result: "{{ title|bold }} ({{ year }}) - http://www.imdb.com/title/{{ imdbid }} - {{ director|bold }} - {{ runtime }} - {{ plot }}"
     not_found: "{{ lex.not_found.generic }}"
+twitter_lookup: "{{ name|bold }} - {{ date }} - {{ favorites }} likes - {{ text }}"
 wikipedia:
     result: "{{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
     not_found: "{{ lex.not_found.generic }}"
