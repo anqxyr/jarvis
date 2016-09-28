@@ -372,7 +372,7 @@ twitter_lookup: "{{ name|bold }} - {{ date }} - {{ favorites }} likes - {{ text 
 duckduckgo:
     result: "[{{ index }}/{{ total }}] {{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
 wikipedia:
-    result: "{{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
+    result: "{{ title|bold }} - {{ url }} - {{ text|shorten(width=200)|formatescape }}"
     not_found: "{{ lex.not_found.generic }}"
 tvtropes:
     not_found: I couldn't find this trope. Either you misspelled it, it doesn't have a laconic description, or it doesn't exist.

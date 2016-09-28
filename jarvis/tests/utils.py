@@ -14,7 +14,7 @@ import yaml
 class Inp(jarvis.core.Inp):
 
     def __init__(self, text, user, channel, channels):
-        self.text = text.strip() if text else ''
+        self.text = text or ''
         self.user = str(user).strip().lower()
         self.channel = str(channel).strip().lower()
 
@@ -47,7 +47,7 @@ def run(
     save the result into the output variable, runs the disptacher and
     returns the output.
     """
-    text = text.split()
+    text = text.split(' ')
     text.extend(map(str, args))
     for k, v in kwargs.items():
         text.append('--{} {}'.format(k, v))

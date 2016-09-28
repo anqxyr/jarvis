@@ -40,3 +40,7 @@ def test_dispatcher_plain_text():
 
 def test_dispatcher_case_sensitivity():
     assert run('.SEEN', core.config.irc.nick) == lex.seen.self
+
+
+def test_dispatcher_leading_whitespace():
+    assert not run(' .seen')

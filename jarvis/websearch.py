@@ -6,7 +6,8 @@
 
 import arrow
 import bs4
-import googleapiclient
+import googleapiclient.discovery
+import googleapiclient.errors
 import requests
 import tweepy
 import wikipedia as wiki
@@ -151,7 +152,8 @@ def imdb(inp, *, title, search, imdbid, year):
 
         tools.save_results(
             inp, [i['imdbID'] for i in results],
-            lambda x: imdb(inp, title=None, search=None, imdbid=x, year=None))
+            lambda x: imdb._func(
+                inp, title=None, search=None, imdbid=x, year=None))
 
         results = [(i['Title'], i['Year']) for i in results]
         results = ['{} ({})'.format(title, year) for title, year in results]
@@ -187,15 +189,14 @@ def duckduckgo(query):
     soup = bs4.BeautifulSoup(response.text, 'html.parser')
     results = soup(class_='web-result')
 
-    output = []
-    for idx, r in enumerate(results):
-        title = r.find(class_='result__a').text
-        url = r.find(class_='result__a')['href']
-        text = r.find(class_='result__snippet').text
-        output.append(lex.duckduckgo.result(
-            index=idx + 1, total=len(results),
-            title=title, url=url, text=text))
-    return output
+    return [
+        lex.duckduckgo.result(
+            index=idx + 1,
+            total=len(results),
+            title=r.find(class_='result__a').text,
+            url=r.find(class_='result__a')['href'],
+            text=r.find(class_='result__snippet').text)
+        for idx, r in enumerate(results)]
 
 ###############################################################################
 

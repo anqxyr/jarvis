@@ -25,6 +25,9 @@ def test_wikipedia_not_found():
     assert run('.w sdfgdhfghe') == lex.wikipedia.not_found
 
 
+def test_wikipedia_bracket_escaping():
+    assert str(run('.w probability field'))
+
 ###############################################################################
 
 
@@ -82,7 +85,7 @@ def test_imdb_not_found():
 
 def test_imdb_showmore():
     run('.imdb -s star wars')
-    assert ('.sm 1') == lex.imdb.result(year=1977)
+    assert run('.sm 1') == lex.imdb.result(year='1977')
 
 ###############################################################################
 

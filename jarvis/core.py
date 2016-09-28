@@ -82,7 +82,7 @@ class Inp:
 
     def __init__(self, text, user, channel, send, privileges, raw):
         """Clean input values."""
-        self.text = text.strip() if text else ''
+        self.text = text or ''
         self.user = str(user).strip().lower()
         self.channel = str(channel).strip().lower()
         self._send = send
@@ -156,7 +156,7 @@ def dispatcher(inp):
 
     command = _get_command_func(inp)
     if command:
-        funcs[command] = ' '.join(inp.text.split(' ')[1:])
+        funcs[command] = ' '.join(inp.text.strip().split(' ')[1:])
 
     for k, v in RULES:
         match = re.match(k, inp.text)

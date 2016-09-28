@@ -89,5 +89,6 @@ env = jinja2.Environment()
 env.globals['lex'] = lex
 env.filters['bold'] = lambda x: '\x02{}\x02'.format(x)
 env.filters['shorten'] = textwrap.shorten
+env.filters['formatescape'] = lambda x: x.replace('{', '{{').replace('}', '}}')
 
 sys.modules[__name__] = lex
