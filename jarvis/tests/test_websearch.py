@@ -80,6 +80,30 @@ def test_imdb_not_found():
     assert run('.imdb whatever -y 2100') == lex.imdb.not_found
 
 
+def test_imdb_showmore():
+    run('.imdb -s star wars')
+    assert ('.sm 1') == lex.imdb.result(year=1977)
+
+###############################################################################
+
+
+def test_duckduckgo_simpe():
+    assert run('.ddg scp wiki') == lex.duckduckgo.result(index=1)
+
+
+def test_duckduckgo_index():
+    assert run('.ddg scp-wiki -i 5') == lex.duckduckgo.result(index=5)
+
+
+def test_duckduckgo_bad_index():
+    assert run('.ddg scp-wiki -i 100') == lex.input.bad_index
+
+
+def test_duckduckgo_showmore():
+    run('.ddg scp-wiki')
+    assert run('.sm 8') == lex.duckduckgo.result(index=8)
+
+
 ###############################################################################
 
 

@@ -23,3 +23,20 @@ class AttrDict(dict):
         return AttrDict({
             key: AttrDict.from_nested_dict(data[key])
             for key in data})
+
+###############################################################################
+
+
+def catch(exceptions, return_value=None):
+
+    def decorator(func):
+
+        def inner(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except exceptions:
+                return return_value
+
+        return inner
+
+    return decorator

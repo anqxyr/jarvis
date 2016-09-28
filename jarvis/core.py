@@ -14,7 +14,7 @@ import re
 import yaml
 
 from playhouse import dataset
-from . import ext, lex
+from . import ext, lex, utils
 
 ###############################################################################
 # Logging
@@ -30,18 +30,8 @@ log = logbook.Logger(__name__)
 # Config
 ###############################################################################
 
-
-class _AttributeDict(dict):
-
-    def __getattr__(self, name):
-        value = self[name]
-        if isinstance(value, dict):
-            return self.__class__(value)
-        return value
-
-
 with open('config.yaml') as file:
-    config = _AttributeDict(yaml.load(file))
+    config = utils.AttrDict.from_nested_dict(yaml.safe_load(file))
 
 ###############################################################################
 # Page Cache

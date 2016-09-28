@@ -10,8 +10,26 @@ import googleapiclient.discovery
 import requests
 import tweepy
 import wikipedia as wiki
+import functools
 
-from . import core, parser, lex, tools
+from . import core, parser, lex, tools, utils
+
+###############################################################################
+
+
+def indexed_cache(func):
+
+    func = functools.lru_cache()(func)
+
+    @functools.wraps(func)
+    @utils.catch(IndexError, return_value=lex.input.bad_index)
+    def inner(inp, *, index, **kwargs):
+        results = func(**kwargs)
+        tools.save_results(inp, range(len(results)), results.__getitem__)
+        return results[index - 1 if index else 0]
+
+    return inner
+
 
 ###############################################################################
 
@@ -150,6 +168,26 @@ def twitter_lookup(inp):
         date=arrow.get(tweet.created_at).format('YYYY-MM-DD'),
         favorites=tweet.favorite_count)
 
+
+@core.command
+@core.alias('ddg')
+@parser.duckduckgo
+@indexed_cache
+def duckduckgo(query):
+    response = requests.get(
+        'https://duckduckgo.com/html/', params={'q': query})
+    soup = bs4.BeautifulSoup(response.text, 'html.parser')
+    results = soup(class_='web-result')
+
+    output = []
+    for idx, r in enumerate(results):
+        title = r.find(class_='result__a').text
+        url = r.find(class_='result__a')['href']
+        text = r.find(class_='result__snippet').text
+        output.append(lex.duckduckgo.result(
+            index=idx + 1, total=len(results),
+            title=title, url=url, text=text))
+    return output
 
 ###############################################################################
 
