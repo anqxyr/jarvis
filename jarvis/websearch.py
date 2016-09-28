@@ -26,8 +26,11 @@ def indexed_cache(func):
     @utils.catch(IndexError, return_value=lex.input.bad_index)
     def inner(inp, *, index, **kwargs):
         results = func(**kwargs)
-        tools.save_results(inp, range(len(results)), results.__getitem__)
-        return results[index - 1 if index else 0]
+        if isinstance(results, list):
+            tools.save_results(inp, range(len(results)), results.__getitem__)
+            return results[index - 1 if index else 0]
+        else:
+            return results
 
     return inner
 
