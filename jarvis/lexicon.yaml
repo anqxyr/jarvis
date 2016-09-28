@@ -354,6 +354,8 @@ tweet:
 google:
     result: "{{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
     not_found: "{{ lex.not_found.generic }}"
+    heavy_load: Google is under heavy load right now. Try again in a minute, or use .duckduckgo in the meantime.
+    quota_exceeded: Daily usage quota exceeded. Try again tomorrow, or use .duckduckgo instead.
 gis:
     result: "{{ url }}"
     not_found: "{{ lex.not_found.generic }}"

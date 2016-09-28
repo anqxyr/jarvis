@@ -6,7 +6,7 @@
 
 import arrow
 import bs4
-import googleapiclient.discovery
+import googleapiclient
 import requests
 import tweepy
 import wikipedia as wiki
@@ -39,7 +39,15 @@ def googleapi(api, version, method, _container='items', **kwargs):
         api, version, developerKey=core.config.google.apikey)
     if method:
         engine = getattr(engine, method)()
-    return engine.list(**kwargs).execute().get(_container)
+    try:
+        return engine.list(**kwargs).execute().get(_container)
+    except googleapiclient.errors.HttpError as e:
+        if e.resp.status in (500, 503):
+            return lex.google.heavy_load
+        elif e.resp.status == 403:
+            return lex.google.quota_exceeded
+        else:
+            raise e
 
 
 @core.command
