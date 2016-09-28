@@ -53,72 +53,93 @@ def googleapi(api, version, method, _container='items', **kwargs):
 
 @core.command
 @core.alias('g')
-@parser.websearch
-def google(inp, *, query):
+@parser.google
+@indexed_cache
+def google(query):
     results = googleapi(
         'customsearch', 'v1', 'cse',
-        q=query, cx=core.config.google.cseid, num=1)
+        q=query, cx=core.config.google.cseid, num=10)
 
     if not results:
         return lex.google.not_found
 
-    res = results[0]
-    return lex.google.result(
-        title=res['title'], url=res['link'], text=res['snippet'])
+    return [
+        lex.google.result(
+            index=idx + 1,
+            total=len(results),
+            title=r['title'],
+            url=r['link'],
+            text=r['snippet'])
+        for idx, r in enumerate(results)]
 
 
 @core.command
-@parser.websearch
-def gis(inp, *, query):
+@parser.google
+@indexed_cache
+def gis(query):
     results = googleapi(
         'customsearch', 'v1', 'cse',
         q=query, cx=core.config.google.cseid, searchType='image',
-        num=1, safe='high')
+        num=10, safe='high')
 
     if not results:
         return lex.gis.not_found
 
-    return lex.gis.result(url=results[0]['link'])
+    return [
+        lex.gis.result(
+            index=idx + 1,
+            total=len(results),
+            title=r['title'],
+            url=r['link'])
+        for idx, r in enumerate(results)]
 
 
 @core.command
 @core.alias('yt')
-@parser.websearch
-def youtube(inp, *, query):
+@parser.youtube
+@indexed_cache
+def youtube(query):
     results = googleapi(
         'youtube', 'v3', 'search',
-        q=query, maxResults=1, part='id', type='video')
+        q=query, maxResults=10, part='id', type='video')
 
     if not results:
         return lex.youtube.not_found
 
-    video_id = results[0]['id']['videoId']
-    return lex.youtube.result(video_id=video_id, **_youtube_info(video_id))
+    video_ids = [r['id']['videoId'] for r in results]
+    return [
+        lex.youtube.result(
+            index=idx + 1,
+            total=len(results),
+            video_id=vid,
+            **info)
+        for idx, (vid, info) in
+        enumerate(zip(video_ids, _youtube_info(*video_ids)))]
 
 
 @core.rule(r'(?i).*youtube\.com/watch\?v=([-_a-z0-9]+)')
 @core.rule(r'(?i).*youtu\.be/([-_a-z0-9]+)')
 def youtube_lookup(inp):
-    return lex.youtube.result(**_youtube_info(inp.text))
+    return lex.youtube.result(**_youtube_info(inp.text)[0])
 
 
-def _youtube_info(video_id):
+def _youtube_info(*video_ids):
     results = googleapi(
         'youtube', 'v3', 'videos',
-        part='contentDetails,snippet,statistics', id=video_id, maxResults=1)
+        part='contentDetails,snippet,statistics', id=','.join(video_ids))
 
     if not results:
         return lex.youtube.not_found
 
-    res = results[0]
-    return dict(
-        title=res['snippet']['title'],
-        duration=res['contentDetails']['duration'][2:].lower(),
-        likes=res['statistics'].get('likeCount'),
-        dislikes=res['statistics'].get('dislikeCount'),
-        views=res['statistics']['viewCount'],
-        channel=res['snippet']['channelTitle'],
-        date=res['snippet']['publishedAt'][:10])
+    return [dict(
+        title=r['snippet']['title'],
+        duration=r['contentDetails']['duration'][2:].lower(),
+        likes=r['statistics'].get('likeCount'),
+        dislikes=r['statistics'].get('dislikeCount'),
+        views=r['statistics']['viewCount'],
+        channel=r['snippet']['channelTitle'],
+        date=r['snippet']['publishedAt'][:10])
+        for r in results]
 
 
 ###############################################################################

@@ -352,15 +352,15 @@ tweet:
 # Websearch
 ###############################################################################
 google:
-    result: "{{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
+    result: "[{{ index }}/{{ total }}] {{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
     not_found: "{{ lex.not_found.generic }}"
     heavy_load: Google is under heavy load right now. Try again in a minute, or use .duckduckgo in the meantime.
     quota_exceeded: Daily usage quota exceeded. Try again tomorrow, or use .duckduckgo instead.
 gis:
-    result: "{{ url }}"
+    result: "[{{ index }}/{{ total }}] {{ title|bold }} - {{ url }}"
     not_found: "{{ lex.not_found.generic }}"
 youtube:
-    result: "{{ title|bold }} - length {{ duration|bold }} - {{ likes ~ '↑' ~ dislikes ~ '↓ - ' if likes and dislikes }}{{ '{:,}'.format(views|int)|bold }} views - {{ channel|bold }} on {{ date|bold }}{{' - http://youtube.com/watch?v=' ~ video_id if video_id }}"
+    result: "[{{ index }}/{{ total }}] {{ title|bold }} - length {{ duration|bold }} - {{ likes ~ '↑' ~ dislikes ~ '↓ - ' if likes and dislikes }}{{ '{:,}'.format(views|int)|bold }} views - {{ channel|bold }} on {{ date|bold }}{{' - http://youtube.com/watch?v=' ~ video_id if video_id }}"
     not_found: "{{ lex.not_found.generic }}"
 translate:
     result: "[{{ lang|bold }}] {{ text|join(', ')|shorten(width=200) }}"

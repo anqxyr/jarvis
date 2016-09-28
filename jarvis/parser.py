@@ -487,6 +487,18 @@ def websearch(pr):
 
 
 @parser
+def google(pr):
+    pr.add_argument('query', nargs='+', action='join')
+    pr.add_argument('--index', '-i', nargs=1, type=int)
+
+
+@parser
+def youtube(pr):
+    pr.add_argument('query', nargs='+', action='join')
+    pr.add_argument('--index', '-i', nargs=1, type=int)
+
+
+@parser
 def translate(pr):
     pr.add_argument('lang')
     pr.add_argument('query', nargs='+', action='join')
