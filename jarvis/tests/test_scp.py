@@ -31,6 +31,19 @@ def test_author_default():
     assert run('.au', _user='anqxyr') == lex.summary.author(name='anqxyr')
 
 
+def test_author_showmore():
+    run('.au Jack')
+    assert run('.sm 3') == lex.summary.author
+
+
+###############################################################################
+
+
+def test_authordetails_showmore():
+    run('.ad Jack')
+    assert run('.sm 3')
+
+
 ###############################################################################
 # Misc
 ###############################################################################

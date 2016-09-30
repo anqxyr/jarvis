@@ -129,7 +129,7 @@ outbound:
         I've already delivered everything.
         This place is empty.
     count: |-
-        {% set uses = users|sorted|join(', ') %}
+        {% set users = users|sort|join(', ') %}
         You have {{ count }} outbound tells, including - {{ users }}.
         In the past, you've sent {{ count }} tells that haven't been delivered yet. You sent them to {{ users }}.
         {{ count }} tells - {{ users }}.
@@ -360,7 +360,7 @@ gis:
     result: "[{{ index }}/{{ total }}] {{ title|bold }} - {{ url }}"
     not_found: "{{ lex.not_found.generic }}"
 youtube:
-    result: "[{{ index }}/{{ total }}] {{ title|bold }} - length {{ duration|bold }} - {{ likes ~ '↑' ~ dislikes ~ '↓ - ' if likes and dislikes }}{{ '{:,}'.format(views|int)|bold }} views - {{ channel|bold }} on {{ date|bold }}{{' - http://youtube.com/watch?v=' ~ video_id if video_id }}"
+    result: "{{'[' ~ index ~ '/' ~ total ~ ']' if index}} {{ title|bold }} - length {{ duration|bold }} - {{ likes ~ '↑' ~ dislikes ~ '↓ - ' if likes and dislikes }}{{ '{:,}'.format(views|int)|bold }} views - {{ channel|bold }} on {{ date|bold }}{{' - http://youtube.com/watch?v=' ~ video_id if video_id }}"
     not_found: "{{ lex.not_found.generic }}"
 translate:
     result: "[{{ lang|bold }}] {{ text|join(', ')|shorten(width=200) }}"

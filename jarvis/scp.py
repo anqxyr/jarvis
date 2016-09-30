@@ -49,7 +49,7 @@ def guess_author(func):
         elif len(authors) == 1:
             return func(inp, *args, author=authors[0], **kwargs)
         else:
-            tools.save_results(inp, authors, func)
+            tools.save_results(inp, authors, lambda x: func(inp, x))
             return tools.choose_input(authors)
 
     return inner

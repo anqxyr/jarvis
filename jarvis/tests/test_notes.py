@@ -73,6 +73,10 @@ def test_outbound_simple():
     assert run('.out') == lex.outbound.count(count=1, users={'user'})
 
 
+def test_outbound_jinja2():
+    str(run('.out'))
+
+
 def test_outbound_echo_one():
     assert run('.out -e') == lex.outbound.echo(user='user', message='test3')
 
