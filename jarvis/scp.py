@@ -247,8 +247,8 @@ def errors(inp):
         yield lex.errors.done
 
 
-@core.require(channel=core.config.irc.sssc)
 @core.command
+@core.require(channel=core.config.irc.sssc)
 @core.cooldown(7200)
 @core.multiline
 def cleantitles(inp):

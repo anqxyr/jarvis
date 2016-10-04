@@ -28,7 +28,7 @@ Ban = collections.namedtuple('Ban', 'names hosts status reason thread')
 
 def get_ban_list():
     wiki = pyscp.wikidot.Wiki('05command')
-    soup = wiki('alexandra-s-ban-page')._soup
+    soup = wiki('chat-ban-page')._soup
     rows = soup('tr')[1:]
     return [b for b in map(parse_ban, rows) if b]
 
