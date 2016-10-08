@@ -9,6 +9,7 @@ import functools
 import natural.number
 import pyscp
 import re
+import time
 
 from . import core, parser, lex
 
@@ -379,11 +380,15 @@ def remove(inp, *, page, images):
     page.edit(source, comment='removed image code. -' + inp.user)
     yield lex.images.remove.page_edited
 
+    time.sleep(5)
+
     text = lex.templates.removal.post._raw
     text += lex.templates.postfix._raw
     text = text.format(user=inp.user)
     page._thread.new_post(text)
     yield lex.images.remove.posted
+
+    time.sleep(5)
 
     text = lex.templates.removal.pm._raw
     text += lex.templates.postfix._raw
