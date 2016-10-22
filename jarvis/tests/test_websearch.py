@@ -114,3 +114,9 @@ def test_twitter_lookup_simple():
     assert (
         run('https://twitter.com/MeetAnimals/status/778453962970107904') ==
         lex.twitter_lookup(name='Animal Life'))
+
+
+def test_twitter_lookup_linebreaks():
+    assert (
+        run('https://twitter.com/TwitterForNews/status/311909802462822400') ==
+        lex.twitter_lookup(text='L I N E  B R E A K S  #newattwitter'))

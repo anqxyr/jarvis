@@ -198,7 +198,7 @@ def twitter_lookup(inp):
 
     tweet = api.get_status(inp.text)
     return lex.twitter_lookup(
-        name=tweet.user.name, text=tweet.text,
+        name=tweet.user.name, text=tweet.text.replace('\n', ' '),
         date=arrow.get(tweet.created_at).format('YYYY-MM-DD'),
         favorites=tweet.favorite_count)
 
