@@ -568,6 +568,7 @@ def gibber(pr):
 
     pr.add_argument(
         'user',
+        type=str.lower,
         nargs='?',
         help="""What would <user> say?""")
 
