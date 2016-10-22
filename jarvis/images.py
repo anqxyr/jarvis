@@ -83,9 +83,14 @@ class Image:
 
 
 def load_images():
+    global IMAGES
+    IMAGES = []
     soup = wiki('images')._soup
     for category in soup(class_='collapsible-block'):
         name = category.find(class_='collapsible-block-link').text
+        claim = category.find(class_='claim')
+        if claim:
+            CLAIMS[name] = claim.text.split()[-1]
         rows = category('tr')
         for row, notes in zip(rows[::2], rows[1::2]):
             url, page, source, status = row('td')
