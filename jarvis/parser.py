@@ -558,6 +558,20 @@ def alert(pr):
         help="""Alert text.""")
 
 
+@parser
+def gibber(pr):
+    pr.add_argument(
+        'channel',
+        re='#',
+        nargs='?',
+        help="""Switch to another channel.""")
+
+    pr.add_argument(
+        'user',
+        nargs='?',
+        help="""What would <user> say?""")
+
+
 ###############################################################################
 # SCP
 ###############################################################################

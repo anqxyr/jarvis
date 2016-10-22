@@ -10,6 +10,8 @@ logging, tells, and quotes.
 ###############################################################################
 
 import arrow
+import functools
+import markovify
 import random
 import re
 
@@ -380,3 +382,30 @@ def get_alerts(inp):
     alerts = [i.text for i in db.Alert.select().where(where)]
     db.Alert.delete().where(where).execute()
     return alerts
+
+
+@functools.lru_cache()
+def get_text_model(channel, user):
+    if user:
+        lines = db.Message.find(channel=channel, user=user)
+    else:
+        lines = db.Message.find(channel=channel)
+    lines = lines.order_by(db.Message.id.desc()).limit(10000)
+    text = '\n'.join([i.text for i in lines])
+    return markovify.NewlineText(text)
+
+
+@core.command
+@parser.gibber
+@core.crosschannel
+def gibber(inp, user):
+    """
+    Generate a message using markov chains, hatbot-like.
+
+    If the user isn't specified, generates the message based on the log of
+    the entire channel.
+    """
+    if user and not db.Message.find_one(channel=inp.channel, user=user):
+        return lex.gibber.no_such_user
+    model = get_text_model(inp.channel, user)
+    return lex.gibber.say(text=model.make_short_sentence(200))
