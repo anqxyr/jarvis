@@ -99,6 +99,7 @@ def get_tells(inp):
 @core.alias('st')
 @core.notice
 def showtells(inp):
+    """Check for incoming messages."""
     if not db.Tell.find_one(recipient=inp.user):
         return lex.tell.no_new
 
@@ -148,7 +149,7 @@ def outbound(inp, *, purge, echo):
 @parser.seen
 @core.crosschannel
 def seen(inp, *, user, first, total):
-    """Retrieve the first or the last message said by the user."""
+    """Show the first message said by the user."""
     if user == core.config.irc.nick:
         return lex.seen.self
 
@@ -178,6 +179,11 @@ def seen(inp, *, user, first, total):
 @parser.quote
 @core.crosschannel
 def quote(inp, mode, **kwargs):
+    """
+    Manage quotes.
+
+    This command is disabled in #site19.
+    """
     if inp.channel in core.config.irc.noquotes:
         return lex.denied
     return quote.dispatch(inp, mode, **kwargs)
@@ -243,6 +249,17 @@ def delete_quote(inp, *, user, message):
 @parser.memo
 @core.crosschannel
 def memo(inp, mode, **kwargs):
+    """
+    Manage memos.
+
+    This command is disabled in #site19
+
+    Memos are short persistent messages storing useful information about the
+    user. Memos are channel-specific and support cross-channel access. Each
+    user can have only a single memo stored in a particular channel.
+
+    Unlike quotes, memo creation times are not preserved.
+    """
     if inp.channel in core.config.irc.noquotes:
         return lex.denied
     return memo.dispatch(inp, mode, **kwargs)
@@ -250,6 +267,7 @@ def memo(inp, mode, **kwargs):
 
 @memo.subcommand()
 def get_memo(inp, *, user):
+    """Retrieve the specified user's memo."""
     memo = db.Memo.find_one(user=user, channel=inp.channel)
 
     if memo:
@@ -260,6 +278,15 @@ def get_memo(inp, *, user):
 
 @memo.subcommand('add')
 def add_memo(inp, *, user, message):
+    """
+    Add a new memo.
+
+    If the specified user already has a memo in this channel, the operation
+    will be aborted to prevent accidental overwrites.
+
+    If you wish to overwrite an old memo, delete it explicitly and add the
+    new memo in its place afterwards.
+    """
     if db.Memo.find_one(user=user, channel=inp.channel):
         return lex.memo.already_exists
 
@@ -269,6 +296,13 @@ def add_memo(inp, *, user, message):
 
 @memo.subcommand('del')
 def delete_memo(inp, *, user, message):
+    """
+    Delete memo.
+
+    Deletion requires the full text of the memo in order to prevent accidental
+    deletions, as well as to provide an additional copy of the deleted memo
+    for the logs.
+    """
     memo = db.Memo.find_one(
         user=user, channel=inp.channel, text_lower=message)
     if not memo:
@@ -280,6 +314,12 @@ def delete_memo(inp, *, user, message):
 
 @memo.subcommand('append')
 def append_memo(inp, *, user, message):
+    """
+    Append memo.
+
+    Adds additional text to the end of the previously stored memo, without
+    deletiing the original.
+    """
     memo = db.Memo.find_one(user=user, channel=inp.channel)
     if not memo:
         return lex.memo.not_found
@@ -291,6 +331,7 @@ def append_memo(inp, *, user, message):
 
 @memo.subcommand('count')
 def count_memos(inp):
+    """Output the number of memos stored in this channel."""
     return lex.memo.count(count=db.Memo.find(channel=inp.channel).count())
 
 
@@ -315,7 +356,7 @@ def peek_memo(inp):
 @core.command
 @parser.alert
 def alert(inp, *, date, span, message):
-    """!alert [<date>|<delay>] <message> -- Remind your future self."""
+    """Make a reminder for your future self."""
     if date and date < arrow.utcnow():
         return lex.alert.past
 

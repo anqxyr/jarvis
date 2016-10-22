@@ -9,7 +9,7 @@ import arrow
 import random
 import tweepy
 
-from . import core, parser, lex, __version__
+from . import core, parser, lex, __version__, utils
 
 ###############################################################################
 
@@ -30,6 +30,7 @@ def save_results(inp, items, func=None):
 @core.alias('sm')
 @parser.showmore
 def showmore(inp, *, index):
+    """Show additional results from the last used command."""
     if index is None:
         index = 1
     if index <= 0:
@@ -62,6 +63,11 @@ def choose_input(options):
 @core.alias('jarvis')
 @core.alias('changelog')
 def version(inp):
+    """
+    Output version info.
+
+    Shows bot's bio, version number, github link, and uptime.
+    """
     uptime = (arrow.now() - BOOTTIME)
     m, s = divmod(uptime.seconds, 60)
     h, m = divmod(m, 60)
@@ -72,6 +78,11 @@ def version(inp):
 @core.require(channel=core.config.irc.sssc)
 @core.command
 def rejoin(inp):
+    """
+    Enter the specified channel.
+
+    Staff-only command.
+    """
     channel = inp.text if inp.text.startswith('#') else '#' + inp.text
     inp.raw(['JOIN', channel])
     return lex.rejoin(channel=channel)
@@ -110,7 +121,15 @@ def get_throw(count, sides):
 @core.alias('roll')
 @parser.dice
 def dice(inp, *, throws, bonus, text, expand):
-    """Return the result of rolling multiple dice."""
+    """
+    Return the result of rolling multiple dice.
+
+    Examples of valid dice throws:
+    2d5
+    d100 -10d5 +3d20
+    3d20 +5 open the door
+    3df 2d2
+    """
     total = 0
     expanded = {}
 
@@ -140,16 +159,19 @@ def dice(inp, *, throws, bonus, text, expand):
 @core.command
 @core.rule(r'(?i)(^(?=.*\bjarvis)(?=.*\bhugs?\b).*)')
 def hugs(inp):
+    """Who's a good bot? Jarvy is a good bot."""
     return lex.silly.hugs
 
 
 @core.command
 def zyn(inp):
+    """Marp."""
     return lex.silly.zyn
 
 
 @core.command
 def user(inp):
+    """Get wikidot profile url for the user."""
     user = inp.text.lower().replace(' ', '-')
     return 'http://www.wikidot.com/user:info/' + user
 
@@ -157,18 +179,35 @@ def user(inp):
 @core.rule(r'(?i)^\.help\b(.*)')
 @parser.help
 def help(inp, *, command, elemental):
+    """Give a link to the help page."""
     if elemental:
         return
     url = 'http://scp-stats.wikidot.com/jarvis'
     return url if not command else url + '#' + command.replace(' ', '-')
 
 
-@core.require(channel=core.config.irc.sssc)
 @core.command
+@core.require(channel=core.config.irc.sssc)
 def reloadtitles(inp):
+    """Update title cache."""
     core.wiki.titles.cache_clear()
     core.wiki.titles()
-    yield lex.reloadtitles
+    return lex.reloadtitles
+
+
+###############################################################################
+# Update Help
+###############################################################################
+
+
+#@core.command
+#@core.require(channel=core.config.irc.sssc)
+#def updatehelp(inp):
+def updatehelp():
+    funcs = sorted(
+        {v for k, v in core.COMMANDS.items()}, key=lambda x: x.__name__)
+    core.stats_wiki('help-test').create(
+        utils.load_template('help.template', funcs=funcs), 'Help Test')
 
 
 ###############################################################################

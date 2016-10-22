@@ -133,12 +133,14 @@ def _page_search_base(inp, pages, *, summary, **kwargs):
 @core.alias('s')
 @parser.search
 def search(inp, **kwargs):
+    """Find scp-wiki pages."""
     return _page_search_base(inp, core.pages, **kwargs)
 
 
 @core.command
 @parser.search
 def tale(inp, **kwargs):
+    """Find scp-wiki tales."""
     return _page_search_base(inp, core.pages.tags('tale'), **kwargs)
 
 
@@ -146,11 +148,13 @@ def tale(inp, **kwargs):
 @core.alias('wl')
 @parser.search
 def wandererslibrary(inp, **kwargs):
+    """Find Wanderers' Library pages."""
     return _page_search_base(inp, core.wlpages, **kwargs)
 
 
 @core.command
 def tags(inp):
+    """Find pages with the given tags."""
     return show_search_results(inp, core.pages.tags(inp.text))
 
 
@@ -166,6 +170,7 @@ def name_lookup(inp):
 @core.alias('au')
 @guess_author
 def author(inp, author):
+    """Display author summary."""
     pages = core.pages.related(author)
     url = pages.tags('author')[0].url if pages.tags('author') else None
     url = ' ( {} )'.format(url) if url else ''
@@ -185,6 +190,7 @@ def author(inp, author):
 @core.alias('ad')
 @guess_author
 def authordetails(inp, author):
+    """Generate detailed statistics about the author."""
     return stats.update_user(author)
 
 
@@ -229,6 +235,11 @@ def errors_vote():
 @core.command
 @core.multiline
 def errors(inp):
+    """
+    Dispay an error report.
+
+    Staff-only command.
+    """
     all_pages = []
 
     for name in ['untagged', 'untitled', 'deleted', 'vote', 'orphaned']:
@@ -252,6 +263,11 @@ def errors(inp):
 @core.cooldown(7200)
 @core.multiline
 def cleantitles(inp):
+    """
+    Remove orphaned scp titles from the series pages.
+
+    Staff-only command.
+    """
     yield lex.cleantitles.start
 
     pages = [
@@ -293,6 +309,7 @@ def cleantitles(inp):
 @core.command
 @parser.random
 def random(inp, **kwargs):
+    """Get a random page."""
     pages = find_pages(core.pages, **kwargs) if inp.text else core.pages
     if pages:
         return show_page(rand.choice(pages))
@@ -305,6 +322,7 @@ def random(inp, **kwargs):
 @core.cooldown(120)
 @core.multiline
 def lastcreated(inp, cooldown={}, **kwargs):
+    """Display most recently created pages."""
     kwargs = dict(
         body='title created_by created_at rating',
         order='created_at desc',
@@ -318,6 +336,7 @@ def lastcreated(inp, cooldown={}, **kwargs):
 @core.command
 @parser.unused
 def unused(inp, *, random, last, count, prime, palindrome, divisible):
+    """Get the first unused scp slot."""
     numbers = range(2, 3000)
 
     if prime:
@@ -350,6 +369,7 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible):
 
 @core.command
 def staff(inp, staff={}):
+    """Display a blurb for the given staff member."""
     if not inp.text:
         return 'http://www.scp-wiki.net/meet-the-staff'
 

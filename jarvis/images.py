@@ -209,6 +209,7 @@ def get_page_category(page):
 @core.alias('img')
 @parser.images
 def images(inp, mode, **kwargs):
+    """Image Team magic toolkit."""
     return images.dispatch(inp, mode, **kwargs)
 
 
@@ -216,6 +217,11 @@ def images(inp, mode, **kwargs):
 @images.subcommand('scan')
 @core.multiline
 def scan(inp, *, pages):
+    """
+    Scan wiki pages.
+
+    Finds all images in the specified pages and adds them to the index.
+    """
     cats = set()
     counter = 0
     for page in pages:
@@ -243,6 +249,7 @@ def scan(inp, *, pages):
 @images.subcommand('update')
 @targeted(1)
 def update(inp, *, images, url, page, source, status, notes):
+    """Update image records."""
     image = images[0]
     if url:
         image.url = url
@@ -255,7 +262,6 @@ def update(inp, *, images, url, page, source, status, notes):
             return lex.images.update.bad_status
         image.status = status
     if notes:
-        print(repr(image.notes))
         if image.notes:
             return lex.images.update.notes_conflict
         image.notes.append(notes)
@@ -268,6 +274,7 @@ def update(inp, *, images, url, page, source, status, notes):
 @core.multiline
 @targeted(5)
 def list_images(inp, *, images, terse):
+    """Display image records."""
     out = lex.images.list.terse if terse else lex.images.list.verbose
     yield from [
         out(url=i.url, page=i.page, source=i.source, status=i.status)
@@ -278,6 +285,7 @@ def list_images(inp, *, images, terse):
 @images.subcommand('notes')
 @targeted(1)
 def notes(inp, *, images, append, purge, list):
+    """Add, change, remove, or display image notes."""
     image = images[0]
 
     if append:
@@ -301,6 +309,7 @@ def notes(inp, *, images, append, purge, list):
 @images.subcommand('purge')
 @targeted()
 def purge(inp, *, images):
+    """Delete all records of the image from the index."""
     global IMAGES
     IMAGES = [i for i in IMAGES if i not in images]
     save_images(images[0].category, 'records purged', inp.user)
@@ -311,6 +320,7 @@ def purge(inp, *, images):
 @core.multiline
 @targeted(1)
 def search(inp, *, images):
+    """Return reverse-image-seach links for the image."""
     image = images[0]
     yield lex.images.search.tineye(url=image.url)
     yield lex.images.search.google(url=image.url)

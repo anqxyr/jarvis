@@ -4,6 +4,24 @@
 # Module Imports
 ###############################################################################
 
+import jinja2
+
+###############################################################################
+# Jinja2
+###############################################################################
+
+
+env = jinja2.Environment(
+    loader=jinja2.PackageLoader('jarvis', 'resources'))
+env.filters['hasattr'] = hasattr
+env.filters['filldict'] = lambda x, y: [
+    (k, v) if k else (y, v) for k, v in x.items()]
+
+
+def load_template(name, **kwargs):
+    template = env.get_template(name)
+    return template.render(**kwargs)
+
 
 ###############################################################################
 

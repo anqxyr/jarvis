@@ -50,6 +50,7 @@ class CommandWrapper:
 
         def inner(func):
             self._subcommands[mode] = func
+            func._parser = self._parser._subparsers[mode]
             return func
 
         return inner
@@ -78,6 +79,10 @@ class PositionalArgument:
         self.re = kwargs.get('re')
         self.type = kwargs.get('type')
         self.choices = kwargs.get('choices')
+
+        self.help = kwargs.get('help')
+        if self.help:
+            self.help = ' '.join([i.strip() for i in self.help.split('\n')])
 
     def __repr__(self):
         return '<{} name={}>'.format(self.__class__.__name__, repr(self.name))
@@ -339,64 +344,188 @@ def tell(pr):
 
 @parser
 def outbound(pr):
-    pr.add_argument('--purge', '-p', nargs='?', type=str.lower)
-    pr.add_argument('--echo', '-e')
+    pr.add_argument(
+        '--purge', '-p',
+        nargs='?',
+        type=str.lower,
+        help="""Purge outbound tells. If a username is specified, the command
+                will delete the tells sent to that user. Otherwise, all
+                outbound tells will be deleted.""")
+
+    pr.add_argument(
+        '--echo', '-e',
+        help="""Print all outbound tells. Full text and send time of each tell
+                will be displayed.""")
+
     pr.exclusive('purge', 'echo')
 
 
 @parser
 def seen(pr):
-    pr.add_argument('--first', '-f')
-    pr.add_argument('--total', '-t')
+    pr.add_argument(
+        '--first', '-f',
+        help="""Display the first recorded message said by the user.""")
+
+    pr.add_argument(
+        '--total', '-t',
+        help="""Display the total number of messages said by the user.""")
+
     pr.exclusive('first', 'total')
-    pr.add_argument('channel', re='#', nargs='?')
-    pr.add_argument('user', type=str.lower)
+
+    pr.add_argument(
+        'channel',
+        re='#',
+        nargs='?',
+        help="""Switch to another channel.""")
+
+    pr.add_argument(
+        'user',
+        type=str.lower,
+        help='Username to look for.')
 
 
 @parser
 def quote(pr):
-    pr.add_argument('channel', re='#', nargs='?')
+    pr.add_argument(
+        'channel',
+        re='#',
+        nargs='?',
+        help="""Switch to another channel.""")
+
+    ###########################################################################
 
     get = pr.subparser()
-    get.add_argument('user', re=r'.*[^\d].*', type=str.lower, nargs='?')
-    get.add_argument('index', type=int, nargs='?')
+
+    get.add_argument(
+        'user',
+        re=r'.*[^\d].*',
+        type=str.lower,
+        nargs='?',
+        help="""Find a quote by the given user.""")
+
+    get.add_argument(
+        'index',
+        type=int,
+        nargs='?',
+        help="""Get the quote at the given index.""")
+
+    ###########################################################################
 
     add = pr.subparser('add')
+
     add.add_argument(
-        'date', nargs='?', type=arrow.get, re=r'\d{4}-\d{2}-\d{2}')
-    add.add_argument('user', type=str.lower)
-    add.add_argument('message', nargs='+', action='join')
+        'date',
+        nargs='?',
+        type=arrow.get,
+        re=r'\d{4}-\d{2}-\d{2}',
+        help="""Override the quote creation time with the give date
+                in the YYYY-MM-DD format.""")
+
+    add.add_argument(
+        'user',
+        type=str.lower,
+        help="""Name of the user being quoted.""")
+
+    add.add_argument(
+        'message',
+        nargs='+',
+        action='join',
+        help="""Text of the quote.""")
+
+    ###########################################################################
 
     delete = pr.subparser('del')
-    delete.add_argument('user', type=str.lower)
-    delete.add_argument('message', nargs='+', action='join')
+
+    delete.add_argument(
+        'user',
+        type=str.lower,
+        help="""Name of the user whose quote is being deleted.""")
+
+    delete.add_argument(
+        'message',
+        nargs='+',
+        action='join',
+        help="""Text of the quote. The text must match the existing quote
+                exactly in order for the quote to be deleted.""")
 
 
 @parser
 def memo(pr):
-    pr.add_argument('channel', re='#', nargs='?')
+    pr.add_argument(
+        'channel',
+        re='#',
+        nargs='?',
+        help="""Switch to another channel.""")
 
-    pr.subparser().add_argument('user', type=str.lower)
+    pr.subparser().add_argument(
+        'user',
+        type=str.lower,
+        help="""Name of the user whose memo is being retrieved.""")
+
+    ###########################################################################
 
     add = pr.subparser('add')
-    add.add_argument('user', type=str.lower)
-    add.add_argument('message', nargs='+', action='join')
+
+    add.add_argument(
+        'user',
+        type=str.lower,
+        help="""Name of the user whose memo is being added.""")
+
+    add.add_argument(
+        'message',
+        nargs='+',
+        action='join',
+        help="""Text of the memo.""")
+
+    ###########################################################################
 
     append = pr.subparser('append')
-    append.add_argument('user', type=str.lower)
-    append.add_argument('message', nargs='+', action='join')
+
+    append.add_argument(
+        'user',
+        type=str.lower,
+        help="""Name of the user whose memo is being appended.""")
+
+    append.add_argument(
+        'message',
+        nargs='+',
+        action='join',
+        help="""Text to be appended to the memo.""")
+
+    ###########################################################################
 
     delete = pr.subparser('del')
-    delete.add_argument('user', type=str.lower)
-    delete.add_argument('message', nargs='+', action='join', type=str.lower)
+
+    delete.add_argument(
+        'user',
+        type=str.lower,
+        help="""Name of the user whose memeo is being deleted.""")
+
+    delete.add_argument(
+        'message',
+        nargs='+',
+        action='join',
+        type=str.lower,
+        help="""Text of the memo. The text must match the existing memo
+                exactly in order for the memo to be deleted.""")
+
+    ###########################################################################
 
     pr.subparser('count')
 
 
 @parser
 def rem(pr):
-    pr.add_argument('user', type=str.lower)
-    pr.add_argument('message', nargs='+', action='join')
+    pr.add_argument(
+        'user',
+        type=str.lower,
+        help="""Name of the user whose memo is being added.""")
+
+    pr.add_argument(
+        'message',
+        nargs='+',
+        action='join',
+        help="""Text of the memo.""")
 
 
 @parser
@@ -409,10 +538,24 @@ def topic(pr):
 
 @parser
 def alert(pr):
-    pr.add_argument('date', type=arrow.get, nargs='?')
-    pr.add_argument('span', re='(\d+[dhm])+')
+    pr.add_argument(
+        'date',
+        type=arrow.get,
+        nargs='?',
+        help="""Date in YYYY-MM-DD format.""")
+
+    pr.add_argument(
+        'span',
+        re='(\d+[dhm])+',
+        help="""Time to wait before the alert, for example 2d3h4m.""")
+
     pr.exclusive('date', 'span', required=True)
-    pr.add_argument('message', nargs='+', action='join')
+
+    pr.add_argument(
+        'message',
+        nargs='+',
+        action='join',
+        help="""Alert text.""")
 
 
 ###############################################################################
@@ -443,12 +586,34 @@ def search(pr):
 
 @parser
 def unused(pr):
-    pr.add_argument('--random', '-r')
-    pr.add_argument('--last', '-l')
-    pr.add_argument('--count', '-c')
-    pr.add_argument('--prime', '-p')
-    pr.add_argument('--palindrome', '-i')
-    pr.add_argument('--divisible', '-d', nargs=1, type=int)
+    pr.add_argument(
+        '--random', '-r',
+        help="""Return a random slot.""")
+
+    pr.add_argument(
+        '--last', '-l',
+        help='Return the last slot.')
+
+    pr.add_argument(
+        '--count', '-c',
+        help="""Return the number of matching slots.""")
+
+    pr.add_argument(
+        '--prime', '-p',
+        help="""Limit matches to prime-numbered slots.""")
+
+    pr.add_argument(
+        '--palindrome', '-i',
+        help="""Limit matches to slots whose number is a palindrome.""")
+
+    pr.add_argument(
+        '--divisible', '-d',
+        nargs=1,
+        type=int,
+        help="""Limit matches to slots divisible by a given number.
+                For example, '.unused -d 100' will return slots that
+                end wtih 00.""")
+
     pr.exclusive('random', 'last', 'count')
 
 
@@ -459,16 +624,39 @@ def unused(pr):
 
 @parser
 def showmore(pr):
-    pr.add_argument('index', nargs='?', type=int)
+    pr.add_argument(
+        'index',
+        nargs='?',
+        type=int,
+        help="""Index of the stored result you wish to see,
+                starting with 1.""")
 
 
 @parser
 def dice(pr):
     pr.add_argument(
-        'throws', nargs='+', re=r'(?i)[+-]?[0-9]*d([0-9]+|f)$', type=str.lower)
-    pr.add_argument('bonus', nargs='?', type=int)
-    pr.add_argument('text', nargs='*', action='join')
-    pr.add_argument('--expand', '-e')
+        'throws',
+        nargs='+',
+        re=r'(?i)[+-]?[0-9]*d([0-9]+|f)$',
+        type=str.lower,
+        help="""One or more dice throws to be calculated.""")
+
+    pr.add_argument(
+        'bonus',
+        nargs='?',
+        type=int,
+        help="""Bonus value to be added to or substracted from
+                the final result.""")
+
+    pr.add_argument(
+        'text',
+        nargs='*',
+        action='join',
+        help="""Description of the throw.""")
+
+    pr.add_argument(
+        '--expand', '-e',
+        help="""Display detailed information about each thrown die.""")
 
 
 @parser
@@ -526,40 +714,144 @@ def duckduckgo(pr):
 @parser
 def images(pr):
 
-    pr.subparser('scan').add_argument('pages', nargs='+')
+    pr.subparser('scan').add_argument(
+        'pages',
+        nargs='+',
+        help="""Names of pages to be scanned for unindexed images.""")
+
+    ###########################################################################
 
     update = pr.subparser('update')
-    update.add_argument('target')
-    update.add_argument('index', nargs='?', type=int)
-    update.add_argument('--url', '-u', nargs=1)
-    update.add_argument('--page', '-p', nargs=1)
-    update.add_argument('--source', '--origin', '-o', nargs=1)
+
     update.add_argument(
-        '--status', '-s', nargs='+', type=str.upper, action='join')
-    update.add_argument('--notes', '-n', nargs='+', action='join')
+        'target',
+        help="""Page name or image url indicating which image to target.""")
+
+    update.add_argument(
+        'index',
+        nargs='?',
+        type=int,
+        help="""For pages with multiple images,
+                index specifies which image to use.""")
+
+    update.add_argument(
+        '--url', '-u',
+        nargs=1,
+        help="""Update the url of the image. Useful when the image was
+                rehosted or reuploaded.""")
+
+    update.add_argument(
+        '--page', '-p',
+        nargs=1,
+        help="""Update the page on which the image resides.""")
+
+    update.add_argument(
+        '--source', '--origin', '-o',
+        nargs=1,
+        help="""Update the origin of the image. Should be a full valid url.""")
+
+    update.add_argument(
+        '--status', '-s',
+        nargs='+',
+        type=str.upper,
+        action='join',
+        help="""Update the image status.""")
+
+    update.add_argument(
+        '--notes', '-n',
+        nargs='+',
+        action='join',
+        help="""Add a note. Only addes one note, and only if no notes are
+                present already. If more notes needs to be added,
+                use .im notes instead.""")
+
+    ###########################################################################
 
     list_ = pr.subparser('list')
-    list_.add_argument('target')
-    list_.add_argument('index', nargs='?', type=int)
-    list_.add_argument('--terse', '-t')
+
+    list_.add_argument(
+        'target',
+        help="""Page name or image url indicating which image to target.""")
+
+    list_.add_argument(
+        'index',
+        nargs='?',
+        type=int,
+        help="""For pages with multiple images,
+                index specifies which image to use.""")
+
+    list_.add_argument(
+        '--terse', '-t',
+        help="""Do not show full urls.""")
+
+    ###########################################################################
 
     notes = pr.subparser('notes')
-    notes.add_argument('target')
-    notes.add_argument('index', nargs='?', type=int)
-    notes.add_argument('--append', '-a', nargs='+', action='join')
-    notes.add_argument('--purge', '-p')
-    notes.add_argument('--list', '-l')
+
+    notes.add_argument(
+        'target',
+        help="""Page name or image url indicating which image to target.""")
+
+    notes.add_argument(
+        'index',
+        nargs='?',
+        type=int,
+        help="""For pages with multiple images,
+                index specifies which image to use.""")
+
+    notes.add_argument(
+        '--append', '-a',
+        nargs='+',
+        action='join',
+        help="""Add a new note to the image.""")
+
+    notes.add_argument(
+        '--purge', '-p',
+        help="""Delete all notes from the record.""")
+
+    notes.add_argument(
+        '--list', '-l',
+        help="""Display all notes.""")
+
     notes.exclusive('append', 'purge', 'list')
 
+    ###########################################################################
+
     purge = pr.subparser('purge')
-    purge.add_argument('target')
-    purge.add_argument('index', nargs='?', type=int)
+
+    purge.add_argument(
+        'target',
+        help="""Page name or image url indicating which image to target.""")
+
+    purge.add_argument(
+        'index',
+        nargs='?',
+        type=int,
+        help="""For pages with multiple images,
+                index specifies which image to use.""")
+
+    ###########################################################################
 
     search = pr.subparser('search')
-    search.add_argument('target')
-    search.add_argument('index', nargs='?', type=int)
 
-    pr.subparser('stats').add_argument('category')
+    search.add_argument(
+        'target',
+        help="""Page name or image url indicating which image to target.""")
+
+    search.add_argument(
+        'index',
+        nargs='?',
+        type=int,
+        help="""For pages with multiple images,
+                index specifies which image to use.""")
+
+    ###########################################################################
+
+    pr.subparser('stats').add_argument(
+        'category',
+        help="""Name of the category for which to display the stats.""")
+
+    ###########################################################################
 
     pr.subparser('sync')
 
@@ -567,11 +859,17 @@ def images(pr):
     add.add_argument('url')
     add.add_argument('page', nargs='?')
 
+    ###########################################################################
+
     remove = pr.subparser('remove')
     remove.add_argument('page')
     remove.add_argument('images', nargs='+')
 
+    ###########################################################################
+
     pr.subparser('attribute').add_argument('page')
+
+    ###########################################################################
 
     claim = pr.subparser('claim')
     claim.add_argument('category')
