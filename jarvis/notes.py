@@ -395,7 +395,7 @@ def get_text_model(channel, user):
     return markovify.NewlineText(text)
 
 
-@core.command
+#@core.command
 @parser.gibber
 @core.crosschannel
 def gibber(inp, user):
