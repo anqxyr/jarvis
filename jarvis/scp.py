@@ -326,7 +326,7 @@ def lastcreated(inp, cooldown={}, **kwargs):
     kwargs = dict(
         body='title created_by created_at rating',
         order='created_at desc',
-        rating='>=-25',
+        rating='>=-15',
         limit=3)
     pages = core.wiki.list_pages(**kwargs)
     rating = inp.channel == core.config.irc.sssc
