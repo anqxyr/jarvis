@@ -230,7 +230,6 @@ def get_steam_game(steam_id, url=True):
     if 'data' not in data:
         return lex.steam.not_found
     data = data['data']
-    __import__('pprint').pprint(data)
     name = data['name']
     description = data['short_description']
     if 'price_overview' in data:
