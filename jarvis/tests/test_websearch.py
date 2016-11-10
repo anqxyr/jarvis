@@ -42,6 +42,10 @@ def test_youtube_mssing_likes():
         lex.youtube.result(title='Защитники - Официальный тизер!'))
 
 
+def test_youtube_curly_braces():
+    assert str(run('https://www.youtube.com/watch?v=DNNOeEDB19E'))
+
+
 ###############################################################################
 
 

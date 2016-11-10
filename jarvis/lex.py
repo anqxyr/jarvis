@@ -64,7 +64,12 @@ class Lexicon:
     def __str__(self):
         text = env.from_string(self._raw).render(**self.kwargs).strip()
         text = random.choice(text.split('\n')).replace('*', '\x02')
-        return text.strip().format(**self.kwargs)
+        text = text.strip()
+        try:
+            text = text.format(**self.kwargs)
+        except KeyError:
+            pass
+        return text
 
     @property
     def _raw(self):
@@ -89,6 +94,5 @@ env = jinja2.Environment()
 env.globals['lex'] = lex
 env.filters['bold'] = lambda x: '\x02{}\x02'.format(x)
 env.filters['shorten'] = textwrap.shorten
-env.filters['formatescape'] = lambda x: x.replace('{', '{{').replace('}', '}}')
 
 sys.modules[__name__] = lex
