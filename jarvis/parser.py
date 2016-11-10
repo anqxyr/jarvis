@@ -721,6 +721,16 @@ def duckduckgo(pr):
     pr.add_argument('query', nargs='+', action='join')
     pr.add_argument('--index', '-i', nargs=1, type=int)
 
+
+@parser
+def steam(pr):
+    pr.add_argument(
+        'title',
+        nargs='+',
+        action='join',
+        type=str.lower,
+        help="""Title of the game to search for.""")
+
 ###############################################################################
 # Images
 ###############################################################################

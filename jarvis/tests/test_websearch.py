@@ -110,6 +110,28 @@ def test_duckduckgo_showmore():
 ###############################################################################
 
 
+def test_steam_lookup_simple():
+    assert (
+        run('http://store.steampowered.com/app/418150') ==
+        lex.steam.result(name='The Madness of Little Emma'))
+
+
+def test_steam_lookup_not_found():
+    assert (
+        run('http://store.steampowered.com/app/999999999999') ==
+        lex.steam.not_found)
+
+
+def test_steam_simple():
+    assert run('.steam terraria') == lex.steam.result(name='Terraria')
+
+
+def test_steam_no_price():
+    assert str(run('.steam little emma demo'))
+
+###############################################################################
+
+
 def test_twitter_lookup_simple():
     assert (
         run('https://twitter.com/MeetAnimals/status/778453962970107904') ==
