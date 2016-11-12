@@ -438,7 +438,7 @@ def quote(pr):
 
     delete.add_argument(
         'user',
-        type=str.lower,
+        type=lambda x: x.lower().rstrip(',:'),
         help="""Name of the user whose quote is being deleted.""")
 
     delete.add_argument(
@@ -498,7 +498,7 @@ def memo(pr):
 
     delete.add_argument(
         'user',
-        type=str.lower,
+        type=lambda x: x.lower().rstrip(',:'),
         help="""Name of the user whose memeo is being deleted.""")
 
     delete.add_argument(
