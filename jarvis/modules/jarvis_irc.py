@@ -61,7 +61,7 @@ def refresh(bot):
 
 @sopel.module.interval(28800)
 def tweet(bot):
-    jarvis.tools.tweet()
+    jarvis.tools.post_on_twitter()
 
 
 @sopel.module.event('JOIN')

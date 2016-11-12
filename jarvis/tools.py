@@ -6,6 +6,7 @@
 ###############################################################################
 
 import arrow
+import functools
 import random
 import tweepy
 
@@ -211,50 +212,84 @@ def updatehelp():
 
 
 ###############################################################################
+# Twitter Announcements
+###############################################################################
 
 
-def tweet():
-    twitter = core.config.twitter
-    auth = tweepy.OAuthHandler(twitter.key, twitter.secret)
-    auth.set_access_token(twitter.token, twitter.token_secret)
+@functools.lru_cache()
+def _get_twitter_api():
+    tw = core.config.twitter
+    auth = tweepy.OAuthHandler(tw.key, tw.secret)
+    auth.set_access_token(tw.token, tw.token_secret)
+    return tweepy.API(auth)
 
-    api = tweepy.API(auth)
 
-    timeline = api.user_timeline(count=100)
-    timeline = [i for i in timeline if i.source == twitter.name]
+def _get_new_article(pages):
+    """
+    Get random new tale or scp article.
 
-    def pages(tag, rating, age):
-        urls = [i.entities['urls'][0]['expanded_url'] for i in timeline]
-        pages = [p for p in core.pages if p.url not in urls]
-        pages = [p for p in pages if tag in p.tags and p.rating >= rating]
-        date = arrow.now().replace(days=-int(age[1:])).format('YYYY-MM-DD')
-        if age.startswith('>'):
-            pages = [p for p in pages if date > p.created]
-        elif age.startswith('<'):
-            pages = [p for p in pages if date < p.created]
-        return pages
+    Return random article yonger than 30 days, with rating of at least
+    40 points for a skip and 20 points for a tale.
+    """
+    date = arrow.now().replace(days=-30).format('YYYY-MM-DD')
+    pages = [p for p in pages if p.created > date]
 
-    queue = {
-        lex.tweet.new_scp: pages('scp', 40, '<30'),
-        lex.tweet.new_tale: pages('tale', 20, '<30')}
+    skips = [p for p in pages if 'scp' in p.tags and p.rating >= 40]
+    tales = [p for p in pages if 'tale' in p.tags and p.rating >= 20]
+    pages = skips + tales
 
-    now = arrow.now().replace
+    return random.choice(pages) if pages else None
 
-    rpages = [i for i in timeline if i.text.startswith('Random SCP')]
-    rpages = [i for i in rpages if i.created_at > now(days=-7).naive]
-    if not rpages:
-        queue[lex.tweet.random_scp] = pages('scp', 120, '>180')
 
-    rpages = [i for i in timeline if i.text.startswith('Random tale')]
-    rpages = [i for i in rpages if i.created_at > now(days=-2).naive]
-    if not rpages:
-        queue[lex.tweet.random_tale] = pages('tale', 60, '>180')
+def _get_old_article(pages, scp=True):
+    """Get random old tale or scp article."""
+    date = arrow.now().replace(days=-180).format('YYYY-MM-DD')
+    pages = [p for p in pages if p.created < date]
+    pages = [p for p in pages if ('scp' if scp else 'tale') in p.tags]
+    pages = [p for p in pages if p.rating >= (120 if scp else 60)]
+    return random.choice(pages)
 
-    for k, v in queue.items():
-        if not v:
-            continue
-        page = random.choice(v)
-        attr = page.build_attribution_string(
-            templates=lex.tweet.attribution._raw)
-        api.update_status(str(k(page=page, attr=attr)))
+
+def _get_post_data(api):
+    tweets = api.user_timeline(count=100)
+    tweets = [i for i in tweets if i.source == core.config.twitter.name]
+    urls = [i.entities['urls'] for i in tweets]
+    urls = [i[0]['expanded_url'] for i in urls if i]
+    posted = [p for p in core.pages if p.url in urls]
+    not_posted = [p for p in core.pages if p not in posted]
+
+    new = _get_new_article(not_posted)
+    if new:
+        # post new articles if there are any
+        return (lex.post_on_twitter.new, new)
+
+    if tweets and tweets[0].created_at == arrow.now().naive:
+        # if we posted an old article today already, don't post anything
+        return None
+
+    if any('scp' in p.tags for p in posted[:2]):
+        # post tale, tale, tale, scp, tale, tale, tale, scp, tale...
+        old = _get_old_article(not_posted, scp=False)
+    else:
+        old = _get_old_article(not_posted, scp=True)
+    return (lex.post_on_twitter.old, old)
+
+
+def post_on_twitter():
+    api = _get_twitter_api()
+    result = _get_post_data(api)
+
+    if not result:
         return
+
+    text, page = result
+    attr = page.build_attribution_string(
+        templates=lex.post_on_twitter.attribution._raw)
+    text = str(text(page=page, attr=attr))
+
+    try:
+        api.update_status(text)
+        core.log.info('Tweet: ' + page.name)
+    except Exception as e:
+        core.log.exception(e)
+        raise e

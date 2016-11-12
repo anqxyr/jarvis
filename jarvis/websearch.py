@@ -9,7 +9,6 @@ import bs4
 import googleapiclient.discovery
 import googleapiclient.errors
 import requests
-import tweepy
 import wikipedia as wiki
 import functools
 
@@ -191,10 +190,7 @@ def imdb(inp, *, title, search, imdbid, year):
 
 @core.rule(r'https?://twitter.com/[^/]+/status/([0-9]+)')
 def twitter_lookup(inp):
-    tw = core.config.twitter
-    auth = tweepy.OAuthHandler(tw.key, tw.secret)
-    auth.set_access_token(tw.token, tw.token_secret)
-    api = tweepy.API(auth)
+    api = tools._get_twitter_api()
 
     tweet = api.get_status(inp.text)
     return lex.twitter_lookup(

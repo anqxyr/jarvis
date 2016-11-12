@@ -330,16 +330,14 @@ silly:
         http://bit.ly/1Z7bi2z
         marp
 reloadtitles: All titles are fresh and shiny now.
-tweet:
+post_on_twitter:
     attribution:
         author: "{user}"
         rewrite: "{user}"
         translation: "{user}"
         maintainer: "{user}"
-    new_scp: New SCP article - {page.title} by {attr}. {page.url}
-    new_tale: New tale - {page.title} by {attr}. {page.url}
-    random_scp: Random SCP article - {page.title} by {attr}. {page.url}
-    random_tale: Random tale - {page.title} by {attr}. {page.url}
+    new: New article - {page.title} by {attr}. {page.url}
+    old: Random article - {page.title} by {attr}. {page.url}
 ###############################################################################
 # Websearch
 ###############################################################################

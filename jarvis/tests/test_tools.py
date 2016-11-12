@@ -5,8 +5,9 @@
 # Module Imports
 ###############################################################################
 
+import uuid
 
-from jarvis import tools, lex
+from jarvis import tools, lex, core
 from jarvis.tests.utils import run
 
 
@@ -76,3 +77,43 @@ def test_dice_tail_garbage():
 ###############################################################################
 # Misc
 ###############################################################################
+
+
+###############################################################################
+# Twitter
+###############################################################################
+
+
+def test_twitter_get_new_article():
+    page = tools._get_new_article(core.pages)
+    if not page:
+        return
+    assert 'scp' in page.tags or 'tale' in page.tags
+    if 'scp' in page.tags:
+        assert page.rating >= 40
+    if 'tale' in page.tags:
+        assert page.rating >= 20
+
+
+def test_twitter_get_old_article():
+    page = tools._get_old_article(core.pages)
+    if not page:
+        return
+    assert 'scp' in page.tags or 'tale' in page.tags
+    if 'scp' in page.tags:
+        assert page.rating >= 120
+    if 'tale' in page.tags:
+        assert page.rating >= 60
+
+
+def test_twitter_post_tweet():
+    uuid_text = str(uuid.uuid4())
+    api = tools._get_twitter_api()
+
+    api.update_status(uuid_text)
+    tweet = api.user_timeline(count=5)[0]
+    assert tweet.text == uuid_text
+
+
+def test_post_on_twitter():
+    tools.post_on_twitter()
