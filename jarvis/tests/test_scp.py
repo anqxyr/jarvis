@@ -49,8 +49,12 @@ def test_authordetails_showmore():
 ###############################################################################
 
 
-def test_scp_lookup():
-    assert run('scp-1200')
+def test_scp_lookup_simple():
+    assert run('scp-1200') == lex.show_page.summary
+
+
+def test_scp_lookup_not_found():
+    assert run('scp-7548') == lex.not_found.page
 
 
 ###############################################################################
