@@ -220,7 +220,7 @@ quote:
         Consider it done.
         Yeah, yeah, okay, I'll do it.
         Hahahahaha yeah alright I'll do it.
-        I will remember it untils the stars themselves turn cold and die.
+        I will remember it until the stars themselves turn cold and die.
     get: |-
         [{index}/{total}] {time} {user}: {text}
     already_exists: Thanks, but I already have one of those.
@@ -228,17 +228,7 @@ quote:
     not_found: I can't delete something I don't have.
     deleted: I have a feeling I forgot something important, but I can't remember what.
 memo:
-    added: |-
-        Anything for you, you funny human.
-        I'm on it, boss.
-        I will do it.
-        I'll do it, meatbag.
-        Just because I have to do this, doesn't mean I enjoy it.
-        I shall follow your orders, товарищ.
-        Consider it done.
-        Yeah, yeah, okay, I'll do it.
-        Hahahahaha yeah alright I'll do it.
-        I will remember it untils the stars themselves turn cold and die.
+    added: "{{ lex.quote.added }}"
     get: "{text}"
     already_exists: Thanks, but I already have one of those.
     not_found: There are no memos matching your criteria.
