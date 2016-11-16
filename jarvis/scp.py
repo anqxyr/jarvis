@@ -164,9 +164,9 @@ def tags(inp):
 def name_lookup(inp):
     pages = [p for p in core.pages if p.name == inp.text.lower()]
     if not pages:
-        pages = ext.PageView(core.wiki.list_pages(
+        pages = list(core.wiki.list_pages(
             body='title created_by created_at rating tags', category='*',
-            created_at='last 2 hours'))
+            name=inp.text.lower()))
     return show_search_results(inp, pages)
 
 
