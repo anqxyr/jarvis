@@ -336,9 +336,7 @@ class ArgumentError(Exception):
 
 @parser
 def tell(pr):
-    pr.add_argument('topic', re='@.+', type=lambda x: x.lstrip('@'), nargs='?')
     pr.add_argument('user', type=lambda x: x.lower().rstrip(':,'))
-    pr.exclusive('user', 'topic', required=True)
     pr.add_argument('message', nargs='+', action='join')
 
 

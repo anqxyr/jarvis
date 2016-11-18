@@ -39,31 +39,20 @@ def logevent(inp):
 
 @core.command
 @parser.tell
-def tell(inp, *, user, topic, message):
+def tell(inp, *, user, message):
     """
     Send messages to other users.
 
     Saves the message and delivers them to the target next time they're in
-    the same channel with the bot. The target is either a single user, or a
-    tell topic. In the later case, all users subscribed to the topic at the
-    moment the tell it sent will recieve the message.
+    the same channel with the bot.
     """
-    if topic:
-        users = [i.user for i in db.Subscriber.find(topic=topic)]
-        if not users:
-            return lex.topic.no_subscribers
-    else:
-        users = [user]
-
-    data = dict(
+    db.Tell.create(
+        recipient=user,
         sender=inp.user,
         text=message,
         time=arrow.utcnow().timestamp,
-        topic=topic)
-    db.Tell.insert_many(dict(recipient=i, **data) for i in users).execute()
+        topic=None)
 
-    if topic:
-        return lex.topic.send(count=len(users))
     return lex.tell.send
 
 
@@ -82,19 +71,10 @@ def get_tells(inp):
 
     for tell in tells:
 
-        time = arrow.get(tell.time).humanize()
-
-        if tell.topic:
-            yield lex.topic.get(
-                name=tell.sender,
-                time=time,
-                topic=tell.topic,
-                text=tell.text)
-        else:
-            yield lex.tell.get(
-                name=tell.sender,
-                time=time,
-                text=tell.text)
+        yield lex.tell.get(
+            name=tell.sender,
+            time=arrow.get(tell.time).humanize(),
+            text=tell.text)
 
 
 @core.command
