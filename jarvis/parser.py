@@ -336,8 +336,17 @@ class ArgumentError(Exception):
 
 @parser
 def tell(pr):
-    pr.add_argument('user', type=lambda x: x.lower().rstrip(':,'))
-    pr.add_argument('message', nargs='+', action='join')
+    pr.add_argument(
+        'user',
+        type=lambda x: x.lower().rstrip(':,'),
+        re=r'(?i)\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z',
+        help="""IRC username of the user to whom the message is intended.""")
+
+    pr.add_argument(
+        'message',
+        nargs='+',
+        action='join',
+        help="""Text of the message.""")
 
 
 @parser
@@ -527,14 +536,6 @@ def rem(pr):
 
 
 @parser
-def topic(pr):
-    pr.add_argument('action', choices=[
-        'list', 'subscribe', 'unsubscribe', 'sub', 'unsub',
-        'restrict', 'unrestrict', 'res', 'unres'])
-    pr.add_argument('topic', nargs='?')
-
-
-@parser
 def alert(pr):
     pr.add_argument(
         'date',
@@ -578,15 +579,69 @@ def gibber(pr):
 
 @parser
 def random(pr):
-    pr.add_argument('title', nargs='*', type=str.lower)
-    pr.add_argument('--exclude', '-e', nargs='+', type=str.lower)
-    pr.add_argument('--strict', '-s', nargs='+', type=str.lower)
-    pr.add_argument('--tags', '-t', nargs='+', action='join', type=str.lower)
-    pr.add_argument('--author', '-a', nargs='+', action='join', type=str.lower)
-    pr.add_argument('--rating', '-r', re=r'([><=]?\d+)|(\d+\.\.\d+)', nargs=1)
-    pr.add_argument('--created', '-c', nargs=1)
     pr.add_argument(
-        '--fullname', '-f', nargs='+', action='join', type=str.lower)
+        'title',
+        nargs='*',
+        type=str.lower,
+        help="""Search for pages whose title contains the given words.""")
+
+    pr.add_argument(
+        '--exclude', '-e',
+        nargs='+',
+        type=str.lower,
+        help="""Exclude pages whose title contains the given words.""")
+
+    pr.add_argument(
+        '--strict', '-s',
+        nargs='+',
+        type=str.lower,
+        help="""An analogue of the [title] argument with strict
+                word matching. Unlike the former, specifying '--strict part'
+                will *not* return matches whose title contains 'particle'.""")
+
+    pr.add_argument(
+        '--tags', '-t',
+        nargs='+',
+        action='join',
+        type=str.lower,
+        help="""Limit results to pages with specified tags.
+                Follows the normal +/- wikidot tag notation.""")
+
+    pr.add_argument(
+        '--author', '-a',
+        nargs='+',
+        action='join',
+        type=str.lower,
+        help="""Limit results to pages written by the specified user.
+                Rewrites are supported. Unlike .au, this argument does not
+                attempt to divine the name of the user based on a partial
+                input. Full exact case-insensitive wikidot username must
+                be provided.""")
+
+    pr.add_argument(
+        '--rating', '-r',
+        re=r'([><=]?\d+)|(\d+\.\.\d+)',
+        nargs=1,
+        help="""Limit results to pages with the specified rating. Supports
+                exact ratings (20, =20); ratings above or below a given value
+                (>100, <-10); or a range of ratings (20..50).""")
+
+    pr.add_argument(
+        '--created', '-c',
+        nargs=1,
+        help="""Limit results to pages created on the given date. Dates must
+                follow the YYYY-MM-DD format. Partial dates are supported:
+                specifying -c 2014-01 will return only pages created in
+                January of 2014. Dates before or after (>2012 or <2015-10-05);
+                as well as date ranges (2013-02-10..2013-02-20) are
+                likewise supported.""")
+
+    pr.add_argument(
+        '--fullname', '-f',
+        nargs='+',
+        action='join',
+        type=str.lower,
+        help="""Find a page by exact full name.""")
 
 
 @parser
@@ -594,7 +649,10 @@ def search(pr):
     # search and random are almost the same
     # except search has one more argument
     random.__wrapped__(pr)
-    pr.add_argument('--summary', '-u')
+    pr.add_argument(
+        '--summary', '-u',
+        help="""Instead of showing the results of the search, output summary
+                information about the found pages.""")
 
 
 @parser
@@ -684,40 +742,95 @@ def help(pr):
 
 @parser
 def websearch(pr):
-    pr.add_argument('query', nargs='+', action='join')
+    pr.add_argument(
+        'query',
+        nargs='+',
+        action='join',
+        help="""Terms for which you wish to search.""")
 
 
 @parser
 def google(pr):
-    pr.add_argument('query', nargs='+', action='join')
-    pr.add_argument('--index', '-i', nargs=1, type=int)
+    pr.add_argument(
+        'query',
+        nargs='+',
+        action='join',
+        help="""Your search query.""")
+
+    pr.add_argument(
+        '--index', '-i',
+        nargs=1,
+        type=int,
+        help="""Number of the result to show, between 1 and 10.""")
 
 
 @parser
 def youtube(pr):
-    pr.add_argument('query', nargs='+', action='join')
-    pr.add_argument('--index', '-i', nargs=1, type=int)
+    pr.add_argument(
+        'query',
+        nargs='+',
+        action='join',
+        help="""Your search query.""")
+
+    pr.add_argument(
+        '--index', '-i',
+        nargs=1,
+        type=int,
+        help="""Number of the result to show, between 1 and 10.""")
 
 
 @parser
 def translate(pr):
-    pr.add_argument('lang')
-    pr.add_argument('query', nargs='+', action='join')
+    pr.add_argument(
+        'lang',
+        help="""Langauge codes for source and target language. For example,
+                specifying ru-fr will translate your text from Russian into
+                French. The source language can be optionally omitted.""")
+
+    pr.add_argument(
+        'query',
+        nargs='+',
+        action='join',
+        help="""Text you wish to translate.""")
 
 
 @parser
 def imdb(pr):
-    pr.add_argument('title', nargs='+', action='join')
-    pr.add_argument('--search', '-s', nargs='+', action='join')
-    pr.add_argument('--imdbid', '-i', nargs=1)
+    pr.add_argument(
+        'title',
+        nargs='+',
+        action='join',
+        help="""Exact title of a movie or tv show.""")
+    pr.add_argument(
+        '--search', '-s',
+        nargs='+',
+        action='join',
+        help="""Search for movies whose title contains the specified words.""")
+    pr.add_argument(
+        '--imdbid', '-i',
+        nargs=1,
+        help="""Show the movie with the given imdb id.""")
     pr.exclusive('title', 'search', 'imdbid')
-    pr.add_argument('--year', '-y', nargs=1, type=int)
+    pr.add_argument(
+        '--year', '-y',
+        nargs=1,
+        type=int,
+        help="""Limit results to those released in the specified year.""")
 
 
 @parser
 def duckduckgo(pr):
-    pr.add_argument('query', nargs='+', action='join')
-    pr.add_argument('--index', '-i', nargs=1, type=int)
+        pr.add_argument(
+        'query',
+        nargs='+',
+        action='join',
+        help="""Your search query.""")
+
+    pr.add_argument(
+        '--index', '-i',
+        nargs=1,
+        type=int,
+        help="""Number of the result to show, between 1 and 30.""")
 
 
 @parser
