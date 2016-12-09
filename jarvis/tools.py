@@ -241,7 +241,8 @@ def _get_new_article(pages):
 
     skips = [p for p in pages if 'scp' in p.tags and p.rating >= 40]
     tales = [p for p in pages if 'tale' in p.tags and p.rating >= 20]
-    pages = skips + tales
+    goi = [p for p in pages if 'goi-format' in p.tags and p.rating >= 20]
+    pages = skips + tales + goi
 
     return random.choice(pages) if pages else None
 
@@ -250,8 +251,13 @@ def _get_old_article(pages, scp=True):
     """Get random old tale or scp article."""
     date = arrow.now().replace(days=-180).format('YYYY-MM-DD')
     pages = [p for p in pages if p.created < date]
-    pages = [p for p in pages if ('scp' if scp else 'tale') in p.tags]
-    pages = [p for p in pages if p.rating >= (120 if scp else 60)]
+    if scp:
+        pages = [p for p in pages if 'scp' in p.tags]
+        pages = [p for p in pages if p.rating >= 120]
+    else:
+        pages = [
+            p for p in pages if 'tale' in p.tags or 'goi-format' in p.tags]
+        pages = [p for p in pages if p.rating >= 60]
     return random.choice(pages)
 
 
