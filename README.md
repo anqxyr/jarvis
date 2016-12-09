@@ -1,5 +1,4 @@
 # jarvis
-[![GitHub tag](https://img.shields.io/github/tag/anqxyr/jarvis.svg?maxAge=2592000)]()
 [![Build Status](https://travis-ci.org/anqxyr/jarvis.svg?branch=master)](https://travis-ci.org/anqxyr/jarvis)
 [![Coverage Status](http://img.shields.io/coveralls/anqxyr/jarvis.svg)](https://coveralls.io/r/anqxyr/jarvis)
 [![Python version](https://img.shields.io/badge/python-3.4-blue.svg)]()
@@ -8,6 +7,12 @@
 IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 ## Changelog
+
+### 1.1.1
+
+* Large number of new commands in the websearch module.
+* Updated dynamic help page generation.
+* Bugfixes.
 
 ### 1.1
 
