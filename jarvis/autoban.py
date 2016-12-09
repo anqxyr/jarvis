@@ -62,6 +62,7 @@ def ban_user(inp, target, length):
 @core.require(channel=core.config.irc.sssc)
 @core.command
 def updatebans(inp):
+    """Update the ban list."""
     global BANS
     try:
         BANS = get_ban_list()

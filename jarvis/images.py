@@ -333,6 +333,7 @@ def search(inp, *, images):
 
 @images.subcommand('stats')
 def stats(inp, *, category):
+    """Show review statistics for an image category."""
     images = [i for i in IMAGES if i.category == category]
     return lex.images.stats(
         count=len(images),
@@ -343,6 +344,11 @@ def stats(inp, *, category):
 @core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('sync')
 def sync(inp):
+    """
+    Reload image index.
+
+    Useful when the index page had to be manually edited for any reason.
+    """
     load_images()
     return lex.images.sync
 
@@ -350,6 +356,17 @@ def sync(inp):
 @core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('add')
 def add(inp, *, url, page):
+    """
+    Add image to the index.
+
+    This subcommand is to be used when only when 'scan' is not applicable,
+    such as in situation where the image have been taken down from the page
+    before being added to the index.
+
+    If the image is properly uploaded to the page, jarvis should be able
+    to determine the page it belongs to based solely on image url. Otherwise,
+    name of the image's parent page must be supplied.
+    """
     if not page:
         page = re.search(r'scp-wiki.wdfiles.com/local--files/([^/]+)/', url)
         if not page:
@@ -387,6 +404,20 @@ def remove_image_component(source, image_url):
 @images.subcommand('remove')
 @core.multiline
 def remove(inp, *, page, images):
+    """
+    Remove an image from the page.
+
+    Edits the page to remove the image code from the page source. If the image
+    is uploaded to the page, the image file itself will not and should not
+    be deleted.
+
+    Additionally, jarvis will automatically announce image removal via a
+    discussion post, and send wikidot PMs to all authors of the page.
+
+    When using this command, please visually confirm afterwards that no
+    elements of the page except the image were removed, and that the
+    formatting of the page is unaffected by the removal.
+    """
     page = scpwiki(page)
 
     source = page.source
@@ -417,6 +448,14 @@ def remove(inp, *, page, images):
 @core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('attribute')
 def attribute(inp, *, page):
+    """
+    Attribute page images.
+
+    Jarvis will make a post in the page's discussion thread, attributing all
+    applicable indexed images found on the page to their respective sources.
+    The text of the attributions is based on the license of the image. Public
+    Domain images are not attributed.
+    """
     messages = []
     url = core.wiki(page).url
     images = [i for i in IMAGES if i.page == url]
@@ -453,6 +492,12 @@ def attribute(inp, *, page):
 @core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('claim')
 def claim(inp, *, category, purge):
+    """
+    Reserve image category.
+
+    Adds a note on the index page indicating that the particular image
+    category is being reviewed by the specific user.
+    """
     if not [i for i in IMAGES if i.category == category]:
         return lex.images.claim.unknown_category
     if not purge:

@@ -117,3 +117,7 @@ def test_twitter_post_tweet():
 
 def test_post_on_twitter():
     tools.post_on_twitter()
+
+
+def test_updatehelp():
+    assert str(run('.updatehelp'))

@@ -201,14 +201,19 @@ def reloadtitles(inp):
 ###############################################################################
 
 
-#@core.command
-#@core.require(channel=core.config.irc.sssc)
-#def updatehelp(inp):
-def updatehelp():
+@core.command
+@core.require(channel=core.config.irc.sssc)
+def updatehelp(inp):
+    """
+    Update the help page.
+
+    Staff-only command.
+    """
     funcs = sorted(
         {v for k, v in core.COMMANDS.items()}, key=lambda x: x.__name__)
-    core.stats_wiki('help-test').create(
+    core.stats_wiki('jarvis').create(
         utils.load_template('help.template', funcs=funcs), 'Help Test')
+    return lex.updatehelp.finished
 
 
 ###############################################################################

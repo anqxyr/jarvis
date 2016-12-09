@@ -200,6 +200,7 @@ def get_quote(inp, *, user, index):
 
 @quote.subcommand('add')
 def add_quote(inp, *, date, user, message):
+    """Add new quote."""
     if db.Quote.find_one(user=user, channel=inp.channel, text=message):
         return lex.quote.already_exists
 
@@ -214,6 +215,13 @@ def add_quote(inp, *, date, user, message):
 
 @quote.subcommand('del')
 def delete_quote(inp, *, user, message):
+    """
+    Delete quote.
+
+    Deletion requires the full text of the quote in order to prevent
+    accidental deletions, as well as to provide an additional copy of the
+    deleted memo for the logs.
+    """
     quote = db.Quote.find_one(user=user, channel=inp.channel, text=message)
 
     if not quote:
@@ -320,6 +328,7 @@ def count_memos(inp):
 @core.command
 @parser.rem
 def rem(inp, *, user, message):
+    """Shorthand for '!memo add'."""
     if inp.channel not in core.config.irc.noquotes:
         return add_memo(inp, user=user, message=message)
 

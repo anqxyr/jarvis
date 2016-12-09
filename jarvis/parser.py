@@ -252,7 +252,8 @@ class ArgumentParser:
             self.add_argument(
                 'mode',
                 nargs='?' if mode is None else 1,
-                choices=[mode], type=str.lower)
+                choices=[mode], type=str.lower,
+                help="""Name of the subcommand to execute.""")
         else:
             mode_arg = next(i for i in self._args if i.name == 'mode')
             mode_arg.choices.append(mode)
@@ -425,7 +426,7 @@ def quote(pr):
         nargs='?',
         type=arrow.get,
         re=r'\d{4}-\d{2}-\d{2}',
-        help="""Override the quote creation time with the give date
+        help="""Override the quote creation time with the given date
                 in the YYYY-MM-DD format.""")
 
     add.add_argument(
@@ -750,6 +751,15 @@ def websearch(pr):
 
 
 @parser
+def dictionary(pr):
+    pr.add_argument(
+        'query',
+        nargs='+',
+        action='join',
+        help="""A word or a phrase.""")
+
+
+@parser
 def google(pr):
     pr.add_argument(
         'query',
@@ -992,21 +1002,43 @@ def images(pr):
     pr.subparser('sync')
 
     add = pr.subparser('add')
-    add.add_argument('url')
-    add.add_argument('page', nargs='?')
+
+    add.add_argument(
+        'url',
+        help="""Full url of the image.""")
+
+    add.add_argument(
+        'page',
+        nargs='?',
+        help="""Name of the parent page.""")
 
     ###########################################################################
 
     remove = pr.subparser('remove')
-    remove.add_argument('page')
-    remove.add_argument('images', nargs='+')
+
+    remove.add_argument(
+        'page',
+        help="""Name of the page.""")
+
+    remove.add_argument(
+        'images',
+        nargs='+',
+        help="""Full urls of all the images that must be removed.""")
 
     ###########################################################################
 
-    pr.subparser('attribute').add_argument('page')
+    pr.subparser('attribute').add_argument(
+        'page',
+        help="""Name of the page to be attributed.""")
 
     ###########################################################################
 
     claim = pr.subparser('claim')
-    claim.add_argument('category')
-    claim.add_argument('--purge', '-p')
+
+    claim.add_argument(
+        'category',
+        help="""Name of the category.""")
+
+    claim.add_argument(
+        '--purge', '-p',
+        help="""Delete claim.""")

@@ -58,6 +58,7 @@ def googleapi(api, version, method, _container='items', **kwargs):
 @parser.google
 @indexed_cache
 def google(query):
+    """Ask the wise and all-knowing Google."""
     results = googleapi(
         'customsearch', 'v1', 'cse',
         q=query, cx=core.config.google.cseid, num=10)
@@ -79,6 +80,7 @@ def google(query):
 @parser.google
 @indexed_cache
 def gis(query):
+    """Search for images."""
     results = googleapi(
         'customsearch', 'v1', 'cse',
         q=query, cx=core.config.google.cseid, searchType='image',
@@ -101,6 +103,7 @@ def gis(query):
 @parser.youtube
 @indexed_cache
 def youtube(query):
+    """Search youtube for stuff."""
     results = googleapi(
         'youtube', 'v3', 'search',
         q=query, maxResults=10, part='id', type='video')
@@ -165,6 +168,7 @@ def translate(inp, *, lang, query):
 @core.command
 @parser.imdb
 def imdb(inp, *, title, search, imdbid, year):
+    """Look up information about a movie."""
     params = dict(t=title, s=search, i=imdbid, y=year, plot='short', r='json')
     params = {k: v for k, v in params.items() if v}
     response = requests.get('http://www.omdbapi.com/', params=params).json()
@@ -204,6 +208,7 @@ def twitter_lookup(inp):
 @parser.duckduckgo
 @indexed_cache
 def duckduckgo(query):
+    """Ask the ducks if they know anything about the topic."""
     response = requests.get(
         'https://duckduckgo.com/html/', params={'q': query})
     soup = bs4.BeautifulSoup(response.text, 'html.parser')
@@ -268,6 +273,7 @@ def steam(inp, title, _cache={}):
 @core.alias('w')
 @parser.websearch
 def wikipedia(inp, *, query):
+    """Get wikipedia page about the topic."""
     try:
         page = wiki.page(query)
     except wiki.exceptions.PageError:
@@ -282,8 +288,9 @@ def wikipedia(inp, *, query):
 
 @core.command
 @core.alias('define')
-@parser.websearch
+@parser.dictionary
 def dictionary(inp, *, query):
+    """Look up dictionary definition of a word or a phrase."""
     url = 'http://ninjawords.com/' + query
     soup = bs4.BeautifulSoup(requests.get(url).text, 'lxml')
     word = soup.find(class_='word')
@@ -307,6 +314,7 @@ def dictionary(inp, *, query):
 @core.command
 @parser.websearch
 def urbandictionary(inp, *, query):
+    """Show urban defitiontion of a word or a phrase."""
     url = 'http://api.urbandictionary.com/v0/define?term=' + query
     data = requests.get(url).json()
     if not data['list']:
@@ -318,6 +326,7 @@ def urbandictionary(inp, *, query):
 @core.command
 @parser.websearch
 def tvtropes(inp, *, query):
+    """Show laconic description of the trope, and a link to the full page."""
     query = query.title().replace(' ', '')
     baseurl = 'http://tvtropes.org/{}/' + query
     url = baseurl.format('Laconic')

@@ -330,6 +330,8 @@ silly:
         http://bit.ly/1Z7bi2z
         marp
 reloadtitles: All titles are fresh and shiny now.
+updatehelp:
+    finished: Done.
 post_on_twitter:
     attribution:
         author: "{user}"

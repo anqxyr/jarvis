@@ -3,6 +3,7 @@ h2 {
     color: blue;
 }
 .doc {
+    width: 50%;
 }
 .usage {
     font-family: monospace;
@@ -27,6 +28,8 @@ h2 {
     display: inline-block;
     margin: -10px 0px;
     width: 70%;
+    font-family: monospace;
+    font-size: 0.8rem;
     font-style: italic;
 }
 [[/module]]
@@ -37,7 +40,7 @@ h2 {
 {% for f in funcs %}
 ++ {{ f.__name__ }}
 [[div class="doc"]]
-{{ f.__doc__ }}
+{{ f.__doc__|unwrap }}
 [[/div]]
 
 {% if f|hasattr('_parser') %}
@@ -54,7 +57,7 @@ h2 {
     {% endif %}
     [[/div]]
     [[div class="arg-help"]]
-    {{ arg.help }}
+    @@{{ arg.help|unwrap }}@@
     [[/div]]
 {% endfor %}
 [[/div]]
@@ -64,7 +67,7 @@ h2 {
 {% for subname, subfunc in f._subcommands|filldict('-default-')|sort %}
 +++ {{ subname }}
 [[div class="doc"]]
-{{ subfunc.__doc__ }}
+{{ subfunc.__doc__|unwrap }}
 [[/div]]
 
 {% set subparser = subfunc._parser %}
@@ -83,7 +86,7 @@ h2 {
     {% endif %}
     [[/div]]
     [[div class="arg-help"]]
-    {{ arg.help }}
+    @@{{ arg.help|unwrap }}@@
     [[/div]]
 {% endfor %}
 [[/div]]
