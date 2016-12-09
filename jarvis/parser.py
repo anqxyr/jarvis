@@ -339,7 +339,7 @@ def tell(pr):
     pr.add_argument(
         'user',
         type=lambda x: x.lower().rstrip(':,'),
-        re=r'(?i)\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z',
+        #re=r'(?i)\A[a-z_\-\[\]\\^{}|`][a-z0-9_\-\[\]\\^{}|`]*\z',
         help="""IRC username of the user to whom the message is intended.""")
 
     pr.add_argument(
@@ -820,7 +820,7 @@ def imdb(pr):
 
 @parser
 def duckduckgo(pr):
-        pr.add_argument(
+    pr.add_argument(
         'query',
         nargs='+',
         action='join',

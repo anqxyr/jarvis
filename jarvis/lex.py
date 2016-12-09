@@ -67,7 +67,7 @@ class Lexicon:
         text = text.strip()
         try:
             text = text.format(**self.kwargs)
-        except KeyError:
+        except (KeyError, ValueError):
             pass
         return text
 

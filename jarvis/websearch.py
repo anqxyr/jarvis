@@ -232,7 +232,7 @@ def get_steam_game(steam_id, url=True):
         price = int(data['price_overview']['final']) / 100
     else:
         price = None
-    genres = [i['description'] for i in data['genres']]
+    genres = [i['description'] for i in data.get('genres', [])]
     return lex.steam.result(
         name=name, description=description, price=price,
         genres=genres, url=steam_id if url else None)

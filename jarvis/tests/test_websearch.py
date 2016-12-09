@@ -133,6 +133,10 @@ def test_steam_simple():
 def test_steam_no_price():
     assert str(run('.steam little emma demo'))
 
+
+def test_steam_no_genre():
+    assert str(run('.steam magic the gathering'))
+
 ###############################################################################
 
 
