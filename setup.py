@@ -21,7 +21,7 @@ setuptools.setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3.4'],
     packages=['jarvis', 'jarvis/modules'],
-    package_data={'jarvis': ['lexicon.yaml']},
+    package_data={'jarvis': ['lexicon.yaml', 'resources/help.template']},
     tests_require=[
         'pytest>=3.0.2',
         'pytest-cov',
