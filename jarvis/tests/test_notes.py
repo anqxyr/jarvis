@@ -59,6 +59,13 @@ def test_showtells_have_tells():
         lex.tell.get(text='st3')]
 
 
+def test_masstell():
+    assert (
+        run('.masstell --cc user1 user2 user3 user4 --text MASSTELL',
+            _user='masstell_user') ==
+        lex.tell.send)
+    assert run('.out', _user='masstell_user') == lex.outbound.count(count=4)
+
 ###############################################################################
 # Outbound
 ###############################################################################

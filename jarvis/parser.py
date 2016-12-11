@@ -351,6 +351,22 @@ def tell(pr):
 
 
 @parser
+def masstell(pr):
+    pr.add_argument(
+        '--users', '--cc',
+        type=lambda x: x.lower().rstrip(':,'),
+        nargs='+',
+        help="""IRC usernames of the users to whom the message is intended.
+                Space-separated. Commas are automatically stripped off.""")
+
+    pr.add_argument(
+        '--message', '--text',
+        nargs='+',
+        action='join',
+        help="""Text of the message.""")
+
+
+@parser
 def outbound(pr):
     pr.add_argument(
         '--purge', '-p',

@@ -56,6 +56,20 @@ def tell(inp, *, user, message):
     return lex.tell.send
 
 
+@core.command
+@parser.masstell
+def masstell(inp, *, users, message):
+    """Send a single message to several users."""
+    time = arrow.utcnow().timestamp
+    db.Tell.insert_many([dict(
+        recipient=user,
+        sender=inp.user,
+        text=message,
+        time=time,
+        topic=None) for user in users]).execute()
+    return lex.tell.send
+
+
 @core.rule(r'(.*)')
 @core.private
 @core.multiline
