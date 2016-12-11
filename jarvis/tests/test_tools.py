@@ -120,4 +120,6 @@ def test_post_on_twitter():
 
 
 def test_updatehelp():
-    assert str(run('.updatehelp'))
+    result = run('.updatehelp')
+    assert result == lex.updatehelp.finished
+    assert str(result)

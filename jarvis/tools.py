@@ -211,8 +211,8 @@ def updatehelp(inp):
     """
     funcs = sorted(
         {v for k, v in core.COMMANDS.items()}, key=lambda x: x.__name__)
-    core.stats_wiki('jarvis').create(
-        utils.load_template('help.template', funcs=funcs), 'Help Test')
+    core.stats_wiki('jarvis').edit(
+        utils.load_template('help.template', funcs=funcs))
     return lex.updatehelp.finished
 
 

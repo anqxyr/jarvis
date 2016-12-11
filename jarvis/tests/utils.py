@@ -38,7 +38,7 @@ class Inp(jarvis.core.Inp):
 
 def run(
         text, *args,
-        _user='test-user', _channel='test-channel', _channels=None,
+        _user='test-user', _channel='#test-channel', _channels=None,
         **kwargs):
     """
     Run the input through the dispatcher and return the result.
