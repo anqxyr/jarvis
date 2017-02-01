@@ -121,6 +121,8 @@ tell:
         Still no tells.
         I don't recall anyone sending you anything.
     new: You have {count} new messages.
+masstell:
+    missing_args: Please specify recipients and message text.
 outbound:
     empty: |-
         You don't have any undelivered tells.

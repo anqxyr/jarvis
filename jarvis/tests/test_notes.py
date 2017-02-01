@@ -66,6 +66,12 @@ def test_masstell():
         lex.tell.send)
     assert run('.out', _user='masstell_user') == lex.outbound.count(count=4)
 
+
+def test_masstell_missing_args():
+    assert run('.masstell') == lex.masstell.missing_args
+    assert run('.masstell --cc name') == lex.masstell.missing_args
+    assert run('.masstell --text text') == lex.masstell.missing_args
+
 ###############################################################################
 # Outbound
 ###############################################################################

@@ -60,6 +60,8 @@ def tell(inp, *, user, message):
 @parser.masstell
 def masstell(inp, *, users, message):
     """Send a single message to several users."""
+    if not users or not message:
+        return lex.masstell.missing_args
     time = arrow.utcnow().timestamp
     db.Tell.insert_many([dict(
         recipient=user,

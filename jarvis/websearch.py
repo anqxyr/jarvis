@@ -125,16 +125,16 @@ def youtube(query):
 @core.rule(r'(?i).*youtube\.com/watch\?v=([-_a-z0-9]+)')
 @core.rule(r'(?i).*youtu\.be/([-_a-z0-9]+)')
 def youtube_lookup(inp):
-    return lex.youtube.result(**_youtube_info(inp.text)[0])
+    info = _youtube_info(inp.text)
+    if not info:
+        return lex.youtube.not_found
+    return lex.youtube.result(**info[0])
 
 
 def _youtube_info(*video_ids):
     results = googleapi(
         'youtube', 'v3', 'videos',
         part='contentDetails,snippet,statistics', id=','.join(video_ids))
-
-    if not results:
-        return lex.youtube.not_found
 
     return [dict(
         title=r['snippet']['title'],

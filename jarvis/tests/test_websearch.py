@@ -46,6 +46,9 @@ def test_youtube_curly_braces():
     assert str(run('https://www.youtube.com/watch?v=DNNOeEDB19E'))
 
 
+def test_youtube_whatever():
+    assert str(run('https://www.youtube.com/watch?v=T1Hklvc-vx0'))
+
 ###############################################################################
 
 
