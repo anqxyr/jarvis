@@ -221,7 +221,8 @@ def errors_untitled():
     pages.extend(core.wiki.list_pages(name='scp-*', created_at='last 3 hours'))
     pages = [p for p in pages if p.url not in core.wiki.titles()]
     pages = [p for p in pages if p.is_mainlist]
-    pages = [p for p in pages if 'scp-1848' not in p.url]
+    exempt = ('scp-1848', 'scp-2864')
+    pages = [p for p in pages if p.name not in exempt]
     return pages
 
 
