@@ -304,3 +304,4 @@ def post_on_twitter():
     except Exception as e:
         core.log.exception(e)
         raise e
+

@@ -140,6 +140,15 @@ def test_steam_no_price():
 def test_steam_no_genre():
     assert str(run('.steam magic the gathering'))
 
+
+def test_steam_superhot():
+    # this weird bug happens in cycles, every 3rd or so result is correct
+    # so we'll check the output 3 times to make sure
+    url = 'http://store.steampowered.com/app/322500'
+    for _ in range(3):
+        assert url in str(run('.steam superhot'))
+
+
 ###############################################################################
 
 
