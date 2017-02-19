@@ -111,7 +111,7 @@ def test_unused_last():
 
 
 def test_unused_prime():
-    assert run('.unused -p') == 'http://www.scp-wiki.net/scp-2297'
+    assert run('.unused -p') == 'http://www.scp-wiki.net/scp-2287'
 
 
 def test_unused_divisible():
