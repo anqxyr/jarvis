@@ -353,7 +353,7 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible):
         numbers = [i for i in numbers if i % divisible == 0]
 
     slots = ['scp-{:03d}'.format(i) for i in numbers]
-    used_slots = {p.name for p in core.pages.tags('scp')}
+    used_slots = {p.name for p in core.pages}
     unused_slots = [i for i in slots if i not in used_slots]
 
     if not unused_slots:
