@@ -297,6 +297,8 @@ def post_on_twitter():
     attr = page.build_attribution_string(
         templates=lex.post_on_twitter.attribution._raw)
     text = str(text(page=page, attr=attr))
+    if len(text) >= 140:
+        text = lex.post_on_twitter.short(page=page)
 
     try:
         api.update_status(text)

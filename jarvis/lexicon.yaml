@@ -342,6 +342,7 @@ post_on_twitter:
         maintainer: "{user}"
     new: New article - {page.title} by {attr}. {page.url}
     old: Random article - {page.title} by {attr}. {page.url}
+    short: "{page.title}. {page.url}"
 ###############################################################################
 # Websearch
 ###############################################################################
