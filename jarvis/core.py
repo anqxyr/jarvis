@@ -14,7 +14,7 @@ import re
 import yaml
 
 from playhouse import dataset
-from . import ext, lex, utils
+from . import ext, lex, utils, db
 
 ###############################################################################
 # Logging
@@ -113,6 +113,39 @@ class Inp:
     def privileges(self):
         return self._priv()
 
+    @property
+    def channel_config(self):
+        return ChannelConfig(self.channel)
+
+
+class ChannelConfig:
+
+    _cache = collections.defaultdict(dict)
+
+    def __init__(self, channel):
+        self.channel = channel
+
+    @property
+    def cache(self):
+        return self._cache[self.channel]
+
+    @property
+    def memos(self):
+        if 'memos' not in self.cache:
+            inst = db.ChannelConfig.find_one(channel=self.channel)
+            self.cache['memos'] = inst.memos if inst else 'all'
+        return self.cache['memos']
+
+    @memos.setter
+    def memos(self, value):
+        inst = db.ChannelConfig.find_one(channel=self.channel)
+        if not inst:
+            db.ChannelConfig.create(channel=self.channel, memos=value)
+        else:
+            inst.memos = value
+            inst.save()
+        self.cache['memos'] = value
+
 
 def _call_func(inp, func, text):
     inp.text = text
@@ -196,11 +229,11 @@ def rule(regex):
     return inner
 
 
-def require(channel, level=0):
+def require(channel=None, level=0):
     def decorator(func):
         @functools.wraps(func)
         def inner(inp, *args, **kwargs):
-            if inp.privileges.get(channel, -1) < level:
+            if inp.privileges.get(channel or inp.channel, -1) < level:
                 return lex.denied
             return func(inp, *args, **kwargs)
         return inner

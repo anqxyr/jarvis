@@ -173,6 +173,15 @@ def seen(inp, *, user, first, total):
 # Quotes
 ###############################################################################
 
+
+def _memos_allowed(inp, value):
+    if inp.channel_config.memos == 'off':
+        return False
+    if inp.channel_config.memos == 'all':
+        return True
+    return value.isalnum() if value else True
+
+
 @core.command
 @parser.quote
 @core.crosschannel
@@ -182,7 +191,7 @@ def quote(inp, mode, **kwargs):
 
     This command is disabled in #site19.
     """
-    if inp.channel in core.config.irc.noquotes:
+    if not _memos_allowed(inp, kwargs.get('user', '')):
         return lex.denied
     return quote.dispatch(inp, mode, **kwargs)
 
@@ -251,6 +260,33 @@ def delete_quote(inp, *, user, message):
 # Memos
 ###############################################################################
 
+
+@core.command
+@core.require(level=4)
+def togglememos(inp):
+    """
+    Toggle memo settings for this channel.
+
+    Possible values is 'off', 'alphanumeric', and 'all'.
+
+    'off' will disable memos and quotes in the channel.
+
+    'alphanumeric' limits possible usernames in memos and quotes to
+    alphanumeric characters, preventing lines such as '???' from being
+    interpreted as memo pull up requests.
+
+    'all' allows unrestricted memo use.
+
+    Defaults to 'all'. Can only be changed by channel operators.
+    """
+    current = inp.channel_config.memos
+    current = current if current else 'all'
+    states = ['off', 'all', 'alphanumeric']
+    new_state = states[states.index(current) - 1]
+    inp.channel_config.memos = new_state
+    return lex.togglememos(state=new_state)
+
+
 @core.command
 @parser.memo
 @core.crosschannel
@@ -266,7 +302,7 @@ def memo(inp, mode, **kwargs):
 
     Unlike quotes, memo creation times are not preserved.
     """
-    if inp.channel in core.config.irc.noquotes:
+    if not _memos_allowed(inp, kwargs.get('user', '')):
         return lex.denied
     return memo.dispatch(inp, mode, **kwargs)
 
@@ -345,14 +381,16 @@ def count_memos(inp):
 @parser.rem
 def rem(inp, *, user, message):
     """Shorthand for '!memo add'."""
-    if inp.channel not in core.config.irc.noquotes:
-        return add_memo(inp, user=user, message=message)
+    if not _memos_allowed(inp, user):
+        return lex.denied
+    return add_memo(inp, user=user, message=message)
 
 
 @core.rule(r'^\?([^\s]+)\s*$')
 def peek_memo(inp):
-    if inp.channel not in core.config.irc.noquotes:
-        return get_memo(inp, user=inp.text.lower())
+    if not _memos_allowed(inp, inp.text):
+        return
+    return get_memo(inp, user=inp.text.lower())
 
 
 ###############################################################################

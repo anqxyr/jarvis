@@ -122,6 +122,13 @@ class Alert(BaseModel):
     time = peewee.DateTimeField()
     text = peewee.TextField()
 
+
+class ChannelConfig(BaseModel):
+
+    channel = peewee.CharField(index=True)
+    memos = peewee.CharField(null=True)
+
+
 ###############################################################################
 
 
@@ -129,5 +136,6 @@ def init(path):
     """Initialize the database, create missing tables."""
     db.init(path)
     db.connect()
-    db.create_tables(
-        [Tell, Message, Quote, Memo, Subscriber, Restricted, Alert], safe=True)
+    db.create_tables([
+        Tell, Message, Quote, Memo,
+        Subscriber, Restricted, Alert, ChannelConfig], safe=True)
