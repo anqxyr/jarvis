@@ -123,3 +123,20 @@ def test_updatehelp():
     result = run('.updatehelp')
     assert result == lex.updatehelp.finished
     assert str(result)
+
+
+def test_onpage():
+    assert run('.onpage anqxyr -o') == [
+        lex.onpage.working,
+        lex.onpage.found(user='anqxyr', page=15)]
+
+
+def test_onpage_not_found():
+    # this test should not be run under normal circumstances
+    # as it is extremely time-consuming, requiring retrieval of over 300
+    # pages and taking over 10 minutes to run.
+    return
+
+    assert run('.onpage blahblhablah') == [
+        lex.onpage.working,
+        lex.onpage.not_found]

@@ -344,6 +344,10 @@ post_on_twitter:
     new: New article - {page.title} by {attr}. {page.url}
     old: Random article - {page.title} by {attr}. {page.url}
     short: "{page.title}. {page.url}"
+onpage:
+    working: Searching member list. Please wait...
+    found: Found user {{ user }} on page {{ page }}.
+    not_found: Unable to find {{ user in the member list.
 ###############################################################################
 # Websearch
 ###############################################################################

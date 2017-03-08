@@ -6,7 +6,9 @@
 ###############################################################################
 
 import arrow
+import bs4
 import functools
+import itertools
 import random
 import tweepy
 
@@ -306,3 +308,40 @@ def post_on_twitter():
     except Exception as e:
         core.log.exception(e)
         raise e
+
+###############################################################################
+# On Page
+###############################################################################
+
+
+@functools.lru_cache(maxsize=400)
+def _members_on_page(page):
+    data = core.wiki._module('membership/MembersListModule', page=page)
+    soup = bs4.BeautifulSoup(data['body'], 'lxml')
+    authors = soup(class_='printuser')
+    authors = [i.text.lower() for i in authors]
+    total = soup.find(class_='pager-no').text.split()[-1]
+    return int(total), authors
+
+
+@core.command
+@core.multiline
+@parser.onpage
+def onpage(inp, user, oldest_first):
+    """
+    Find the member list page on which the given user appears.
+
+    Iterates over the member lists until it find the required user.
+    Be default, starts with the newest members and continues back in time.
+    """
+    yield lex.onpage.working
+    total, _ = _members_on_page(1)
+    pages = range(1, total + 1)
+    if not oldest_first:
+        pages = reversed(pages)
+
+    for page in pages:
+        if user in _members_on_page(page)[1]:
+            yield lex.onpage.found(user=user, page=page)
+            return
+    yield lex.onpage.not_found(user=user)

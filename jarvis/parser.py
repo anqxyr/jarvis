@@ -67,7 +67,7 @@ class PositionalArgument:
 
     def __init__(self, parser, *args, **kwargs):
         self.parser = parser
-        self.name = args[0].lstrip('-')
+        self.name = args[0].lstrip('-').replace('-', '_')
         self.flags = []
 
         self.is_optional = False
@@ -751,6 +751,20 @@ def dice(pr):
 def help(pr):
     pr.add_argument('command', nargs='*', action='join')
     pr.add_argument('--elemental', '-e', nargs='*')
+
+
+@parser
+def onpage(pr):
+    pr.add_argument(
+        'user',
+        nargs='+',
+        type=str.lower,
+        action='join',
+        help="""Wikidot username of the user in question.""")
+
+    pr.add_argument(
+        '--oldest-first', '-o',
+        help="""Start the search with oldest users.""")
 
 ###############################################################################
 # Websearch
