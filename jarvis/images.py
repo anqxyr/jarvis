@@ -218,8 +218,8 @@ def images(inp, mode, **kwargs):
     return images.dispatch(inp, mode, **kwargs)
 
 
-@core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('scan')
+@core.require(channel=core.config.irc.imageteam, level=2)
 @core.multiline
 def scan(inp, *, pages):
     """
@@ -250,8 +250,8 @@ def scan(inp, *, pages):
     yield lex.images.scan.done(count=counter)
 
 
-@core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('update')
+@core.require(channel=core.config.irc.imageteam, level=2)
 @targeted(1)
 def update(inp, *, images, url, page, source, status, notes):
     """Update image records."""
@@ -286,8 +286,8 @@ def list_images(inp, *, images, terse):
         for i in images]
 
 
-@core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('notes')
+@core.require(channel=core.config.irc.imageteam, level=2)
 @targeted(1)
 def notes(inp, *, images, append, purge, list):
     """Add, change, remove, or display image notes."""
@@ -310,8 +310,8 @@ def notes(inp, *, images, append, purge, list):
         return image.notes
 
 
-@core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('purge')
+@core.require(channel=core.config.irc.imageteam, level=2)
 @targeted()
 def purge(inp, *, images):
     """Delete all records of the image from the index."""
@@ -341,8 +341,8 @@ def stats(inp, *, category):
         not_reviewed=len([i for i in images if not i.status]))
 
 
-@core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('sync')
+@core.require(channel=core.config.irc.imageteam, level=2)
 def sync(inp):
     """
     Reload image index.
@@ -353,8 +353,8 @@ def sync(inp):
     return lex.images.sync
 
 
-@core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('add')
+@core.require(channel=core.config.irc.imageteam, level=2)
 def add(inp, *, url, page):
     """
     Add image to the index.
@@ -400,8 +400,8 @@ def remove_image_component(source, image_url):
     return re.sub(bracketed, '', source)
 
 
-@core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('remove')
+@core.require(channel=core.config.irc.imageteam, level=2)
 @core.multiline
 def remove(inp, *, page, images):
     """
@@ -445,8 +445,8 @@ def remove(inp, *, page, images):
     yield lex.images.remove.pm_sent
 
 
-@core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('attribute')
+@core.require(channel=core.config.irc.imageteam, level=2)
 def attribute(inp, *, page):
     """
     Attribute page images.
@@ -489,8 +489,8 @@ def attribute(inp, *, page):
     return lex.images.attribute.done(count=count)
 
 
-@core.require(channel=core.config.irc.imageteam, level=4)
 @images.subcommand('claim')
+@core.require(channel=core.config.irc.imageteam, level=2)
 def claim(inp, *, category, purge):
     """
     Reserve image category.
