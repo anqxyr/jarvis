@@ -345,3 +345,10 @@ def onpage(inp, user, oldest_first):
             yield lex.onpage.found(user=user, page=page)
             return
     yield lex.onpage.not_found(user=user)
+
+
+@core.command
+def mylevel(inp):
+    return lex.mylevel(
+        user=inp.user, channel=inp.channel,
+        level=inp.privileges.get(inp.channel))
