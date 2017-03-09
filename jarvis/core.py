@@ -38,6 +38,8 @@ with open('config.yaml') as file:
 ###############################################################################
 
 wiki = pyscp.wikidot.Wiki('www.scp-wiki.net')
+wiki_editable = pyscp.wikidot.Wiki('scp-wiki')
+wiki_editable.auth(config.wiki.name, config.wiki.password)
 wlwiki = pyscp.wikidot.Wiki('wanderers-library')
 stats_wiki = pyscp.wikidot.Wiki('scp-stats')
 stats_wiki.auth(config.wiki.name, config.wiki.password)

@@ -508,6 +508,45 @@ def claim(inp, *, category, purge):
         CLAIMS.pop(category)
         save_images(category, 'category claim purged', inp.user)
 
+
+@images.subcommand('tagcc')
+@core.require(channel=core.config.irc.imageteam, level=2)
+@core.multiline
+def tagcc(inp):
+    candidates = []
+    for page in {i.page for i in IMAGES}:
+        images = [i for i in IMAGES if i.page == page]
+        if all(i.status in ('PUBLIC DOMAIN', 'BY-SA CC') for i in images):
+            candidates.append(page)
+
+    if not candidates:
+        yield lex.images.tagcc.no_candidates
+        return
+
+    pages = [p for p in core.pages if p.url in candidates]
+    pages = [p for p in pages if '_cc' not in p.tags]
+    yield lex.images.tagcc.working(count=len(pages))
+
+    count = 0
+    for page in pages:
+        images = [i.url for i in IMAGES if i.page == page.url]
+        if any(i not in images for i in page.images):
+            yield lex.images.tagcc.untracked(page=page.name)
+            continue
+
+        tags = page.tags
+        tags.add('_cc')
+        core.wiki_editable(page.name).set_tags(tags)
+        count += 1
+
+    yield lex.images.tagcc.finished(count=count)
+
+
+
+
+
+
+
 ###############################################################################
 
 load_images()

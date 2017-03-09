@@ -1072,3 +1072,7 @@ def images(pr):
     claim.add_argument(
         '--purge', '-p',
         help="""Delete claim.""")
+
+    ###########################################################################
+
+    pr.subparser('tagcc')

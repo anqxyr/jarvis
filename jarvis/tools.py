@@ -349,6 +349,7 @@ def onpage(inp, user, oldest_first):
 
 @core.command
 def mylevel(inp):
+    """Show the user's permission level in the current channel."""
     return lex.mylevel(
         user=inp.user, channel=inp.channel,
         level=inp.privileges.get(inp.channel))

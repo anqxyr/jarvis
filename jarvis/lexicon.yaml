@@ -439,6 +439,11 @@ images:
     claim:
         unknown_category: The specified category does not exist or contains no images.
         done: Category successfully claimed.
+    tagcc:
+        working: I have found {{ count }} candidates for the _cc tag. Please wait...
+        no_candidates: There are no pages that match the requirements for the _cc tag. Come back another time.
+        untracked: "{{ page }} contains images not tracked in the image index, and was not tagged as _cc."
+        finished: Done. Tagged {{ count }} pages.
 templates:
     attribution:
         cc_non_commercial: The [{url} {num} image] in this article is a CC BY-NC-SA image from {origin}. Note that the image is used here under a different license than the rest of the site. Commercial use of the image is not permitted by its creator.
