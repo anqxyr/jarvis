@@ -72,6 +72,15 @@ def updatebans(inp):
 
 
 def autoban(inp, name, host):
+    try:
+        _autoban(inp, name, host)
+    except Exception as e:
+        core.log.exception(e)
+        core.log.error(name, host)
+        inp.send(lex.error, private=False, notice=False, multiline=False)
+
+
+def _autoban(inp, name, host):
     inp.user = 'OP Alert'
     if not core.config.debug and inp.channel != '#site19':
         return
