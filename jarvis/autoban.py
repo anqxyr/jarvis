@@ -72,15 +72,6 @@ def updatebans(inp):
 
 
 def autoban(inp, name, host):
-    try:
-        _autoban(inp, name, host)
-    except Exception as e:
-        core.log.exception(e)
-        core.log.error(name, host)
-        inp.send(lex.error, private=False, notice=False, multiline=False)
-
-
-def _autoban(inp, name, host):
     inp.user = 'OP Alert'
     if not core.config.debug and inp.channel != '#site19':
         return
@@ -90,8 +81,22 @@ def _autoban(inp, name, host):
         ban_user(inp, name, 900)
         return lex.autoban.name(user=name)
     # find if the user is in the banlist
-    bans = [b for b in BANS if name.lower() in b.names or
-            any(fnmatch.fnmatch(host, pat) for pat in b.hosts)]
+    bans = []
+    for b in BANS:
+        if name.lower() in b.names:
+            bans.append(b)
+            continue
+        for pat in b.hosts:
+            try:
+                res = fnmatch.fnmatch(host, pat)
+            except Exception as e:
+                core.log.exception(e)
+                core.log.error(host, pat)
+                inp.send(
+                    lex.error, private=False, notice=False, multiline=False)
+                res = False
+            if res:
+                bans.append(b)
     for ban in bans:
         try:
             # check if the ban has expired
