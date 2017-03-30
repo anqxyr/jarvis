@@ -81,23 +81,7 @@ def autoban(inp, name, host):
         ban_user(inp, name, 900)
         return lex.autoban.name(user=name)
     # find if the user is in the banlist
-    bans = []
-    for b in BANS:
-        if name.lower() in b.names:
-            bans.append(b)
-            continue
-        for pat in b.hosts:
-            try:
-                res = fnmatch.fnmatch(host, pat)
-            except Exception as e:
-                core.log.exception(e)
-                core.log.error(host)
-                core.log.error(pat)
-                inp.send(
-                    lex.error, private=False, notice=False, multiline=False)
-                res = False
-            if res:
-                bans.append(b)
+    bans = [b for b in BANS if name.lower() in b.names or host in b.hosts]
     for ban in bans:
         try:
             # check if the ban has expired
