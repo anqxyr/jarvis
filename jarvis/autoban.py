@@ -91,7 +91,8 @@ def autoban(inp, name, host):
                 res = fnmatch.fnmatch(host, pat)
             except Exception as e:
                 core.log.exception(e)
-                core.log.error(host, pat)
+                core.log.error(host)
+                core.log.error(pat)
                 inp.send(
                     lex.error, private=False, notice=False, multiline=False)
                 res = False
