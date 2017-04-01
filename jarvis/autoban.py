@@ -34,7 +34,7 @@ def get_ban_list():
     bans = {}
     for table in tables:
         chat = table('tr')[0].text
-        rows = soup('tr')[2:]
+        rows = table('tr')[2:]
         bans[chat] = list(map(parse_ban, rows))
     return bans
 
@@ -44,7 +44,7 @@ def parse_ban(row):
     names = [i for i in names.strip().lower().split() if 'generic' not in i]
     hosts = [fnmatch.translate(i) for i in hosts.strip().split()]
     hosts = [re.compile(i).match for i in hosts]
-    return Ban(names, hosts.strip().split(), status, reason, thread)
+    return Ban(names, hosts, status, reason, thread)
 
 
 BANS = get_ban_list()
