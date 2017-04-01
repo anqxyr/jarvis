@@ -6,9 +6,10 @@
 
 import arrow
 import collections
-import pyscp
-import threading
 import fnmatch
+import pyscp
+import re
+import threading
 
 from . import core, lex
 
@@ -29,13 +30,20 @@ Ban = collections.namedtuple('Ban', 'names hosts status reason thread')
 def get_ban_list():
     wiki = pyscp.wikidot.Wiki('05command')
     soup = wiki('chat-ban-page')._soup
-    rows = soup('tr')[1:]
-    return [b for b in map(parse_ban, rows) if b]
+    tables = soup('table', class_='wiki-content-table')
+    bans = {}
+    for table in tables:
+        chat = table('tr')[0].text
+        rows = soup('tr')[2:]
+        bans[chat] = list(map(parse_ban, rows))
+    return bans
 
 
 def parse_ban(row):
     names, hosts, status, reason, thread = [i.text for i in row('td')]
     names = [i for i in names.strip().lower().split() if 'generic' not in i]
+    hosts = [fnmatch.translate(i) for i in hosts.strip().split()]
+    hosts = [re.compile(i).match for i in hosts]
     return Ban(names, hosts.strip().split(), status, reason, thread)
 
 
@@ -73,15 +81,19 @@ def updatebans(inp):
 
 def autoban(inp, name, host):
     inp.user = 'OP Alert'
-    if not core.config.debug and inp.channel != '#site19':
-        return
     if any(word in name.lower() for word in PROFANITY):
         kick_user(inp, name, lex.autoban.kick.name)
         ban_user(inp, host, 10)
         ban_user(inp, name, 900)
         return lex.autoban.name(user=name)
+
+    banlist = BANS.get(inp.channel)
+    if not banlist:
+        return
     # find if the user is in the banlist
-    bans = [b for b in BANS if name.lower() in b.names or host in b.hosts]
+    bans = [
+        b for b in banlist if name.lower() in b.names or
+        any(pat(host) for pat in b.hosts)]
     for ban in bans:
         try:
             # check if the ban has expired
