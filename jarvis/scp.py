@@ -326,7 +326,7 @@ def random(inp, **kwargs):
 @core.alias('lc')
 @core.cooldown(120)
 @core.multiline
-def lastcreated(inp, cooldown={}, **kwargs):
+def lastcreated(inp, **kwargs):
     """Display most recently created pages."""
     kwargs = dict(
         body='title created_by created_at rating',
@@ -334,8 +334,7 @@ def lastcreated(inp, cooldown={}, **kwargs):
         rating='>=-15',
         limit=3)
     pages = core.wiki.list_pages(**kwargs)
-    rating = inp.channel == core.config.irc.sssc
-    return [show_page(p, rating=rating) for p in pages]
+    return [show_page(p, rating=inp.config.lcratings == 'on') for p in pages]
 
 
 @core.command

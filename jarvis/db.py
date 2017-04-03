@@ -127,6 +127,7 @@ class ChannelConfig(BaseModel):
 
     channel = peewee.CharField(index=True)
     memos = peewee.CharField(null=True)
+    lcratings = peewee.CharField(null=True)
 
 
 ###############################################################################
@@ -135,6 +136,14 @@ class ChannelConfig(BaseModel):
 def init(path):
     """Initialize the database, create missing tables."""
     db.init(path)
+
+    try:
+        migrator = playhouse.migrate.SqliteMigrator(db)
+        playhouse.migrate.migrate(migrator.add_column(
+            'ChannelConfig', 'lcratings', peewee.CharField(null=True)))
+    except peewee.OperationalError:
+        pass
+
     db.connect()
     db.create_tables([
         Tell, Message, Quote, Memo,

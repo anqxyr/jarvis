@@ -882,6 +882,7 @@ def steam(pr):
         type=str.lower,
         help="""Title of the game to search for.""")
 
+
 ###############################################################################
 # Images
 ###############################################################################
@@ -1076,3 +1077,30 @@ def images(pr):
     ###########################################################################
 
     pr.subparser('tagcc')
+
+
+###############################################################################
+# Configure
+###############################################################################
+
+
+@parser
+def configure(pr):
+
+    memos = pr.subparser('memos')
+
+    memos.add_argument(
+        'value',
+        nargs='?',
+        choice=['off', 'all', 'alphanumeric'],
+        help="""New value of the configured parameter.""")
+
+    ###########################################################################
+
+    lcratings = pr.subparser('lcratings')
+
+    lcratings.add_argument(
+        'value',
+        nargs='?',
+        choince=['on', 'off'],
+        help="""New value of the configured parameter.""")

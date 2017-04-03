@@ -5,6 +5,7 @@ from .version import __version__
 from . import (
     core,
     scp,
+    configure,
     notes,
     tools,
     websearch,

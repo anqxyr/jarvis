@@ -175,9 +175,9 @@ def seen(inp, *, user, first, total):
 
 
 def _memos_allowed(inp, value):
-    if inp.channel_config.memos == 'off':
+    if inp.config.memos == 'off':
         return False
-    if inp.channel_config.memos == 'all':
+    if inp.config.memos == 'all':
         return True
     return value.isalnum() if value else True
 
@@ -259,32 +259,6 @@ def delete_quote(inp, *, user, message):
 ###############################################################################
 # Memos
 ###############################################################################
-
-
-@core.command
-@core.require(level=4)
-def togglememos(inp):
-    """
-    Toggle memo settings for this channel.
-
-    Possible values is 'off', 'alphanumeric', and 'all'.
-
-    'off' will disable memos and quotes in the channel.
-
-    'alphanumeric' limits possible usernames in memos and quotes to
-    alphanumeric characters, preventing lines such as '???' from being
-    interpreted as memo pull up requests.
-
-    'all' allows unrestricted memo use.
-
-    Defaults to 'all'. Can only be changed by channel operators.
-    """
-    current = inp.channel_config.memos
-    current = current if current else 'all'
-    states = ['off', 'all', 'alphanumeric']
-    new_state = states[states.index(current) - 1]
-    inp.channel_config.memos = new_state
-    return lex.togglememos(state=new_state)
 
 
 @core.command

@@ -38,8 +38,6 @@ with open('config.yaml') as file:
 ###############################################################################
 
 wiki = pyscp.wikidot.Wiki('www.scp-wiki.net')
-wiki_editable = pyscp.wikidot.Wiki('scp-wiki')
-wiki_editable.auth(config.wiki.name, config.wiki.password)
 wlwiki = pyscp.wikidot.Wiki('wanderers-library')
 stats_wiki = pyscp.wikidot.Wiki('scp-stats')
 stats_wiki.auth(config.wiki.name, config.wiki.password)
@@ -116,37 +114,49 @@ class Inp:
         return self._priv()
 
     @property
-    def channel_config(self):
-        return ChannelConfig(self.channel)
+    def config(self):
+        return CachedConfig(self.channel, self.user)
 
 
-class ChannelConfig:
+class CachedConfig:
 
     _cache = collections.defaultdict(dict)
 
-    def __init__(self, channel):
-        self.channel = channel
+    def __init__(self, channel, user):
+        self.channel, self.user = channel, user
 
-    @property
-    def cache(self):
-        return self._cache[self.channel]
+    def _get_channel_config(self, name, default):
+        cache = self._cache[self.channel]
+        if name not in cache:
+            inst = db.ChannelConfig.find_one(channel=self.channel)
+            cache[name] = getattr(inst, name) if inst else default
+        return cache[name]
+
+    def _set_channel_config(self, name, value):
+        cache = self._cache[self.channel]
+        inst = db.ChannelConfig.find_one(channel=self.channel)
+        if not inst:
+            inst = db.ChannelConfig.create(channel=self.channel)
+        setattr(inst, name, value)
+        inst.save()
+        cache[name] = value
 
     @property
     def memos(self):
-        if 'memos' not in self.cache:
-            inst = db.ChannelConfig.find_one(channel=self.channel)
-            self.cache['memos'] = inst.memos if inst else 'all'
-        return self.cache['memos']
+        return self._get_channel_config('memos', 'all')
 
     @memos.setter
     def memos(self, value):
-        inst = db.ChannelConfig.find_one(channel=self.channel)
-        if not inst:
-            db.ChannelConfig.create(channel=self.channel, memos=value)
-        else:
-            inst.memos = value
-            inst.save()
-        self.cache['memos'] = value
+        self._set_channel_config('memos', value)
+
+    @property
+    def lcratings(self):
+        return self._get_channel_config('lcratings', 'on')
+
+    @lcratings.setter
+    def lcratings(self, value):
+        self._set_channel_config('lcratings', value)
+
 
 
 def _call_func(inp, func, text):
