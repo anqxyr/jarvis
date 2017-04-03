@@ -394,6 +394,10 @@ def seen(pr):
         '--total', '-t',
         help="""Display the total number of messages said by the user.""")
 
+    pr.add_argument(
+        '--date', '-d',
+        help="""Display exact date.""")
+
     pr.exclusive('first', 'total')
 
     pr.add_argument(

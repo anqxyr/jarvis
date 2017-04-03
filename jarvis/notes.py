@@ -146,7 +146,7 @@ def outbound(inp, *, purge, echo):
 @core.command
 @parser.seen
 @core.crosschannel
-def seen(inp, *, user, first, total):
+def seen(inp, *, user, first, total, date):
     """Show the first message said by the user."""
     if user == core.config.irc.nick:
         return lex.seen.self
@@ -164,7 +164,8 @@ def seen(inp, *, user, first, total):
 
     seen = query.order_by(
         db.Message.time if first else db.Message.time.desc()).get()
-    time = arrow.get(seen.time).humanize()
+    time = arrow.get(seen.time)
+    time = time.humanize() if not date else 'on {0:YYYY-MM-DD}'.format(time)
     msg = lex.seen.first if first else lex.seen.last
     return msg(user=user, time=time, text=seen.text)
 
