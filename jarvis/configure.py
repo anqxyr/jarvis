@@ -20,7 +20,6 @@ def configure(inp, mode, **kwargs):
 
 
 def _configurable(inp, name, states, value):
-    states = states.split()
     if not value:
         current = getattr(inp.config, name)
         value = states[states.index(current) - 1]
@@ -46,7 +45,7 @@ def memos(inp, *, value):
 
     Defaults to 'all'. Can only be changed by channel operators.
     """
-    return _configurable(inp, 'memos', 'off all alphanumeric', value)
+    return _configurable(inp, 'memos', ['off', 'all', 'alphanumeric'], value)
 
 
 @configure.subcommand('lcratings')
@@ -59,4 +58,15 @@ def lcratings(inp, *, value):
 
     Defaults to 'on'.
     """
-    return _configurable(inp, 'lcratings', 'on off', value)
+    return _configurable(inp, 'lcratings', [True, False], value)
+
+
+@configure.subcommand('keeplogs')
+@core.require(level=4)
+def keeplogs(inp, *, value):
+    """
+    Toggle log keeping for this channel.
+
+    Disabling logs will break .seen and any other commands relying on logs.
+    """
+    return _configurable(inp, 'keeplogs', [True, False], value)

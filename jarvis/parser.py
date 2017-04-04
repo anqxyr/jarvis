@@ -1101,10 +1101,24 @@ def configure(pr):
 
     ###########################################################################
 
-    lcratings = pr.subparser('lcratings')
+    # this is a narrowly targeted type to be used in .conf values
+    def bool_string(value):
+        if value.lower() in ['yes', 'on', 'true', 'enable']:
+            return True
+        elif value.lower() in ['no', 'off', 'false', 'disable']:
+            return False
+        else:
+            raise ValueError
 
-    lcratings.add_argument(
-        'value',
-        nargs='?',
-        choince=['on', 'off'],
-        help="""New value of the configured parameter.""")
+    toggleables = ['lcratings', 'keeplogs']
+
+    for name in toggleables:
+        subpr = pr.subparser(name)
+
+        subpr.add_argument(
+            'value',
+            nargs='?',
+            type=bool_string,
+            help="""New value of the configured parameter.""")
+
+    ###########################################################################

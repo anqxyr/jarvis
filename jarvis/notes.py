@@ -27,6 +27,8 @@ db.init('jarvis.db')
 @core.rule(r'(.*)')
 def logevent(inp):
     """Log input into the database."""
+    if not inp.config.keeplogs:
+        return
     db.Message.create(
         user=inp.user, channel=inp.channel,
         time=arrow.utcnow().timestamp, text=inp.text)

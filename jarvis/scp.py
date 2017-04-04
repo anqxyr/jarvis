@@ -334,7 +334,7 @@ def lastcreated(inp, **kwargs):
         rating='>=-15',
         limit=3)
     pages = core.wiki.list_pages(**kwargs)
-    return [show_page(p, rating=inp.config.lcratings == 'on') for p in pages]
+    return [show_page(p, rating=inp.config.lcratings) for p in pages]
 
 
 @core.command
