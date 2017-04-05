@@ -15,7 +15,7 @@ from . import core, parser, lex
 @core.command
 @parser.configure
 def configure(inp, mode, **kwargs):
-    """TODO: docstring."""
+    """Change the state of a configurable parameter."""
     return configure.dispatch(inp, mode, **kwargs)
 
 

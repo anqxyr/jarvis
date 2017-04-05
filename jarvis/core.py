@@ -151,11 +151,20 @@ class CachedConfig:
 
     @property
     def lcratings(self):
-        return self._get_channel_config('lcratings', 'on')
+        return self._get_channel_config('lcratings', True)
 
     @lcratings.setter
     def lcratings(self, value):
         self._set_channel_config('lcratings', value)
+
+    @property
+    def keeplogs(self):
+        return self._get_channel_config('keeplogs', True)
+
+    @keeplogs.setter
+    def keeplogs(self, value):
+        self._set_channel_config('keeplogs', value)
+
 
 
 
