@@ -41,7 +41,7 @@ def send(bot, text, private=False, notice=False):
 
 def privileges(bot, nick):
     channels = bot.privileges.items()
-    return {str(k): v[nick] for k, v in channels if nick in v}
+    return {str(k).lower(): v[nick] for k, v in channels if nick in v}
 
 
 @sopel.module.rule('.*')
