@@ -20,9 +20,12 @@ def configure(inp, mode, **kwargs):
 
 
 def _configurable(inp, name, states, value):
-    if not value:
+    if value is not None:
         current = getattr(inp.config, name)
-        value = states[states.index(current) - 1]
+        if current:
+            value = states[states.index(current) - 1]
+        else:
+            value = states[0]
     setattr(inp.config, name, value)
     return getattr(lex.configure, name)(state=value)
 
