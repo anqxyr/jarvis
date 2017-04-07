@@ -141,7 +141,7 @@ def _youtube_info(*video_ids):
         duration=r['contentDetails']['duration'][2:].lower(),
         likes=r.get('statistics', {}).get('likeCount'),
         dislikes=r.get('statistics', {}).get('dislikeCount'),
-        views=r.get('statistics', {})['viewCount'],
+        views=r.get('statistics', {}).get('viewCount'),
         channel=r['snippet']['channelTitle'],
         date=r['snippet']['publishedAt'][:10])
         for r in results]
