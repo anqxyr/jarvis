@@ -136,13 +136,12 @@ def _youtube_info(*video_ids):
         'youtube', 'v3', 'videos',
         part='contentDetails,snippet,statistics', id=','.join(video_ids))
 
-    stats = r.get('statistics', {})
     return [dict(
         title=r['snippet']['title'],
         duration=r['contentDetails']['duration'][2:].lower(),
-        likes=stats.get('likeCount'),
-        dislikes=stats.get('dislikeCount'),
-        views=stats['viewCount'],
+        likes=r.get('statistics', {}).get('likeCount'),
+        dislikes=r.get('statistics', {}).get('dislikeCount'),
+        views=r.get('statistics', {})['viewCount'],
         channel=r['snippet']['channelTitle'],
         date=r['snippet']['publishedAt'][:10])
         for r in results]
