@@ -129,7 +129,7 @@ class CachedConfig:
         cache = self._cache[self.channel]
         if name not in cache:
             inst = db.ChannelConfig.find_one(channel=self.channel)
-            value = getattr(inst, name)
+            value = getattr(inst, name) if inst else None
             cache[name] = value if value is not None else default
         return cache[name]
 
