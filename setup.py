@@ -39,5 +39,6 @@ setuptools.setup(
         'sopel',
         'tweepy',
         'wikipedia',
+        'pint',
     ],
 )
