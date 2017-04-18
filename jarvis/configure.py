@@ -20,7 +20,7 @@ def configure(inp, mode, **kwargs):
 
 
 def _configurable(inp, name, states, value):
-    if value is not None:
+    if value is None:
         current = getattr(inp.config, name)
         if current:
             value = states[states.index(current) - 1]

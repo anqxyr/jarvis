@@ -348,6 +348,10 @@ onpage:
     found: Found user {{ user }} on page {{ page }}.
     not_found: Unable to find {{ user in the member list.
 mylevel: You are {{ user }}. Your privilege level in {{ channel }} is {{ level }}. Congratulations.
+convert:
+    result: "{{ dimensionality|bold }} Converted {{ source }} to {{ value|bold }} {{ units|bold }}."
+    conversion_error: "Failed to convert: {{ text }}"
+    syntax_error: Input expression must be of format "<value> <unit> to <unit>".
 ###############################################################################
 # Websearch
 ###############################################################################

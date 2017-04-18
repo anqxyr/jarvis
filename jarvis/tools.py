@@ -8,15 +8,18 @@
 import arrow
 import bs4
 import functools
-import itertools
+import pint
 import random
 import tweepy
 
 from . import core, parser, lex, __version__, utils
 
 ###############################################################################
+# Global Variables
+###############################################################################
 
 BOOTTIME = arrow.now()
+UREG = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)
 
 ###############################################################################
 # Internal Tools
@@ -353,3 +356,45 @@ def mylevel(inp):
     return lex.mylevel(
         user=inp.user, channel=inp.channel,
         level=inp.privileges.get(inp.channel))
+
+
+###############################################################################
+# Convert
+###############################################################################
+
+
+@core.command
+@parser.convert
+def convert(inp, *, expression, precision):
+    """Convert between different measurement units."""
+    try:
+        source, destination = expression.split(' to ')
+        source_value = source.split(' ')[0]
+        float(source_value)
+    except (IndexError, ValueError):
+        return lex.convert.syntax_error
+    try:
+        result = UREG(source).to(destination)
+    except Exception as e:
+        return lex.convert.conversion_error(text=str(e))
+
+    if precision is False:
+        if '.' not in source_value:
+            sigfig = len(source_value.rstrip('0')) - len(source_value)
+        else:
+            sigfig = len(source_value.split('.')[-1])
+        value = round(result.magnitude, int(sigfig))
+        if int(sigfig) <= 0:
+            value = int(value)
+    elif precision is True:
+        value = result.magnitude
+    else:
+        value = round(result.magnitude, precision)
+        if precision <= 0:
+            value = int(value)
+
+    return lex.convert.result(
+        source=source,
+        value=value,
+        dimensionality=result.dimensionality,
+        units=result.units)

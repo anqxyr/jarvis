@@ -140,3 +140,30 @@ def test_onpage_not_found():
     assert run('.onpage blahblhablah') == [
         lex.onpage.working,
         lex.onpage.not_found]
+
+
+###############################################################################
+# Convert
+###############################################################################
+
+
+def test_convert_basic():
+    assert run('.convert 1 meter to feet') == lex.convert.result(value=3)
+
+
+def test_convert_precise():
+    assert run('.convert 10 meter to feet -p') == lex.convert.result(
+        value=32.808398950131235)
+
+
+def test_convert_precise_four_figures():
+    assert run('.convert 10 meter to foot -p 4') == lex.convert.result(
+        value=32.8084)
+
+
+def test_convert_conversion_error():
+    assert run('.convert 10 meters to rabbits') == lex.convert.conversion_error
+
+
+def test_convert_syntax_error():
+    assert run('.convert blah blah') == lex.convert.syntax_error

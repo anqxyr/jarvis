@@ -770,6 +770,28 @@ def onpage(pr):
         '--oldest-first', '-o',
         help="""Start the search with oldest users.""")
 
+
+@parser
+def convert(pr):
+    pr.add_argument(
+        'expression',
+        nargs='+',
+        action='join',
+        help="""Conversion expression. Must follow the form of
+                "<number> <unit> to <unit>".""")
+
+    pr.add_argument(
+        '--precision', '-p',
+        nargs='?',
+        type=int,
+        help="""Specify conversion precision. By default .convert will attempt
+                to preserve the significant figures of the input value.
+                This parameter overrides the default behaviour. Positive
+                precision values correspond to the number of digits displayed
+                after the decimal point. Negative precision values will
+                round the result value to the nearest ten, hundred, thousand,
+                etc.""")
+
 ###############################################################################
 # Websearch
 ###############################################################################
