@@ -315,6 +315,8 @@ def dictionary(inp, *, query):
 @parser.websearch
 def urbandictionary(inp, *, query):
     """Show urban defitiontion of a word or a phrase."""
+    if not inp.config.urbandict:
+        return lex.denied
     url = 'http://api.urbandictionary.com/v0/define?term=' + query
     data = requests.get(url).json()
     if not data['list']:

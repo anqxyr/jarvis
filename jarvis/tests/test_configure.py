@@ -50,3 +50,8 @@ def test_configure_keeplogs():
     run('.conf keeplogs no')
     run('message two', _user='seentest')
     assert run('.seen seentest') == lex.seen.last(text='message one')
+
+
+def test_configure_urbandict():
+    assert run('.conf urbandict off') == lex.configure.urbandict(state=False)
+    assert run('.urban test') == lex.denied

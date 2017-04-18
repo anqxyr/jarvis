@@ -129,7 +129,7 @@ class ChannelConfig(BaseModel):
     memos = peewee.CharField(null=True)
     lcratings = peewee.BooleanField(null=True)
     keeplogs = peewee.BooleanField(null=True)
-
+    urbandict = peewee.BooleanField(null=True)
 
 
 ###############################################################################
@@ -142,11 +142,8 @@ def init(path):
     try:
         migrator = playhouse.migrate.SqliteMigrator(db)
         playhouse.migrate.migrate(
-            #migrator.drop_column('ChannelConfig', 'lcratings'),
             migrator.add_column(
-                'ChannelConfig', 'keeplogs', peewee.BooleanField(null=True)),
-            migrator.add_column(
-                'ChannelConfig', 'lcratings', peewee.BooleanField(null=True)))
+                'ChannelConfig', 'urbandict', peewee.BooleanField(null=True)))
     except peewee.OperationalError:
         pass
 

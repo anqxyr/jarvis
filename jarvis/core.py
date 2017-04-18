@@ -166,7 +166,13 @@ class CachedConfig:
     def keeplogs(self, value):
         self._set_channel_config('keeplogs', value)
 
+    @property
+    def urbandict(self):
+        return self._get_channel_config('urbandict', True)
 
+    @urbandict.setter
+    def urbandict(self, value):
+        self._set_channel_config('urbandict', value)
 
 
 def _call_func(inp, func, text):

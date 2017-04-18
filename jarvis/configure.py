@@ -73,3 +73,10 @@ def keeplogs(inp, *, value):
     Disabling logs will break .seen and any other commands relying on logs.
     """
     return _configurable(inp, 'keeplogs', [True, False], value)
+
+
+@configure.subcommand('urbandict')
+@core.require(level=4)
+def urbandict(inp, *, value):
+    """Enable or disable the use of .urbandictionary in the channel."""
+    return _configurable(inp, 'urbandict', [True, False], value)
