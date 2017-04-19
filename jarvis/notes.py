@@ -404,18 +404,18 @@ def get_alerts(inp):
     return alerts
 
 
-@functools.lru_cache()
+@functools.lru_cache(maxsize=20)
 def get_text_model(channel, user):
     if user:
         lines = db.Message.find(channel=channel, user=user)
     else:
         lines = db.Message.find(channel=channel)
-    lines = lines.order_by(db.Message.id.desc()).limit(10000)
+    lines = lines.order_by(db.peewee.fn.Random()).limit(1000)
     text = '\n'.join([i.text for i in lines])
     return markovify.NewlineText(text)
 
 
-#@core.command
+@core.command
 @parser.gibber
 @core.crosschannel
 def gibber(inp, user):
@@ -425,7 +425,12 @@ def gibber(inp, user):
     If the user isn't specified, generates the message based on the log of
     the entire channel.
     """
-    if user and not db.Message.find_one(channel=inp.channel, user=user):
+    query = db.Message.select().where(
+        db.Message.channel == inp.channel, db.Message.user == user)
+    if user and not query.exists():
         return lex.gibber.no_such_user
     model = get_text_model(inp.channel, user)
-    return lex.gibber.say(text=model.make_short_sentence(200))
+    text = model.make_short_sentence(200)
+    if not text:
+        return lex.gibber.small_sample
+    return lex.gibber.say(text=text)
