@@ -27,7 +27,7 @@ def _configurable(inp, name, states, value):
         else:
             value = states[0]
     setattr(inp.config, name, value)
-    return getattr(lex.configure, name)(state=value)
+    return getattr(getattr(lex.configure, name), str(value).lower())
 
 
 @configure.subcommand('memos')
@@ -80,3 +80,10 @@ def keeplogs(inp, *, value):
 def urbandict(inp, *, value):
     """Enable or disable the use of .urbandictionary in the channel."""
     return _configurable(inp, 'urbandict', [True, False], value)
+
+
+@configure.subcommand('gibber')
+@core.require(level=4)
+def gibber(inp, *, value):
+    """Enable or disable the .gibber command."""
+    return _configurable(inp, 'gibber', [True, False], value)

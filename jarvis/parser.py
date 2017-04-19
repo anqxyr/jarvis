@@ -1132,7 +1132,7 @@ def configure(pr):
         else:
             raise ValueError
 
-    toggleables = ['lcratings', 'keeplogs', 'urbandict']
+    toggleables = ['lcratings', 'keeplogs', 'urbandict', 'gibber']
 
     for name in toggleables:
         subpr = pr.subparser(name)

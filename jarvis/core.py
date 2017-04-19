@@ -121,6 +121,12 @@ class Inp:
 class CachedConfig:
 
     _cache = collections.defaultdict(dict)
+    _CHANCONF = dict(
+        memos='all',
+        lcratings=True,
+        keeplogs=True,
+        urbandict=True,
+        gibber=True)
 
     def __init__(self, channel, user):
         self.channel, self.user = channel, user
@@ -142,37 +148,17 @@ class CachedConfig:
         inst.save()
         cache[name] = value
 
-    @property
-    def memos(self):
-        return self._get_channel_config('memos', 'all')
+    def __getattr__(self, attr):
+        if attr in self._CHANCONF:
+            return self._get_channel_config(attr, self._CHANCONF[attr])
+        else:
+            return super().__getattr__(attr)
 
-    @memos.setter
-    def memos(self, value):
-        self._set_channel_config('memos', value)
-
-    @property
-    def lcratings(self):
-        return self._get_channel_config('lcratings', True)
-
-    @lcratings.setter
-    def lcratings(self, value):
-        self._set_channel_config('lcratings', value)
-
-    @property
-    def keeplogs(self):
-        return self._get_channel_config('keeplogs', True)
-
-    @keeplogs.setter
-    def keeplogs(self, value):
-        self._set_channel_config('keeplogs', value)
-
-    @property
-    def urbandict(self):
-        return self._get_channel_config('urbandict', True)
-
-    @urbandict.setter
-    def urbandict(self, value):
-        self._set_channel_config('urbandict', value)
+    def __setattr__(self, attr, value):
+        if attr in self._CHANCONF:
+            self._set_channel_config(attr, value)
+        else:
+            super().__setattr__(attr, value)
 
 
 def _call_func(inp, func, text):

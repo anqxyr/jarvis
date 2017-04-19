@@ -475,7 +475,19 @@ templates:
 # Configure
 ###############################################################################
 configure:
-    memos: Memos are now set to {{ state }}.
-    lcratings: Ratings display is now set to {{ state }}.
-    keeplogs: Log-keeping is now set to {{ state }}.
-    urbandict: Urban Dictionary access is now set to {{ state }}.
+    memos:
+        'off': Memos are now disabled.
+        alphanumeric: Only alphanumeric memos will be allowed.
+        all: All memos are now allowed.
+    lcratings:
+        'true': .lastcreated will display article ratings.
+        'false': Article ratings will not be shown.
+    keeplogs:
+        'true': Channel logs will be preserved.
+        'false': Logs will not be kept.
+    urbandict:
+        'true': .urb will be allowed.
+        'false': .urb is disabled.
+    gibber:
+        'true': Let's gibber now.
+        'false': No more gibbering.

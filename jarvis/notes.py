@@ -425,6 +425,8 @@ def gibber(inp, user):
     If the user isn't specified, generates the message based on the log of
     the entire channel.
     """
+    if not inp.config.gibber:
+        return lex.denied
     query = db.Message.select().where(
         db.Message.channel == inp.channel, db.Message.user == user)
     if user and not query.exists():
