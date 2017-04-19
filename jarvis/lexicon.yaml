@@ -266,14 +266,14 @@ show_page:
         rewrite: rewritten {hdate} by {users} and {last_user}
         translator: translated {hdate} by {users} and {last_user}
         maintainer: maintained {hdate} by {users} and {last_user}
-    summary: "*{page.title}* ({attribution}; rating: {rating:+d}) - {page.url}"
-    nr_summary: "*{page.title}* ({attribution}) - {page.url}"
+    summary: "{{ page.title|bold }} ({attribution}; rating: {rating:+d}) - {page.url}"
+    nr_summary: "{{ page.title|bold }} ({attribution}) - {page.url}"
 summary:
     author: |-
-        *{name}*{url} has *{pages.count}* pages ({rels}) ({tags}). They have *{primary.rating}* net upvotes with an average of *{primary.average}*. Their latest page is *{last.title}* at *{last.rating:+d}*.
+        {{ name|bold }}{url} has {{ pages.count|bold }} pages ({rels}) ({tags}). They have {{ primary.rating|bold }} net upvotes with an average of {{ primary.average|bold }}. Their latest page is {{ last.title|bold }} at {{ last.rating|bold }}.
     page: |-
-        *{page.title}* ({attribution}; rating: {page.rating:+d}) - {page.url}
-    search: I've found *{count}* pages by *{authors}* authors. They have a total rating of *{rating}*, with an average of *{average}*. The pages were created between {first} and {last}. The highest rated page is *{top_title}* at *{top_rating:+d}*.
+        {{ page.title|bold }} ({attribution}; rating: {page.rating:+d}) - {page.url}
+    search: I've found {{ count|bold }} pages by {{ authors|bold }} authors. They have a total rating of {{ rating|bold }}, with an average of {{ average|bold }}. The pages were created between {first} and {last}. The highest rated page is {{ top_title|bold }} at {{ top_rating|bold }}.
 unused:
     count: |-
         There are {count} empty slots matching your criteria.
@@ -307,9 +307,9 @@ dice:
         Rocks Fall, Everyone Dies.
         Try a more realistic number, would you?
     output:
-        expanded: "*{total}* [{expanded}]"
-        annotated: "{text}: *{total}*"
-        simple: "*{total}*"
+        expanded: "{{ total|bold }} [{expanded}]"
+        annotated: "{text}: {{ total|bold }"
+        simple: "{{ total|bold }}"
 silly:
     hugs: |-
         I'd hug you with my big robot hands, but you meatbags are so squishy, we'd just end up with a mess on my pretty hands.
