@@ -308,7 +308,7 @@ dice:
         Try a more realistic number, would you?
     output:
         expanded: "{{ total|bold }} [{expanded}]"
-        annotated: "{text}: {{ total|bold }"
+        annotated: "{text}: {{ total|bold }}"
         simple: "{{ total|bold }}"
 silly:
     hugs: |-
