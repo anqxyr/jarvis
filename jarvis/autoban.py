@@ -33,7 +33,7 @@ def get_ban_list():
     tables = soup('table', class_='wiki-content-table')
     bans = {}
     for table in tables:
-        chat = table('tr')[0].text
+        chat = table('tr')[0].text.strip()
         rows = table('tr')[2:]
         bans[chat] = list(map(parse_ban, rows))
     return bans
