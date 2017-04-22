@@ -107,7 +107,7 @@ def test_unused_simple():
 
 
 def test_unused_last():
-    assert run('.unused -l') == 'http://www.scp-wiki.net/scp-2973'
+    assert run('.unused -l') == 'http://www.scp-wiki.net/scp-3999'
 
 
 def test_unused_prime():
@@ -115,8 +115,12 @@ def test_unused_prime():
 
 
 def test_unused_divisible():
-    assert run('.unused -d 10') == lex.not_found.unused
+    assert run('.unused -d 10 -s 3') == lex.not_found.unused
 
 
 def test_unused_count():
-    assert run('.unused -c') == lex.unused.count(count=217)
+    assert run('.unused -c') == lex.unused.count(count=1217)
+
+
+def test_unused_series():
+    assert run('.unused -c -s 1 2 3') == lex.unused.count(count=217)

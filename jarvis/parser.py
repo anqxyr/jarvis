@@ -706,6 +706,13 @@ def unused(pr):
                 For example, '.unused -d 100' will return slots that
                 end wtih 00.""")
 
+    pr.add_argument(
+        '--series', '-s',
+        nargs='+',
+        type=int,
+        re='[1-4]',
+        help="""Only check slots within the given series.""")
+
     pr.exclusive('random', 'last', 'count')
 
 

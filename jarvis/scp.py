@@ -6,10 +6,11 @@
 ###############################################################################
 
 import arrow
-import random as rand
 import functools
-import re
+import itertools
 import jinja2
+import random as rand
+import re
 
 from . import core, ext, parser, lex, stats, tools
 
@@ -339,9 +340,12 @@ def lastcreated(inp, **kwargs):
 
 @core.command
 @parser.unused
-def unused(inp, *, random, last, count, prime, palindrome, divisible):
+def unused(inp, *, random, last, count, prime, palindrome, divisible, series):
     """Get the first unused scp slot."""
-    numbers = range(2, 3000)
+    series = [0, 1, 2, 3] if not series else [i - 1 for i in set(series)]
+    series = [i * 1000 for i in series]
+    numbers = itertools.chain.from_iterable(
+        range(i or 2, i + 1000) for i in series)
 
     if prime:
         numbers = [i for i in numbers if all(i % k for k in range(2, i))]
