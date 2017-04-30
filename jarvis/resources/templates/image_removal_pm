@@ -1,0 +1,14 @@
+Hello,
+
+Your article {{ page }} have been reviewed for image license compliance. The following images were removed for not adhering to the Creative Commons license:
+
+{{ images }}
+
+Where possible, the copyright owners have been contacted in an attempt to sequre a permission for image use. In case of their positive responce, the respective images will be reinstated. If you have questions regarding the image use policies, or bject to the remooval of the image, please contact a member of the Image Team.
+
+-{{ user }}
+
+----
+[[size 75%]]
+This automated message was sent on behalf of {{ user }}. Please do not reply to this message or send other messages to this bot. Contact {{ user }} in regard to this message. If you believe that you are not the intended recipient of this message, that the image was delivered incorrectly, or have other concerns about this bot, please contact [[user anqxyr]].
+[[/size]]

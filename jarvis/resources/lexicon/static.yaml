@@ -1,0 +1,220 @@
+###############################################################################
+# Generics
+###############################################################################
+unclear: |
+    {% set count = options|length - 5 %}
+    {% set options = options|map('bold')|list %}
+    {% set options = options[:5] %}
+    {% if count < 0 %}
+        Ambiguous input. Possible variants: {{ options|join(', ') }}.
+    {% else %}
+        Ambiguous input. Possible variants: {{ options|join(', ') }} and {{ count }} more...
+    {% endif %}
+index_out_of_range: Index out of range.
+###############################################################################
+# Notes
+###############################################################################
+tell:
+    send: Sent.
+    get: "{{ name }} said {{ time }}: {{ text }}"
+    no_new: No new tells.
+    new: You have {{ count }} new messages.
+masstell:
+    missing_args: Please specify recipients and message text.
+outbound:
+    empty: You have no undelivered tells.
+    count: You have {{ count }} outbound tells.
+    purged: Deleted {{ count }} outbound tells.
+    echo: "{{ time }} to {{ user }}: {{ message }}"
+memo:
+    saved: Memo saved.
+    appended: Memo appended.
+    get: "{{ text }}"
+    already_exists: Memo already exists.
+    not_found: Memo not found.
+    deleted: Memo deleted.
+    count: There are {{ count }} memos in this channel.
+    denied: Memos are disabled in this channel.
+quote:
+    added: Quote added.
+    get: "{{ text }}"
+    already_exists: Quote already exists.
+    not_found: No quotes found.
+    delete_not_found: "Unable to delete the quote: quote not found."
+    deleted: Quote deleted.
+    index_out_of_range: "Unable to retrieve the quote: index out of range."
+    denied: Quotes are disabled in this channel.
+seen:
+    last: "{{ user }} was last seen {{ time }} saying: {{ text }}"
+    never: User not found.
+    first: "{{ user }} was first seen {{ time }} saying: {{ text }}"
+    total: "{{ user }} was seen a total of {{ total }} times, {{ this_month }} of them this month."
+    self: I am here.
+alert:
+    set: Alert set.
+    past: Unable to set an alert in the past.
+gibber:
+    say: "{{ text }}"
+    no_such_user: Haven't seen them.
+    small_sample: The sample is not large enough to construct a text model.    
+    denied: Gibs are disabled in this channel.
+###############################################################################
+# SCP
+###############################################################################
+unused:
+    found: http://www.scp-wiki.net/{{ slot }}
+    not_found: No empty slots with these criteria.
+    count: Found {{ count }} unused slots.
+search:
+    default: |
+        {% if count >= 5 %}
+            {{ results[:5]|map(attribute='title')|map('bold')|join(', ') }} and {{ count - 5 }} more...
+        {% else %}
+            {{ results[:-1]|map(attribute='title')|map('bold')|join(', ') }} and {{ results[-1].title|bold }}.
+        {% endif %}
+    summary: Found {{ count|bold }} pages by {{ authors|bold }} authors. They have a total rating of {{ rating|bold }}, with an average of {{ average|bold }}. The pages were created between {first} and {last}. The highest rated page is {{ top_title|bold }} at {{ top_rating|bold }}.
+page_lookup:
+    summary: "{{ page.title|bold }} ({attribution}; rating: {rating:+d}) - {page.url}"
+    nr_summary: "{{ page.title|bold }} ({attribution}) - {page.url}"
+    not_found: Page not found.
+author:
+    summary: "{{ name|bold }}{url} has {{ pages.count|bold }} pages ({rels}) ({tags}). They have {{ primary.rating|bold }} net upvotes with an average of {{ primary.average|bold }}. Their latest page is {{ last.title|bold }} at {{ last.rating|bold }}."
+    details: "{{ url }}"
+    not_found: Author not found.
+###############################################################################
+# Tools
+###############################################################################
+version: v{version} python3 IRC bot, created and maintained by anqxyr, powered by sopel and pyscp. Source code and changelog are available at https://github.com/anqxyr/jarvis . Uptime is {days} days, {hours} hours and {minutes} minutes. Contact anqxyr for bug reports and feature requests.
+rejoin: Entering {channel} ... now.
+dice:
+    bad_side_count: Dice must have at least two sides.
+    too_many_dice: The number of dice is too large.
+    output:
+        expanded: "{{ total|bold }} [{expanded}]"
+        annotated: "{text}: {{ total|bold }}"
+        simple: "{{ total|bold }}"
+hugs: You are hugged.
+zyn: marp
+reloadtitles: Titles reloaded.
+updatehelp: Help page updated.
+post_on_twitter:
+    new: New article - {{ page.title }} by {{ attr }}. {{ page.url }}
+    old: Random article - {{ page.title }} by {{ attr }}. {{ page.url }}
+    short: "{{ page.title }}. {{ page.url }}"
+onpage:
+    working: Searching member list. Please wait...
+    found: Found user {{ user }} on page {{ page }}.
+    not_found: Unable to find {{ user in the member list.
+mylevel: You are {{ user }}. Your privilege level in {{ channel }} is {{ level }}.
+convert:
+    result: "{{ dimensionality|bold }} Converted {{ source }} to {{ value|bold }} {{ units|bold }}."
+    conversion_error: "Failed to convert: {{ text }}"
+    syntax_error: Input expression must be of format "<value> <unit> to <unit>".
+###############################################################################
+# Websearch
+###############################################################################
+google:
+    result: "[{{ index }}/{{ total }}] {{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
+    not_found: No results found.
+    heavy_load: Google is under heavy load right now. Try again in a minute, or use .duckduckgo in the meantime.
+    quota_exceeded: Daily usage quota exceeded. Try again tomorrow, or use .duckduckgo instead.
+gis:
+    result: "[{{ index }}/{{ total }}] {{ title|bold }} - {{ url }}"
+    not_found: No results found.
+youtube:
+    result: "{{'[' ~ index ~ '/' ~ total ~ ']' if index}} {{ title|bold }} - length {{ duration|bold }} - {{ likes ~ '↑' ~ dislikes ~ '↓ - ' if likes and dislikes }}{{ '{:,}'.format(views|int)|bold }} views - {{ channel|bold }} on {{ date|bold }}{{' - http://youtube.com/watch?v=' ~ video_id if video_id }}"
+    not_found: No results found.
+translate:
+    result: "[{{ lang|bold }}] {{ text|join(', ')|shorten(width=200) }}"
+    error: "Could not perform the translation: {{ reason }}"
+imdb:
+    result: "{{ title|bold }} ({{ year }}) - http://www.imdb.com/title/{{ imdbid }} - {{ director|bold }} - {{ runtime }} - {{ plot }}"
+    not_found: No results found.
+twitter_lookup: "{{ name|bold }} - {{ date }} - {{ favorites }} likes - {{ text }}"
+duckduckgo:
+    result: "[{{ index }}/{{ total }}] {{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
+wikipedia:
+    result: "{{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"
+    not_found: No results found.
+tvtropes:
+    not_found: Trope not found.
+steam:
+    result: "{{ name|bold }}{{ ' - http://store.steampowered.com/app/' ~ url if url }}{{ ' - $' ~ price if price}}{{ ' - ' ~ genres|join(', ') if genres }} - {{ description|escape_newline }}"
+    not_found: Game not found.
+urbandict:
+    denied: Urban Dictionary is disabled in this channel.
+###############################################################################
+# Autoban
+###############################################################################
+updatebans:
+    updated: Banlist updated.
+    failed: Failed to update - banlist is broken.
+autoban:
+    name: Kicked user {{ user }} due to an inappropriate username.
+    banlist: User {{ user }} was found in the banlist.
+    kick:
+        name: Your username is inappropriate. Please use "/nick newnick" to change it. You may rejoin with a different username in 10 seconds.
+        banlist: "Your nick/ip was found in the bot's banlist. Reason for ban: {{ reason }}. If you wish to appeal please join #site17."
+###############################################################################
+# Images
+###############################################################################
+images:
+    scan:
+        unknown_category: Could not determine the category for {{ page }}. Proceeding to the next page.
+        done: "{{ count }} new images have been added to the index."
+    update:
+        done: Index updated.
+        bad_status: Incorrect status. Action aborted.
+        notes_conflict: The image record already contains notes. The update subcommand can only add notes where none had previously existed. Use "!images notes -a" to append to existing notes.
+    list:
+        verbose: "{{ [ url, page, source, status|imgstatuscolor ]|reject('none')|join(' - ') }}"
+    notes:
+        append: Note appended.
+        purge: All notes have been purged.
+        empty: There are no notes about this image.
+    add:
+        done: The image has been successfully added to the index.
+        offsite: Could not determine the parent page from the image url. The image is likely hosted off-site. Reupload the image localy or specify the parent page explicitly.
+    too_many: Specified page includes {{ count }} images. Please specify which image you wish to see.
+    not_found: The image is not found in the index.
+    purge: Purged {{ count }} record(s).
+    search:
+        tineye: "http://tineye.com/search?url={{ url }}"
+        google: "http://www.google.com/searchbyimage?image_url={{ url }}"
+    stats: "{{ count }} indexed images in this category ({% for gr in images|groupby('status') %}{{ gr.grouper|imgstatuscolor }} - {{ gr.list|length }}{{ ',' if not loop.last }}{% endfor %}). Not reviewed - {{ not_reviewed }}."
+    sync: Page index synchronized.
+    remove:
+        page_edited: Image code removed.
+        posted: Discussion page post created.
+        pm_sent: Author PM sent.
+    attribute:
+        not_found: Could not find any images with proper origin and status.
+        done: Succesfully attributed {{ count }} images.
+    claim:
+        unknown_category: The specified category does not exist or contains no images.
+        done: Category successfully claimed.
+    tagcc:
+        working: I have found {{ count }} candidates for the _cc tag. Please wait...
+        no_candidates: There are no pages that match the requirements for the _cc tag. Come back another time.
+        untracked: "{{ page }} contains images not tracked in the image index, and was not tagged as _cc."
+        finished: Done. Tagged {{ count }} pages.
+###############################################################################
+# Configure
+###############################################################################
+configure:
+    memos:
+        'off': Memos are now disabled.
+        alphanumeric: Only alphanumeric memos will be allowed.
+        all: All memos are now allowed.
+    lcratings:
+        'true': .lastcreated will display article ratings.
+        'false': Article ratings will not be shown.
+    keeplogs:
+        'true': Channel logs will be preserved.
+        'false': Logs will not be kept.
+    urbandict:
+        'true': .urb will be allowed.
+        'false': .urb is disabled.
+    gibber:
+        'true': Let's gibber now.
+        'false': No more gibbering.

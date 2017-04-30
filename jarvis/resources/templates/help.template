@@ -1,0 +1,98 @@
+[[module css]]
+h2 {
+    color: blue;
+}
+.doc {
+    width: 50%;
+}
+.usage {
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+.arguments {
+    display: flex;
+    flex-wrap: wrap;
+    max-width: 800px;
+    margin-left: 50px;
+}
+.arg {
+    display: inline-block;
+    margin: -10px 0px;
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 0.8rem;
+    width: 30%;
+}
+.arg-help {
+    display: inline-block;
+    margin: -10px 0px;
+    width: 70%;
+    font-family: monospace;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+[[/module]]
+
+
+[[toc]]
+
+{% for f in funcs %}
+++ {{ f.__name__ }}
+[[div class="doc"]]
+{{ f.__doc__|unwrap }}
+[[/div]]
+
+{% if f|hasattr('_parser') %}
+**Usage:** [[span class="usage"]]@@{{ f._parser.usage(f.__name__)[6:] }}@@[[/span]]
+
+**Arguments:**
+[[div class="arguments"]]
+{% for arg in f._parser._args %}
+    [[div class="arg"]]
+    {% if arg.flags %}
+        @@{{ arg.flags|join(', ') }}@@
+    {% else %}
+        @@{{ arg.name }}@@
+    {% endif %}
+    [[/div]]
+    [[div class="arg-help"]]
+    @@{{ arg.help|unwrap }}@@
+    [[/div]]
+{% endfor %}
+[[/div]]
+{% endif %}
+
+{% if f|hasattr('_subcommands') %}
+{% for subname, subfunc in f._subcommands|filldict('-default-')|sort %}
++++ {{ subname }}
+[[div class="doc"]]
+{{ subfunc.__doc__|unwrap }}
+[[/div]]
+
+{% set subparser = subfunc._parser %}
+
+**Usage:** [[span class="usage"]]@@{{ subparser.usage(f.__name__)[6:] }}@@[[/span]]
+{% if subparser._args %}
+**Arguments:**
+{% endif %}
+[[div class="arguments"]]
+{% for arg in subparser._args %}
+    [[div class="arg"]]
+    {% if arg.flags %}
+        @@{{ arg.flags|join(', ') }}@@
+    {% else %}
+        @@{{ arg.name }}@@
+    {% endif %}
+    [[/div]]
+    [[div class="arg-help"]]
+    @@{{ arg.help|unwrap }}@@
+    [[/div]]
+{% endfor %}
+[[/div]]
+
+{% endfor %}
+
+{% endif %}
+
+{% endfor %}
