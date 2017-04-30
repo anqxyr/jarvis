@@ -13,8 +13,11 @@ import yaml
 
 ###############################################################################
 
-with (pathlib.Path(__file__).parent / 'lexicon.yaml').open() as file:
-    DATA = yaml.safe_load(file)
+DATA = {}
+LEXPATH = pathlib.Path(__file__).parent / 'resources/lexicon'
+for file in LEXPATH.glob('*.yaml'):
+    with file.open() as filestream:
+        DATA[file.stem] = yaml.safe_load(filestream)
 
 ###############################################################################
 
@@ -62,28 +65,22 @@ class Lexicon:
         return new
 
     def __str__(self):
-        text = env.from_string(self._raw).render(**self.kwargs).strip()
-        text = random.choice(text.split('\n'))
-        text = text.strip()
-        try:
-            text = text.format(**self.kwargs)
-        except (KeyError, ValueError):
-            pass
-        return text
-
-    @property
-    def _raw(self):
-        out = DATA
-        for i in self.path:
-            out = out[i]
-        return out
+        return self.compose('static')
 
     @property
     def jinja2(self):
         return env
 
-    def compose(self, inp):
-        return str(self)
+    def compose(self, lexicon):
+        if self.path[0] in DATA:
+            lexicon, self.path = self.path[0], self.path[1:]
+        template = DATA[lexicon]
+        for i in self.path:
+            template = template[i]
+        text = env.from_string(template).render(**self.kwargs).strip()
+        text = random.choice(text.split('\n'))
+        text = text.strip()
+        return text
 
 
 ###############################################################################

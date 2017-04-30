@@ -121,7 +121,7 @@ def test_post_on_twitter():
 
 def test_updatehelp():
     result = run('.updatehelp')
-    assert result == lex.updatehelp.finished
+    assert result == lex.updatehelp
     assert str(result)
 
 

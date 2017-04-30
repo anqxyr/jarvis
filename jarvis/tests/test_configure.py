@@ -19,18 +19,18 @@ run = functools.partial(run, _channel='#conftest')
 
 def test_configure_memos_alphanumeric():
     assert run('.conf memos alphanumeric') == lex.configure.memos.alphanumeric
-    assert run('.rem ??? test') == lex.denied
-    assert run('.rem abc test') == lex.memo.added
+    assert run('.rem ??? test') == lex.memo.denied
+    assert run('.rem abc test') == lex.memo.saved
 
 
 def test_configure_memos_all():
     assert run('.conf memos all') == lex.configure.memos.all
-    assert run('.rem ??? test') == lex.memo.added
+    assert run('.rem ??? test') == lex.memo.saved
 
 
 def test_configure_memos_off():
     assert run('.conf memos') == lex.configure.memos.off
-    assert run('.rem test test') == lex.denied
+    assert run('.rem test test') == lex.memo.denied
 
 
 def test_configure_lcratings_on():
@@ -39,7 +39,7 @@ def test_configure_lcratings_on():
 
 def test_configure_lcratings_off():
     assert run('.conf lcratings off') == lex.configure.lcratings.false
-    assert run('.lc') == [lex.show_page.nr_summary] * 3
+    assert run('.lc') == [lex.page_lookup.nr_summary] * 3
 
 
 def test_configure_keeplogs():
@@ -53,9 +53,9 @@ def test_configure_keeplogs():
 
 def test_configure_urbandict():
     assert run('.conf urbandict off') == lex.configure.urbandict.false
-    assert run('.urban test') == lex.denied
+    assert run('.urban test') == lex.urbandict.denied
 
 
 def test_configure_gibber():
     assert run('.conf gibber off') == lex.configure.gibber.false
-    assert run('.gib') == lex.denied
+    assert run('.gib') == lex.gibber.denied

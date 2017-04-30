@@ -190,11 +190,11 @@ def test_quote_get_index():
 
 
 def test_quote_get_index_too_big():
-    assert run('.q 20') == lex.input.bad_index
+    assert run('.q 20') == lex.quote.index_out_of_range
 
 
 def test_quote_get_index_negative():
-    assert run('.q -4') == lex.quote.none_saved
+    assert run('.q -4') == lex.quote.not_found
 
 
 def test_quote_get_user():
@@ -202,7 +202,7 @@ def test_quote_get_user():
 
 
 def test_quote_get_nonexistent_user():
-    assert run('.q user5') == lex.quote.none_saved
+    assert run('.q user5') == lex.quote.not_found
 
 
 def test_quote_get_user_and_index():
@@ -224,7 +224,7 @@ def test_quote_get_cross_channel():
 
 
 def test_memo_add():
-    assert run('.memo add user1 memo1') == lex.memo.added
+    assert run('.memo add user1 memo1') == lex.memo.saved
 
 
 def test_memo_add_no_overwrite():
@@ -232,7 +232,7 @@ def test_memo_add_no_overwrite():
 
 
 def test_memo_add_quick():
-    assert run('.rem user2 memo2') == lex.memo.added
+    assert run('.rem user2 memo2') == lex.memo.saved
 
 
 def test_memo_get():
@@ -257,12 +257,12 @@ def test_memo_add_case_insensitive():
 
 
 def test_memo_append():
-    assert run('.memo append user1 part2') == lex.memo.added
+    assert run('.memo append user1 part2') == lex.memo.appended
     assert run('?user1') == lex.memo.get(text='memo1 part2')
 
 
 def test_memo_append_case_insensitive():
-    assert run('.MEMO APPEND USER1 part3') == lex.memo.added
+    assert run('.MEMO APPEND USER1 part3') == lex.memo.appended
     assert run('?user1') == lex.memo.get(text='memo1 part2 part3')
 
 

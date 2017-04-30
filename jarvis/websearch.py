@@ -22,7 +22,7 @@ def indexed_cache(func):
     func = functools.lru_cache()(func)
 
     @functools.wraps(func)
-    @utils.catch(IndexError, return_value=lex.input.bad_index)
+    @utils.catch(IndexError, return_value=lex.index_out_of_range)
     def inner(inp, *, index, **kwargs):
         results = func(**kwargs)
         if isinstance(results, list):
@@ -184,7 +184,7 @@ def imdb(inp, *, title, search, imdbid, year):
 
         results = [(i['Title'], i['Year']) for i in results]
         results = ['{} ({})'.format(title, year) for title, year in results]
-        return lex.options(options=results)
+        return lex.unclear(options=results)
 
     if 'error' in data:
         return lex.imdb.not_found
@@ -280,7 +280,7 @@ def wikipedia(inp, *, query):
         return lex.wikipedia.not_found
     except wiki.exceptions.DisambiguationError as e:
         tools.save_results(inp, e.options, lambda x: wikipedia(inp, query=x))
-        return lex.options(options=e.options)
+        return lex.unclear(options=e.options)
 
     return lex.wikipedia.result(
         title=page.title, url=page.url, text=page.content)
@@ -316,7 +316,7 @@ def dictionary(inp, *, query):
 def urbandictionary(inp, *, query):
     """Show urban defitiontion of a word or a phrase."""
     if not inp.config.urbandict:
-        return lex.denied
+        return lex.urbandict.denied
     url = 'http://api.urbandictionary.com/v0/define?term=' + query
     data = requests.get(url).json()
     if not data['list']:

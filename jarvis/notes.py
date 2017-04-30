@@ -195,7 +195,7 @@ def quote(inp, mode, **kwargs):
     This command is disabled in #site19.
     """
     if not _memos_allowed(inp, kwargs.get('user', '')):
-        return lex.denied
+        return lex.quote.denied
     return quote.dispatch(inp, mode, **kwargs)
 
 
@@ -211,11 +211,11 @@ def get_quote(inp, *, user, index):
         query = db.Quote.find(channel=inp.channel)
 
     if not query.exists():
-        return lex.quote.none_saved
+        return lex.quote.not_found
 
     index = index or random.randint(1, query.count())
     if index > query.count():
-        return lex.input.bad_index
+        return lex.quote.index_out_of_range
     quote = query.order_by(db.Quote.time).limit(1).offset(index - 1)[0]
 
     return lex.quote.get(
@@ -253,7 +253,7 @@ def delete_quote(inp, *, user, message):
     quote = db.Quote.find_one(user=user, channel=inp.channel, text=message)
 
     if not quote:
-        return lex.quote.not_found
+        return lex.quote.delete_not_found
 
     quote.delete_instance()
     return lex.quote.deleted
@@ -280,7 +280,7 @@ def memo(inp, mode, **kwargs):
     Unlike quotes, memo creation times are not preserved.
     """
     if not _memos_allowed(inp, kwargs.get('user', '')):
-        return lex.denied
+        return lex.memo.denied
     return memo.dispatch(inp, mode, **kwargs)
 
 
@@ -310,7 +310,7 @@ def add_memo(inp, *, user, message):
         return lex.memo.already_exists
 
     db.Memo.create(user=user, channel=inp.channel, text=message)
-    return lex.memo.added
+    return lex.memo.saved
 
 
 @memo.subcommand('del')
@@ -345,7 +345,7 @@ def append_memo(inp, *, user, message):
 
     memo.text += ' ' + message
     memo.save()
-    return lex.memo.added
+    return lex.memo.appended
 
 
 @memo.subcommand('count')
@@ -359,7 +359,7 @@ def count_memos(inp):
 def rem(inp, *, user, message):
     """Shorthand for '!memo add'."""
     if not _memos_allowed(inp, user):
-        return lex.denied
+        return lex.memo.denied
     return add_memo(inp, user=user, message=message)
 
 
@@ -426,7 +426,7 @@ def gibber(inp, user):
     the entire channel.
     """
     if not inp.config.gibber:
-        return lex.denied
+        return lex.gibber.denied
     query = db.Message.select().where(
         db.Message.channel == inp.channel, db.Message.user == user)
     if user and not query.exists():

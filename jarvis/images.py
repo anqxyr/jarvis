@@ -11,7 +11,7 @@ import pyscp
 import re
 import time
 
-from . import core, parser, lex
+from . import core, parser, lex, utils
 
 
 ###############################################################################
@@ -280,7 +280,8 @@ def update(inp, *, images, url, page, source, status, notes):
 @targeted(5)
 def list_images(inp, *, images, terse):
     """Display image records."""
-    out = lex.images.list.terse if terse else lex.images.list.verbose
+    #out = lex.images.list.terse if terse else lex.images.list.verbose
+    out = lex.images.list.verbose
     yield from [
         out(url=i.url, page=i.page, source=i.source, status=i.status)
         for i in images]
@@ -428,17 +429,14 @@ def remove(inp, *, page, images):
 
     time.sleep(5)
 
-    text = lex.templates.removal.post._raw
-    text += lex.templates.postfix._raw
-    text = text.format(user=inp.user)
+    text = utils.load_template('image_removal_post', user=inp.user)
     page._thread.new_post(text)
     yield lex.images.remove.posted
 
     time.sleep(5)
 
-    text = lex.templates.removal.pm._raw
-    text += lex.templates.postfix._raw
-    text = text.format(
+    text = utils.load_template(
+        'image_removal_pm',
         page=page.title, images='\n'.join(images), user=inp.user)
     for i in page.metadata:
         scpwiki.send_pm(i, text, title='Image Removal')
@@ -465,15 +463,16 @@ def attribute(inp, *, page):
             continue
 
         if image.status == 'BY-SA CC':
-            text = lex.templates.attribution.cc
+            template = 'attribution_cc'
         elif image.status == 'BY-NC-SA CC':
-            text = lex.templates.attribution.cc_non_commercial
+            template = 'attribution_cc_nc'
         elif image.status == 'PERMISSION GRANTED':
-            text = lex.templates.attribution.permission
+            template = 'attribution_permission'
         else:
             continue
 
-        text = text._raw.format(
+        text = utils.load_template(
+            template,
             url=image.url,
             num=natural.number.ordinal(idx + 1),
             origin=image.source)
@@ -483,8 +482,8 @@ def attribute(inp, *, page):
         return lex.images.attribute.not_found
 
     count = len(messages)
+    messages.append(utils.load_template('attribution_postfix', user=inp.user))
     messages = '\n----\n'.join(messages)
-    messages += lex.templates.postfix._raw.format(user=inp.user)
     scpwiki(page)._thread.new_post(messages, title='Image Attribution')
     return lex.images.attribute.done(count=count)
 
@@ -513,6 +512,14 @@ def claim(inp, *, category, purge):
 @core.require(channel=core.config.irc.imageteam, level=2)
 @core.multiline
 def tagcc(inp):
+    """
+    Tag eligible pages with the '_cc' tag.
+
+    Only pages for which *all* present images are licensed in a manner
+    compatible with the site's license will be tagged. That means that all
+    the images on the page must be either licensed under the Public Domain
+    or the BY-SA CC license.
+    """
     candidates = []
     for page in {i.page for i in IMAGES}:
         images = [i for i in IMAGES if i.page == page]
@@ -536,14 +543,48 @@ def tagcc(inp):
 
         tags = page.tags
         tags.add('_cc')
-        core.wiki_editable(page.name).set_tags(tags)
+        scpwiki(page.name).set_tags(tags)
+        time.sleep(2)
         count += 1
 
     yield lex.images.tagcc.finished(count=count)
 
 
+#@core.command
+@core.require(channel=[core.config.irc.sssc, core.config.irc.imageteam])
+#@parser.unsourced
+def unsourced(inp, mode, **kwargs):
+    return unsourced.dispatch(inp, mode, **kwargs)
 
 
+#@unsourced.subcommand('remove')
+@core.multiline
+def unsourced_remove(inp, *, page, images):
+    page = scpwiki(page)
+
+    source = page.source
+    for i in images:
+        source = remove_image_component(source, i)
+    page.edit(source, comment='removed image code. -' + inp.user)
+    yield lex.images.remove.page_edited
+
+    time.sleep(5)
+
+    text = lex.templates.unsourced.removal_post._raw
+    text += lex.templates.postfix._raw
+    text = text.format(user=inp.user)
+    page._thread.new_post(text)
+    yield lex.images.remove.posted
+
+    time.sleep(5)
+
+    text = lex.templates.unsourced.removal_pm._raw
+    text += lex.templates.postfix._raw
+    text = text.format(
+        page=page.title, images='\n'.join(images), user=inp.user)
+    for i in page.metadata:
+        scpwiki.send_pm(i, text, title='Image Removal')
+    yield lex.images.remove.pm_sent
 
 
 

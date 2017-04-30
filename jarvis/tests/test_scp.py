@@ -4,8 +4,8 @@
 # Module Imports
 ###############################################################################
 
-from jarvis import core, scp, lex, tools
-from jarvis.tests.utils import run, samples, page
+from jarvis import scp, lex
+from jarvis.tests.utils import run, page
 
 ###############################################################################
 # Author
@@ -16,24 +16,25 @@ def test_author_simple():
     # the call to scp here is a code smell
     # run results should be always compared to lex objects directly
     # if they can't be, it means the output is too complicated
-    assert run('.au anq') == lex.summary.author(name='anqxyr')
+    assert run('.au anq') == lex.author.summary(name='anqxyr')
 
 
 def test_author_ambiguous():
-    assert run('.au gears') == tools.choose_input(['Dr Gears', 'TwistedGears'])
+    assert run('.au gears') == lex.unclear(
+        options=['Dr Gears', 'TwistedGears'])
 
 
 def test_author_not_found():
-    assert run('.au fakeauthorname') == lex.not_found.author
+    assert run('.au fakeauthorname') == lex.author.not_found
 
 
 def test_author_default():
-    assert run('.au', _user='anqxyr') == lex.summary.author(name='anqxyr')
+    assert run('.au', _user='anqxyr') == lex.author.summary(name='anqxyr')
 
 
 def test_author_showmore():
     run('.au Jack')
-    assert run('.sm 3') == lex.summary.author
+    assert run('.sm 3') == lex.author.summary
 
 
 ###############################################################################
@@ -50,11 +51,11 @@ def test_authordetails_showmore():
 
 
 def test_scp_lookup_simple():
-    assert run('scp-1200') == lex.show_page.summary
+    assert run('scp-1200') == lex.page_lookup.summary
 
 
 def test_scp_lookup_not_found():
-    assert run('scp-7548') == lex.not_found.page
+    assert run('scp-7548') == lex.page_lookup.not_found
 
 
 ###############################################################################
@@ -103,19 +104,19 @@ def test_search_fullname():
 
 
 def test_unused_simple():
-    assert run('.unused') == 'http://www.scp-wiki.net/scp-2258'
+    assert run('.unused') == lex.unused.found(slot='scp-2258')
 
 
 def test_unused_last():
-    assert run('.unused -l') == 'http://www.scp-wiki.net/scp-3999'
+    assert run('.unused -l') == lex.unused.found(slot='scp-3999')
 
 
 def test_unused_prime():
-    assert run('.unused -p') == 'http://www.scp-wiki.net/scp-2287'
+    assert run('.unused -p') == lex.unused.found(slot='scp-2287')
 
 
 def test_unused_divisible():
-    assert run('.unused -d 10 -s 3') == lex.not_found.unused
+    assert run('.unused -d 10 -s 3') == lex.unused.not_found
 
 
 def test_unused_count():

@@ -19,7 +19,7 @@ def unwrap(text):
 
 
 env = jinja2.Environment(
-    loader=jinja2.PackageLoader('jarvis', 'resources'))
+    loader=jinja2.PackageLoader('jarvis', 'resources/templates'))
 env.filters['hasattr'] = hasattr
 env.filters['filldict'] = lambda x, y: [
     (k, v) if k else (y, v) for k, v in x.items()]

@@ -18,7 +18,7 @@ def test_wikipedia_simple():
 
 
 def test_wikipedia_ambiguous():
-    assert run('.w mercury') == lex.options
+    assert run('.w mercury') == lex.unclear
 
 
 def test_wikipedia_not_found():
@@ -83,7 +83,7 @@ def test_imdb_year():
 
 
 def test_imdb_search():
-    assert run('.imdb -s avengers') == lex.options
+    assert run('.imdb -s avengers') == lex.unclear
 
 
 def test_imdb_not_found():
@@ -106,7 +106,7 @@ def test_duckduckgo_index():
 
 
 def test_duckduckgo_bad_index():
-    assert run('.ddg scp-wiki -i 100') == lex.input.bad_index
+    assert run('.ddg scp-wiki -i 100') == lex.index_out_of_range
 
 
 def test_duckduckgo_showmore():

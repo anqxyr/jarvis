@@ -4,8 +4,9 @@
 # Module Imports
 ###############################################################################
 
-
 import jarvis
+import pathlib
+import warnings
 import yaml
 
 ###############################################################################
@@ -57,6 +58,18 @@ def run(
     jarvis.core.dispatcher(inp)
 
     out = inp.output
+    #  check that the lex objects convert to strings properly for all
+    #  possible lexicons
+    lexpath = pathlib.Path(__file__).parent.parent / 'resources/lexicon'
+    for i in out:
+        if not hasattr(i, 'compose'):
+            warnings.warn(
+                'Command returned not a lex object: "{}"'.format(text),
+                RuntimeWarning)
+            continue
+        for k in lexpath.glob('*.yaml'):
+            i.compose(k.stem)
+
     return out if len(out) > 1 else out[0] if out else None
 
 
@@ -65,7 +78,3 @@ def page(name):
 
 
 ###############################################################################
-
-
-with open('jarvis/tests/resources/samples.yaml') as file:
-    samples = jarvis.utils.AttrDict.from_nested_dict(yaml.safe_load(file))

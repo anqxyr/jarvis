@@ -15,7 +15,7 @@ def test_dispatcher_simple():
 
 
 def test_dispatcher_ambigious():
-    assert run('.se') == lex.options(options=['search', 'seen'])
+    assert run('.se') == lex.unclear(options=['search', 'seen'])
 
 
 def test_dispatcher_override():

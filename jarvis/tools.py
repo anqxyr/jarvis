@@ -49,17 +49,6 @@ def showmore(inp, *, index):
     return func(items[index - 1]) if func else items[index - 1]
 
 
-def choose_input(options):
-    options = list(map('\x02{}\x02'.format, sorted(options)))
-    if len(options) <= 5:
-        head, tail = options[:-1], options[-1]
-        msg = lex.input.options
-    else:
-        head, tail = options[:5], len(options[5:])
-        msg = lex.input.cropped_options
-    return msg(head=', '.join(head), tail=tail)
-
-
 ###############################################################################
 # Tools for users
 ###############################################################################
@@ -166,13 +155,13 @@ def dice(inp, *, throws, bonus, text, expand):
 @core.rule(r'(?i)(^(?=.*\bjarvis)(?=.*\bhugs?\b).*)')
 def hugs(inp):
     """Who's a good bot? Jarvy is a good bot."""
-    return lex.silly.hugs
+    return lex.hugs
 
 
 @core.command
 def zyn(inp):
     """Marp."""
-    return lex.silly.zyn
+    return lex.zyn
 
 
 @core.command
@@ -218,7 +207,7 @@ def updatehelp(inp):
         {v for k, v in core.COMMANDS.items()}, key=lambda x: x.__name__)
     core.stats_wiki('jarvis').edit(
         utils.load_template('help.template', funcs=funcs))
-    return lex.updatehelp.finished
+    return lex.updatehelp
 
 
 ###############################################################################
@@ -299,8 +288,8 @@ def post_on_twitter():
         return
 
     text, page = result
-    attr = page.build_attribution_string(
-        templates=lex.post_on_twitter.attribution._raw)
+    attr = page.build_attribution_string(templates={
+        i: '{user}' for i in 'author rewrite translation maintainer'.split()})
     text = str(text(page=page, attr=attr))
     if len(text) >= 140:
         text = lex.post_on_twitter.short(page=page)

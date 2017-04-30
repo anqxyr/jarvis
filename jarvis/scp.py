@@ -21,9 +21,17 @@ from . import core, ext, parser, lex, stats, tools
 
 def show_page(page, rating=True):
     attribution = page.build_attribution_string(
-        templates=lex.show_page.templates._raw,
-        group_templates=lex.show_page.group_templates._raw)
-    out = lex.show_page.summary if rating else lex.show_page.nr_summary
+        templates=dict(
+            author='written {hdate} by {user}',
+            rewrite='rewritten {hdate} by {user}',
+            translator='translated {hdate} by {user}',
+            maintainer='maintained {hdate} by {user}'),
+        group_templates=dict(
+            author='co-written {hdate} by {users} and {last_user}',
+            rewrite='rewritten {hdate} by {users} and {last_user}',
+            translator='translated {hdate} by {users} and {last_user}',
+            maintainer='maintained {hdate} by {users} and {last_user}'))
+    out = lex.page_lookup.summary if rating else lex.page_lookup.nr_summary
     if page.name == 'scp-1848':
         r = rand.Random(int(arrow.now().format('YYYYMMDDHH')))
         rating = r.randrange(-160, -140)
@@ -46,12 +54,12 @@ def guess_author(func):
         authors = sorted(i for i in authors if text in i.lower())
 
         if not authors:
-            return lex.not_found.author
+            return lex.author.not_found
         elif len(authors) == 1:
             return func(inp, *args, author=authors[0], **kwargs)
         else:
             tools.save_results(inp, authors, lambda x: func(inp, x))
-            return tools.choose_input(authors)
+            return lex.unclear(options=authors)
 
     return inner
 
@@ -64,7 +72,7 @@ def guess_author(func):
 def show_search_results(inp, results):
     """Process page search results."""
     if not results:
-        return lex.not_found.page
+        return lex.page_lookup.not_found
     elif len(results) == 1:
         return show_page(results[0])
     else:
@@ -76,7 +84,7 @@ def show_search_summary(inp, results):
     if not results:
         return lex.not_found.page
     pages = ext.PageView(results).sorted('created')
-    return lex.summary.search(
+    return lex.search.summary(
         count=pages.count,
         authors=len(pages.authors),
         rating=pages.rating,
@@ -181,12 +189,12 @@ def author(inp, author):
     url = ' ( {} )'.format(url) if url else ''
     pages = pages.articles
     if not pages:
-        return lex.not_found.author
+        return lex.author.not_found
     template = '\x02{1.count}\x02 {0}'.format
     tags = ', '.join(template(*i) for i in pages.split_page_type().items())
     rels = ', '.join(template(*i) for i in pages.split_relation(author).items())
     last = sorted(pages, key=lambda x: x.created, reverse=True)[0]
-    return lex.summary.author(
+    return lex.author.summary(
         name=author, url=url, pages=pages, rels=rels, tags=tags,
         primary=pages.primary(author), last=last)
 
@@ -196,7 +204,7 @@ def author(inp, author):
 @guess_author
 def authordetails(inp, author):
     """Generate detailed statistics about the author."""
-    return stats.update_user(author)
+    return lex.author.details(url=stats.update_user(author))
 
 
 ###############################################################################
@@ -320,7 +328,7 @@ def random(inp, **kwargs):
     if pages:
         return show_page(rand.choice(pages))
     else:
-        return lex.not_found.page
+        return lex.page_lookup.not_found
 
 
 @core.command
@@ -360,7 +368,7 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible, series):
     unused_slots = [i for i in slots if i not in used_slots]
 
     if not unused_slots:
-        return lex.not_found.unused
+        return lex.unused.not_found
 
     if count:
         return lex.unused.count(count=len(unused_slots))
@@ -372,7 +380,7 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible, series):
     else:
         result = unused_slots[0]
 
-    return 'http://www.scp-wiki.net/' + result
+    return lex.unused.found(slot=result)
 
 
 @core.command
@@ -397,4 +405,4 @@ def staff(inp, staff={}):
             if inp.text.lower() in k:
                 return '[{}] {}'.format(cat, v)
 
-    return lex.not_found.staff
+    return lex.staff.not_found
