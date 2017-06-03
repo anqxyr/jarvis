@@ -72,31 +72,6 @@ def test_translate_garbage_lang():
 ###############################################################################
 
 
-def test_imdb_simple():
-    assert run('.imdb watchmen') == lex.imdb.result(imdbid='tt0409459')
-
-
-def test_imdb_year():
-    assert (
-        run('.imdb avengers -y 2015') ==
-        lex.imdb.result(title='Avengers: Age of Ultron'))
-
-
-def test_imdb_search():
-    assert run('.imdb -s avengers') == lex.unclear
-
-
-def test_imdb_not_found():
-    assert run('.imdb whatever -y 2100') == lex.imdb.not_found
-
-
-def test_imdb_showmore():
-    run('.imdb -s star wars')
-    assert run('.sm 1') == lex.imdb.result(year='1977')
-
-###############################################################################
-
-
 def test_duckduckgo_simpe():
     assert run('.ddg scp wiki') == lex.duckduckgo.result(index=1)
 

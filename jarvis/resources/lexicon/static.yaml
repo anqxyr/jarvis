@@ -130,9 +130,6 @@ youtube:
 translate:
     result: "[{{ lang|bold }}] {{ text|join(', ')|shorten(width=200) }}"
     error: "Could not perform the translation: {{ reason }}"
-imdb:
-    result: "{{ title|bold }} ({{ year }}) - http://www.imdb.com/title/{{ imdbid }} - {{ director|bold }} - {{ runtime }} - {{ plot }}"
-    not_found: No results found.
 twitter_lookup: "{{ name|bold }} - {{ date }} - {{ favorites }} likes - {{ text }}"
 duckduckgo:
     result: "[{{ index }}/{{ total }}] {{ title|bold }} - {{ url }} - {{ text|shorten(width=200) }}"

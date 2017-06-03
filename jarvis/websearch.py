@@ -165,33 +165,6 @@ def translate(inp, *, lang, query):
     return lex.translate.result(**response.json())
 
 
-@core.command
-@parser.imdb
-def imdb(inp, *, title, search, imdbid, year):
-    """Look up information about a movie."""
-    params = dict(t=title, s=search, i=imdbid, y=year, plot='short', r='json')
-    params = {k: v for k, v in params.items() if v}
-    response = requests.get('http://www.omdbapi.com/', params=params).json()
-    data = {k.lower(): v for k, v in response.items()}
-
-    if 'search' in data:
-        results = data['search']
-
-        tools.save_results(
-            inp, [i['imdbID'] for i in results],
-            lambda x: imdb._func(
-                inp, title=None, search=None, imdbid=x, year=None))
-
-        results = [(i['Title'], i['Year']) for i in results]
-        results = ['{} ({})'.format(title, year) for title, year in results]
-        return lex.unclear(options=results)
-
-    if 'error' in data:
-        return lex.imdb.not_found
-
-    return lex.imdb.result(**data)
-
-
 @core.rule(r'https?://twitter.com/[^/]+/status/([0-9]+)')
 def twitter_lookup(inp):
     api = tools._get_twitter_api()
