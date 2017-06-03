@@ -85,6 +85,17 @@ author:
     summary: "{{ name|bold }}{{ url }} has {{ pages.count|bold }} pages ({{ rels }}) ({{ tags }}). They have {{ primary.rating|bold }} net upvotes with an average of {{ primary.average|bold }}. Their latest page is {{ last.title|bold }} at {{ last.rating|bold }}."
     details: "{{ url }}"
     not_found: Author not found.
+errors:
+    untagged: No tags - {{ pages }}
+    untitled: No title - {{ pages }}
+    deleted: Improperly deleted - {{ pages }}
+    vote: Meet requirements for deletion - {{ pages }}
+    orphaned: Orphaned titles - {{ pages }}
+    none: I was unable to find any errors. I am so sorry.
+    done: These are all the errors I could find.
+cleantitles:
+    start: Commencing cleanup. This is going to take some time.
+    end: Title cleanup finished successfully.
 ###############################################################################
 # Tools
 ###############################################################################

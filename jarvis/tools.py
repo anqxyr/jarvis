@@ -378,7 +378,9 @@ def convert(inp, *, expression, precision):
         else:
             sigfig = len(source_value.split('.')[-1])
         value = round(result.magnitude, int(sigfig))
-        if int(sigfig) <= 0:
+        if value == 0:
+            value = round(result.magnitude, int(sigfig + 1))
+        if sigfig <= 0:
             value = int(value)
     elif precision is True:
         value = result.magnitude

@@ -219,12 +219,6 @@ def errors_orphaned():
     pages = [k for k in core.wiki.titles() if k not in urls]
     pages = [p for p in pages if re.search(r'/scp-[0-9]{3,4}$', p)]
     pages = map(core.wiki, pages)
-    # try to get the html of the page, and only leave pages that error out
-    for page in pages:
-        try:
-            page.html
-        except:
-            yield page
 
 
 def errors_untagged():
