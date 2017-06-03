@@ -10,7 +10,10 @@ unclear: |
     {% else %}
         Ambiguous input. Possible variants: {{ options|join(', ') }} and {{ count }} more...
     {% endif %}
-index_out_of_range: Index out of range.
+generics:
+    index_error: Index out of range.
+error: Unexpected error has occurred. Please report this incident to anqxyr.
+cooldown: This command is on a cooldown and cannot be used yet.
 ###############################################################################
 # Notes
 ###############################################################################
@@ -42,7 +45,7 @@ quote:
     not_found: No quotes found.
     delete_not_found: "Unable to delete the quote: quote not found."
     deleted: Quote deleted.
-    index_out_of_range: "Unable to retrieve the quote: index out of range."
+    index_error: "Unable to retrieve the quote: index out of range."
     denied: Quotes are disabled in this channel.
 seen:
     last: "{{ user }} was last seen {{ time }} saying: {{ text }}"
@@ -72,26 +75,26 @@ search:
         {% else %}
             {{ results[:-1]|map(attribute='title')|map('bold')|join(', ') }} and {{ results[-1].title|bold }}.
         {% endif %}
-    summary: Found {{ count|bold }} pages by {{ authors|bold }} authors. They have a total rating of {{ rating|bold }}, with an average of {{ average|bold }}. The pages were created between {first} and {last}. The highest rated page is {{ top_title|bold }} at {{ top_rating|bold }}.
+    summary: Found {{ count|bold }} pages by {{ authors|bold }} authors. They have a total rating of {{ rating|bold }}, with an average of {{ average|bold }}. The pages were created between {{ first }} and {{ last }}. The highest rated page is {{ top_title|bold }} at {{ top_rating|bold }}.
 page_lookup:
-    summary: "{{ page.title|bold }} ({attribution}; rating: {rating:+d}) - {page.url}"
-    nr_summary: "{{ page.title|bold }} ({attribution}) - {page.url}"
+    summary: "{{ page.title|bold }} ({{ attribution }}; rating: {{ rating }}) - {{ page.url }}"
+    nr_summary: "{{ page.title|bold }} ({{ attribution }}) - {{ page.url }}"
     not_found: Page not found.
 author:
-    summary: "{{ name|bold }}{url} has {{ pages.count|bold }} pages ({rels}) ({tags}). They have {{ primary.rating|bold }} net upvotes with an average of {{ primary.average|bold }}. Their latest page is {{ last.title|bold }} at {{ last.rating|bold }}."
+    summary: "{{ name|bold }}{{ url }} has {{ pages.count|bold }} pages ({{ rels }}) ({{ tags }}). They have {{ primary.rating|bold }} net upvotes with an average of {{ primary.average|bold }}. Their latest page is {{ last.title|bold }} at {{ last.rating|bold }}."
     details: "{{ url }}"
     not_found: Author not found.
 ###############################################################################
 # Tools
 ###############################################################################
-version: v{version} python3 IRC bot, created and maintained by anqxyr, powered by sopel and pyscp. Source code and changelog are available at https://github.com/anqxyr/jarvis . Uptime is {days} days, {hours} hours and {minutes} minutes. Contact anqxyr for bug reports and feature requests.
-rejoin: Entering {channel} ... now.
+version: v{{ version }} python3 IRC bot, created and maintained by anqxyr, powered by sopel and pyscp. Source code and changelog are available at https://github.com/anqxyr/jarvis . Uptime is {{ days }} days, {{ hours }} hours and {{ minutes }} minutes. Contact anqxyr for bug reports and feature requests.
+rejoin: Entering {{ channel }} ... now.
 dice:
     bad_side_count: Dice must have at least two sides.
     too_many_dice: The number of dice is too large.
     output:
-        expanded: "{{ total|bold }} [{expanded}]"
-        annotated: "{text}: {{ total|bold }}"
+        expanded: "{{ total|bold }} [{{ expanded }}]"
+        annotated: "{{ text }}: {{ total|bold }}"
         simple: "{{ total|bold }}"
 hugs: You are hugged.
 zyn: marp

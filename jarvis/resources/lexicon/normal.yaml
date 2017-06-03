@@ -1,0 +1,242 @@
+###############################################################################
+# Include
+###############################################################################
+include: static
+###############################################################################
+# Fragments
+###############################################################################
+fragment:
+    you: |-
+        pal
+        you funny human
+        human
+        mate
+        boss
+        my liege
+    will_do:
+        I'm on it
+        I will do it
+        I'll do it
+        I will follow orders
+        I'll do as instructed
+    outbound:
+        outbound
+        undelivered
+        outgoing
+    saved:
+        saved
+        added
+        stored
+    deleted:
+        deleted
+        erased
+        purged
+        destroyed
+        forgotten
+        gone
+        unmade
+    channel:
+        channel
+        room
+        chat
+        glorious channel
+###############################################################################
+# Generics
+###############################################################################
+unclear: |-
+    {% set count = options|length - 5 %}
+    {% set options = options|map('bold')|list %}
+    {% set options = options[:5] %}
+    {% set first = options[:-1] %}
+    {% set last = options[-1] %}
+    {% if count < 0 %}
+        Did you mean {{ first|join(', ') }} or {{ last }}?
+        Do you want {{ first|join(' or ') }} or maybe {{ last }}?
+        {{ first|join(', ') }} or {{ last }}. Pick one.
+        Ambiguous input. Possible variants: {{ options|join(', ') }}.
+        I'm not sure whether you meant {{ first|join(', ') }} or {{ last }}.
+        Not quite sure what you wanted here. Was it {{ first|join(', ') }} or {{ last }}?
+    {% else %}
+        I have so many choices for you: {{ options|join(', ') }} and another {{ count }}! Isn't it wonderful?
+        Unclear. Clarify. Options: {{ options|join(', ') }}. Number of additional options: {{ count }}
+        Did you mean {{ first|join(', ') }} or {{ last }}? You can use !showmore to check another {{ count }} matches.
+        Now you choose: {{ options|join(', ') }}. ({{ count }} more)
+    {% endif %}
+generics:
+    index_error: |-
+        Index out of range.
+        This index is no good. Try another one.
+        I think maybe this index is not within the range of my abilities.
+    acknowledged: |-
+        Yup.
+        Right away.
+        Alright.
+        It will be done.
+        Sure, {{ lex.fragment.you }}, sure.
+        Anything for you, {{ lex.fragment.you }}.
+        {{ lex.fragment.will_do }}.
+        {{ lex.fragment.will_do}}, {{ lex.fragment.you }}.
+        Consider it done.
+        Yeah, yeah, okay, {{ lex.fragment.will_do }}.
+        Hahahahaha yeah alright {{ lex.fragment.will_do }}.
+    not_found: |-
+        Nothing found.
+        I found nothing.
+        Nothing here.
+        What you are looking for does not exist, or can't be found.
+        All I see is an endless void.
+    already_exists: |-
+        Can't proceed: record already exists.
+    deleted: |-
+        It's {{ lex.fragment.deleted }}.
+        Bye bye gone.
+        EXTERMINATE! EXTERMINATE!
+        Already forgot it.
+error: |-
+    Sadly, an error has occurred. The only solution is to inform anqxyr about it.
+cooldown: |-
+    Too soon.
+    I can't do this right now.
+    Please come back later.
+###############################################################################
+# Notes
+###############################################################################
+tell:
+    send: |-
+        {{ lex.generics.acknowledged }}
+        Sent.
+        It's on its way.
+        I will deliver it.
+        I will deliver it, {{ lex.fragment.you }}.
+        I'll tell them when I see them.
+        I'm sending it.
+        Initiating Comm Array startup sequence in 3, 2, 1...
+    get: "{{ name }} said {{ time }}: {{ text }}"
+    no_new: |-
+        {{ lex.generics.not_found }}
+        No new tells.
+        You have no pending tells.
+        No new tells today.
+        There's nothing here.
+        Still no tells.
+    new: You have {{ count }} new messages.
+masstell:
+    missing_args: Please specify recipients and message text.
+outbound:
+    empty: |-
+        {{ lex.generics.not_found }}
+        You have no {{ lex.fragment.outbound }} tells.
+        Everything you've sent, has been delivered
+        I've already delivered everything.
+    count: |-
+        You have {{ count }} {{ lex.fragment.outbound }} tells.
+        In the past, you've sent {{ count }} tells that haven't been delivered yet.
+        {{ count }} {{ lex.fragment.outbound }} tells.
+        {{ count }} {{ lex.fragment.outbound }} tells, {{ lex.fragment.you }}.
+        {{ count }} {{ lex.fragment.outbound }} tells.
+    purged: |-
+        Deleted {{ count }} {{ lex.fragment.outbound }} tells.
+        You had {{ count }} {{ lex.fragment.outbound }} tells, and now you have none.
+        {{ count }} little tells, lost in the wind.
+        Your {{ count }} tells will be {{ lex.fragment.deleted }}.
+    echo: "{{ time }} to {{ user }}: {{ message }}"
+memo:
+    saved: |-
+        {{ lex.generics.acknowledged }}
+        Memo {{ lex.fragment.saved }}.
+        One more memo to remember.
+    appended: |-
+        {{ lex.generics.acknowledged }}
+        Memo appended.
+        Updated the memo with the new string.
+    get: "{{ text }}"
+    already_exists: |-
+        {{ lex.generics.already_exists }}
+        Memo already exists.
+        There's a memo with that name already.
+    not_found: |-
+        {{ lex.generics.not_found }}
+        Memo not found.
+    deleted: |-
+        {{ lex.generics.deleted }}
+        Memo {{ lex.fragment.deleted }}.
+    count: |-
+        There are {{ count }} memos in this {{ lex.fragment.channel }}.
+        I've counted {{ count }} memos.
+        {{ count }}.
+    denied: |-
+        Memos are disabled in this {{ lex.fragment.channel }}.
+        No memos in this {{ lex.fragment.channel }}.
+quote:
+    added: |-
+        {{ lex.generics.acknowledged }}
+        Quote {{ lex.fragment.saved }}
+        Another quote to remember.
+    get: "{{ text }}"
+    already_exists: |-
+        {{ lex.generics.already_exists }}
+        Quote already exists.
+    not_found: |-
+        {{ lex.generics.not_found }}
+        No quotes found.
+    delete_not_found: |-
+        "Unable to delete the quote: quote not found."
+        It doesn't exist, so I can't delete it.
+    deleted: |-
+        {{ lex.generics.deleted }}
+        Quote deleted.
+    index_error: |-
+        {{ lex.generics.index_error }}
+        "Unable to retrieve the quote: index out of range."
+    denied: Quotes are disabled in this {{ lex.fragment.channel }}.
+seen:
+    last: |-
+        {{ user }} was last seen {{ time }} saying: {{ text }}
+        I last saw {{ user }} {{ time }} saying: {{ text }}
+    never: |-
+        User not found.
+        I know of no one by that name.
+        I've never seen anyone by that name here.
+    first: |-
+        {{ user }} was first seen {{ time }} saying: {{ text }}
+        I first met {user} {time}. I remember them saying: {text}
+        {text}. That was how I first met {user}, {time}.
+        {time}, I saw {user} for the first time. They said: {text}
+    total: |-
+        {{ user }} was seen a total of {{ total }} times, {{ this_month }} of them this month.
+        I've seen {{ user }} a total of {{ total }} times, including {{ this_month }} times this month.
+        {{ user }} has been observed in this channel {{ total }} times, {{ this_month }} this month.
+        {{ user }} was seen here on {{ total }} ocassions, {{ this_month }} which had happened this month.
+        I have seen {{ user }} {{ this_month }} times this month, and {{ total }} times in all recorded history.
+        {{ user }}: {{ total }} total entries found. {{ this_month }} entries during this month.
+        {{ user }} has said a total of {{ total }} lines. Recently, they've been seen {{ this_month }} times.
+    self: |-
+        I am here.
+        I am right here.
+        I don't like to talk about my past.
+alert:
+    set: |-
+        Alert set.
+        I will remind you when the time comes.
+    past: |-
+        Unable to set an alert in the past.
+gibber:
+    say: "{{ text }}"
+    no_such_user: Haven't seen them.
+    small_sample: The sample is not large enough to construct a text model.    
+    denied: Gibs are disabled in this channel.
+###############################################################################
+# SCP
+###############################################################################
+
+###############################################################################
+# Tools
+###############################################################################
+
+###############################################################################
+# Websearch
+###############################################################################
+
+###############################################################################
+# Autoban
+###############################################################################

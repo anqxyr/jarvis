@@ -4,6 +4,7 @@
 # Module Imports
 ###############################################################################
 
+import itertools
 import jinja2
 import pathlib
 import random
@@ -24,8 +25,9 @@ for file in LEXPATH.glob('*.yaml'):
 
 class Lexicon:
 
-    def __init__(self, path=None):
+    def __init__(self, path=None, lexicon='static'):
         self.path = path or []
+        self.lexicon = lexicon
         self.kwargs = {}
 
     def __repr__(self):
@@ -57,7 +59,7 @@ class Lexicon:
         return True
 
     def __getattr__(self, value):
-        return self.__class__(self.path + [value])
+        return self.__class__(self.path + [value], lexicon=self.lexicon)
 
     def __call__(self, **kwargs):
         new = self.__class__(self.path)
@@ -65,20 +67,36 @@ class Lexicon:
         return new
 
     def __str__(self):
-        return self.compose('static')
+        return self.compose(self.lexicon)
 
     @property
     def jinja2(self):
         return env
 
-    def compose(self, lexicon):
-        if self.path[0] in DATA:
-            lexicon, self.path = self.path[0], self.path[1:]
+    def get_lines(self, lexicon):
         template = DATA[lexicon]
         for i in self.path:
-            template = template[i]
-        text = env.from_string(template).render(**self.kwargs).strip()
-        text = random.choice(text.split('\n'))
+            template = template.get(i)
+            if not template:
+                return []
+        text = env.from_string(template).render(
+            lex=Lexicon(lexicon=lexicon), **self.kwargs).strip()
+        return text.split('\n')
+
+    def compose(self, lexicon):
+        ancestors = DATA[lexicon].get('include', '')
+        ancestors = [i for i in ancestors.split('\n') if i]
+        ancestors.append(lexicon)
+
+        lines = itertools.chain.from_iterable(map(self.get_lines, ancestors))
+        lines = list(lines)
+
+        if not lines:
+            msg = 'Invalid lexicon path: lex.{}.{}'
+            msg = msg.format(lexicon, '.'.join(self.path))
+            raise AttributeError(msg)
+
+        text = random.choice(lines)
         text = text.strip()
         return text
 
@@ -88,7 +106,6 @@ class Lexicon:
 
 lex = Lexicon()
 env = jinja2.Environment()
-env.globals['lex'] = lex
 env.filters['bold'] = lambda x: '\x02{}\x02'.format(x)
 env.filters['shorten'] = textwrap.shorten
 env.filters['escape_newline'] = lambda x: x.replace('\n', ' ')

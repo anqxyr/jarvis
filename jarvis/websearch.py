@@ -22,7 +22,7 @@ def indexed_cache(func):
     func = functools.lru_cache()(func)
 
     @functools.wraps(func)
-    @utils.catch(IndexError, return_value=lex.index_out_of_range)
+    @utils.catch(IndexError, return_value=lex.generics.index_error)
     def inner(inp, *, index, **kwargs):
         results = func(**kwargs)
         if isinstance(results, list):

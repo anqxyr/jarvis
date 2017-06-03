@@ -190,7 +190,7 @@ def test_quote_get_index():
 
 
 def test_quote_get_index_too_big():
-    assert run('.q 20') == lex.quote.index_out_of_range
+    assert run('.q 20') == lex.quote.index_error
 
 
 def test_quote_get_index_negative():

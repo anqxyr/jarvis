@@ -215,7 +215,7 @@ def get_quote(inp, *, user, index):
 
     index = index or random.randint(1, query.count())
     if index > query.count():
-        return lex.quote.index_out_of_range
+        return lex.quote.index_error
     quote = query.order_by(db.Quote.time).limit(1).offset(index - 1)[0]
 
     return lex.quote.get(

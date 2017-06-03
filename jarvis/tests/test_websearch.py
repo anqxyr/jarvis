@@ -105,8 +105,8 @@ def test_duckduckgo_index():
     assert run('.ddg scp-wiki -i 5') == lex.duckduckgo.result(index=5)
 
 
-def test_duckduckgo_bad_index():
-    assert run('.ddg scp-wiki -i 100') == lex.index_out_of_range
+def test_duckduckgo_index_error():
+    assert run('.ddg scp-wiki -i 100') == lex.generics.index_error
 
 
 def test_duckduckgo_showmore():
