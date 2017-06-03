@@ -218,7 +218,7 @@ def errors_orphaned():
         name='scp-*', created_at='last 3 hours')])
     pages = [k for k in core.wiki.titles() if k not in urls]
     pages = [p for p in pages if re.search(r'/scp-[0-9]{3,4}$', p)]
-    pages = map(core.wiki, pages)
+    return map(core.wiki, pages)
 
 
 def errors_untagged():
