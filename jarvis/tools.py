@@ -355,7 +355,12 @@ def mylevel(inp):
 @core.command
 @parser.convert
 def convert(inp, *, expression, precision):
-    """Convert between different measurement units."""
+    """
+    Convert between different measurement units.
+
+    The full list of supported units can be found here:
+    https://github.com/hgrecco/pint/blob/master/pint/default_en_0.6.txt
+    """
     try:
         source, destination = expression.split(' to ')
         source_value = source.split(' ')[0]

@@ -61,6 +61,7 @@ gibber:
     no_such_user: Haven't seen them.
     small_sample: The sample is not large enough to construct a text model.    
     denied: Gibs are disabled in this channel.
+    self: Gibbing the bot is not allowed.
 ###############################################################################
 # SCP
 ###############################################################################

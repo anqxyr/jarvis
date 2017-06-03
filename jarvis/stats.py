@@ -226,5 +226,8 @@ def update_user(name):
         articles_table=ArticlesTable(
             [p for p in pages if p.tags], name).render())
 
-    p.create(data, title=name, comment='automated update')
+    try:
+        p.create(data, title=name, comment='automated update')
+    except RuntimeError:
+        pass
     return p.url

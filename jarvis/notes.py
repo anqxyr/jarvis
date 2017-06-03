@@ -409,7 +409,10 @@ def get_text_model(channel, user):
     if user:
         lines = db.Message.find(channel=channel, user=user)
     else:
-        lines = db.Message.find(channel=channel)
+        lines = (
+            db.Message.select()
+            .where(db.Message.channel == channel)
+            .where(db.Message.user != 'jarvis'))
     lines = lines.order_by(db.peewee.fn.Random()).limit(1000)
     text = '\n'.join([i.text for i in lines])
     return markovify.NewlineText(text)
@@ -427,6 +430,10 @@ def gibber(inp, user):
     """
     if not inp.config.gibber:
         return lex.gibber.denied
+
+    if user == core.config.irc.nick:
+        return lex.gibber.self
+
     query = db.Message.select().where(
         db.Message.channel == inp.channel, db.Message.user == user)
     if user and not query.exists():

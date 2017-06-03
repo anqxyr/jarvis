@@ -218,7 +218,13 @@ def errors_orphaned():
         name='scp-*', created_at='last 3 hours')])
     pages = [k for k in core.wiki.titles() if k not in urls]
     pages = [p for p in pages if re.search(r'/scp-[0-9]{3,4}$', p)]
-    return map(core.wiki, pages)
+    pages = map(core.wiki, pages)
+    # try to get the html of the page, and only leave pages that error out
+    for page in pages:
+        try:
+            page.html
+        except:
+            yield page
 
 
 def errors_untagged():
@@ -285,7 +291,7 @@ def cleantitles(inp):
     yield lex.cleantitles.start
 
     pages = [
-        'scp-series', 'scp-series-2', 'scp-series-3',
+        'scp-series', 'scp-series-2', 'scp-series-3', 'scp-series-4',
         'joke-scps', 'scp-ex', 'archived-scps']
     wiki = core.pyscp.wikidot.Wiki('scp-wiki')
     wiki.auth(core.config.wiki.name, core.config.wiki.password)
