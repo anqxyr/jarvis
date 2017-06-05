@@ -40,7 +40,7 @@ memo:
     denied: Memos are disabled in this channel.
 quote:
     added: Quote added.
-    get: "{{ text }}"
+    get: "[{{ index }}/{{ total }}] {{ time }} {{ user }}: {{ text }}"
     already_exists: Quote already exists.
     not_found: No quotes found.
     delete_not_found: "Unable to delete the quote: quote not found."
@@ -76,13 +76,13 @@ search:
         {% else %}
             {{ results[:-1]|map(attribute='title')|map('bold')|join(', ') }} and {{ results[-1].title|bold }}.
         {% endif %}
-    summary: Found {{ count|bold }} pages by {{ authors|bold }} authors. They have a total rating of {{ rating|bold }}, with an average of {{ average|bold }}. The pages were created between {{ first }} and {{ last }}. The highest rated page is {{ top_title|bold }} at {{ top_rating|bold }}.
+    summary: Found {{ count|bold }} pages by {{ authors|bold }} authors. They have a total rating of {{ rating|signed|bold }}, with an average of {{ average|signed|bold }}. The pages were created between {{ first }} and {{ last }}. The highest rated page is {{ top_title|bold }} at {{ top_rating|signed|bold }}.
 page_lookup:
-    summary: "{{ page.title|bold }} ({{ attribution }}; rating: {{ rating }}) - {{ page.url }}"
+    summary: "{{ page.title|bold }} ({{ attribution }}; rating: {{ rating|signed }}) - {{ page.url }}"
     nr_summary: "{{ page.title|bold }} ({{ attribution }}) - {{ page.url }}"
     not_found: Page not found.
 author:
-    summary: "{{ name|bold }}{{ url }} has {{ pages.count|bold }} pages ({{ rels }}) ({{ tags }}). They have {{ primary.rating|bold }} net upvotes with an average of {{ primary.average|bold }}. Their latest page is {{ last.title|bold }} at {{ last.rating|bold }}."
+    summary: "{{ name|bold }}{{ url }} has {{ pages.count|bold }} pages ({{ rels }}) ({{ tags }}). They have {{ primary.rating|bold }} net upvotes with an average of {{ primary.average|signed|bold }}. Their latest page is {{ last.title|bold }} at {{ last.rating|signed|bold }}."
     details: "{{ url }}"
     not_found: Author not found.
 errors:
@@ -99,6 +99,9 @@ cleantitles:
 ###############################################################################
 # Tools
 ###############################################################################
+showmore:
+    not_found: No results found.
+    index_error: Index out of range.
 version: v{{ version }} python3 IRC bot, created and maintained by anqxyr, powered by sopel and pyscp. Source code and changelog are available at https://github.com/anqxyr/jarvis . Uptime is {{ days }} days, {{ hours }} hours and {{ minutes }} minutes. Contact anqxyr for bug reports and feature requests.
 rejoin: Entering {{ channel }} ... now.
 dice:
@@ -155,6 +158,8 @@ steam:
     not_found: Game not found.
 urbandict:
     denied: Urban Dictionary is disabled in this channel.
+dictionary:
+    not_found: No results found.
 ###############################################################################
 # Autoban
 ###############################################################################

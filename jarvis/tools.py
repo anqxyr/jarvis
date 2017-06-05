@@ -42,10 +42,10 @@ def showmore(inp, *, index):
     if index <= 0:
         return lex.input.bad_index
     if inp.channel not in MEMORY:
-        return lex.not_found.generic
+        return lex.showmore.not_found
     items, func = MEMORY[inp.channel]
     if index > len(items):
-        return lex.input.bad_index
+        return lex.showmore.index_error
     return func(items[index - 1]) if func else items[index - 1]
 
 

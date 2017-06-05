@@ -109,5 +109,6 @@ env = jinja2.Environment()
 env.filters['bold'] = lambda x: '\x02{}\x02'.format(x)
 env.filters['shorten'] = textwrap.shorten
 env.filters['escape_newline'] = lambda x: x.replace('\n', ' ')
+env.filters['signed'] = lambda x: '{:+d}'.format(x)
 
 sys.modules[__name__] = lex

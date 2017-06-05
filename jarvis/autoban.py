@@ -51,7 +51,7 @@ BANS = get_ban_list()
 
 
 def kick_user(inp, name, message):
-    message = message.compose(inp)
+    message = str(message)
     inp.raw(['KICK', inp.channel, name], message)
 
 

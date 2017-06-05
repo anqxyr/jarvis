@@ -267,8 +267,10 @@ def dictionary(inp, *, query):
     url = 'http://ninjawords.com/' + query
     soup = bs4.BeautifulSoup(requests.get(url).text, 'lxml')
     word = soup.find(class_='word')
+    
     if not word or not word.dl:
-        return lex.not_found.generic
+        return lex.dictionary.not_found
+    
     output = ['\x02{}\x02 - '.format(word.dt.text)]
     for line in word.dl('dd'):
         if 'article' in line['class']:
