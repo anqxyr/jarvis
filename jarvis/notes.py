@@ -242,7 +242,7 @@ def add_quote(inp, *, date, user, message):
 
 
 @quote.subcommand('del')
-def delete_quote(inp, *, user, message):
+def delete_quote(inp, *, user, index):
     """
     Delete quote.
 
@@ -250,13 +250,17 @@ def delete_quote(inp, *, user, message):
     accidental deletions, as well as to provide an additional copy of the
     deleted memo for the logs.
     """
-    quote = db.Quote.find_one(user=user, channel=inp.channel, text=message)
+    quote = db.Quote.find(user=user, channel=inp.channel)
+    if not 0 < index - 1 < len(quote):
+        return lex.quote.index_error
+    quote = quote[index]
 
     if not quote:
         return lex.quote.delete_not_found
 
+    text = quote.text
     quote.delete_instance()
-    return lex.quote.deleted
+    return lex.quote.deleted(text=text)
 
 
 ###############################################################################
@@ -314,7 +318,7 @@ def add_memo(inp, *, user, message):
 
 
 @memo.subcommand('del')
-def delete_memo(inp, *, user, message):
+def delete_memo(inp, *, user):
     """
     Delete memo.
 
@@ -323,12 +327,13 @@ def delete_memo(inp, *, user, message):
     for the logs.
     """
     memo = db.Memo.find_one(
-        user=user, channel=inp.channel, text_lower=message)
+        user=user, channel=inp.channel)
     if not memo:
         return lex.memo.not_found
 
+    text = memo.text
     memo.delete_instance()
-    return lex.memo.deleted
+    return lex.memo.deleted(text=text)
 
 
 @memo.subcommand('append')

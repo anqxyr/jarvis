@@ -35,7 +35,7 @@ memo:
     get: "{{ text }}"
     already_exists: Memo already exists.
     not_found: Memo not found.
-    deleted: Memo deleted.
+    deleted: 'Deleted: "{{ text }}".'
     count: There are {{ count }} memos in this channel.
     denied: Memos are disabled in this channel.
 quote:
@@ -44,7 +44,7 @@ quote:
     already_exists: Quote already exists.
     not_found: No quotes found.
     delete_not_found: "Unable to delete the quote: quote not found."
-    deleted: Quote deleted.
+    deleted: 'Deleted: "{{ text }}".'
     index_error: "Unable to retrieve the quote: index out of range."
     denied: Quotes are disabled in this channel.
 seen:
