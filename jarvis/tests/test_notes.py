@@ -271,21 +271,12 @@ def test_memo_not_found():
 
 
 def test_memo_delete():
-    assert run('.memo del user1 memo1 part2 part3') == lex.memo.deleted
+    assert run('.memo del user1') == lex.memo.deleted(text='memo1 part2 part3')
     assert run('?user1') == lex.memo.not_found
 
 
-def test_memo_delete_case_insensitive():
-    assert run('.memo del USER2 MEMO2') == lex.memo.deleted
-    assert run('?user2') == lex.memo.not_found
-
-
-def test_memo_delete_text_mismatch():
-    assert run('.memo del user3 wrong text') == lex.memo.not_found
-
-
 def test_memo_delete_not_found():
-    assert run('.memo del user5 whatever') == lex.memo.not_found
+    assert run('.memo del user5') == lex.memo.not_found
 
 
 def test_memo_count():

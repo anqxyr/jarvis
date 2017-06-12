@@ -469,13 +469,6 @@ def quote(pr):
         type=lambda x: x.lower().rstrip(',:'),
         help="""Name of the user whose quote is being deleted.""")
 
-    delete.add_argument(
-        'message',
-        nargs='+',
-        action='join',
-        help="""Text of the quote. The text must match the existing quote
-                exactly in order for the quote to be deleted.""")
-
 
 @parser
 def memo(pr):
@@ -528,14 +521,6 @@ def memo(pr):
         'user',
         type=lambda x: x.lower().rstrip(',:'),
         help="""Name of the user whose memeo is being deleted.""")
-
-    delete.add_argument(
-        'message',
-        nargs='+',
-        action='join',
-        type=str.lower,
-        help="""Text of the memo. The text must match the existing memo
-                exactly in order for the memo to be deleted.""")
 
     ###########################################################################
 
