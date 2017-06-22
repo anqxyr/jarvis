@@ -74,7 +74,7 @@ def masstell(inp, *, names, separator, text, users, message):
         sender=inp.user,
         text=text,
         time=time,
-        topic=None) for user in names]).execute()
+        topic=None) for user in set(names)]).execute()
     return lex.tell.send
 
 

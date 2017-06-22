@@ -139,7 +139,7 @@ convert:
     conversion_error: "Failed to convert: {{ text }}"
     syntax_error: Input expression must be of format "<value> <unit> to <unit>".
 name:
-    person: "{{ [prefix, name, suffix]|reject|join(' ') }}"
+    person: "{{ [prefix, name, suffix]|reject('none')|join(' ') }}"
 ###############################################################################
 # Websearch
 ###############################################################################
