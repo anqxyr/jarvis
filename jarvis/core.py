@@ -248,7 +248,7 @@ def require(channel=None, level=0):
         @functools.wraps(func)
         def inner(inp, *args, **kwargs):
             if inp.privileges.get(channel or inp.channel, -1) < level:
-                return lex.denied
+                return lex.denied.low_level
             return func(inp, *args, **kwargs)
         return inner
     return decorator
@@ -258,8 +258,8 @@ def crosschannel(func):
     @functools.wraps(func)
     def inner(inp, *args, channel, **kwargs):
         if channel:
-            if channel not in inp.privileges:
-                return lex.denied
+            #if channel not in inp.privileges:
+            #    return lex.denied.not_in_channel
             inp.channel = channel
             inp.notice = True
         return func(inp, *args, **kwargs)

@@ -60,17 +60,21 @@ def tell(inp, *, user, message):
 
 @core.command
 @parser.masstell
-def masstell(inp, *, users, message):
+def masstell(inp, *, names, separator, text, users, message):
     """Send a single message to several users."""
-    if not users or not message:
+    if (names and users) or (text and message):
+        return lex.masstell.arg_conflict
+    names, text = names or users, text or message
+    if not names or not text:
         return lex.masstell.missing_args
+
     time = arrow.utcnow().timestamp
     db.Tell.insert_many([dict(
         recipient=user,
         sender=inp.user,
-        text=message,
+        text=text,
         time=time,
-        topic=None) for user in users]).execute()
+        topic=None) for user in names]).execute()
     return lex.tell.send
 
 
@@ -182,7 +186,7 @@ def _memos_allowed(inp, value):
         return False
     if inp.config.memos == 'all':
         return True
-    return value.isalnum() if value else True
+    return all(c.isalnum() or c == '_' for c in value) if value else True
 
 
 @core.command
@@ -251,9 +255,9 @@ def delete_quote(inp, *, user, index):
     deleted memo for the logs.
     """
     quote = db.Quote.find(user=user, channel=inp.channel)
-    if not 0 < index - 1 < len(quote):
+    if not 0 < index - 1 < quote.count():
         return lex.quote.index_error
-    quote = quote[index]
+    quote = quote[index - 1]
 
     if not quote:
         return lex.quote.delete_not_found
@@ -382,8 +386,31 @@ def peek_memo(inp):
 
 @core.command
 @parser.alert
-def alert(inp, *, date, span, message):
+def alert(inp, mode, **kwargs):
     """Make a reminder for your future self."""
+    return alert.dispatch(inp, mode, **kwargs)
+
+
+@alert.subcommand('echo')
+@core.multiline
+def alert_echo(inp):
+    """Output existing alerts."""
+    query = db.Alert.select().where(db.Alert.user == inp.user)
+    if not query.exists():
+        yield lex.alert.no_alerts
+
+    query = query.order_by(db.Alert.time)
+    for alert in query.limit(4):
+        time = arrow.get(alert.time).humanize()
+        yield lex.alert.echo(text=alert.text, time=time)
+
+    if query.count() > 4:
+        yield lex.alert.more(count=query.count() - 4)
+
+
+@alert.subcommand('set')
+def alert_set(inp, *, date, span, message):
+    """Set a new alert."""
     if date and date < arrow.utcnow():
         return lex.alert.past
 
@@ -405,13 +432,23 @@ def get_alerts(inp):
     now = arrow.utcnow().timestamp
     where = ((db.Alert.user == inp.user) & (db.Alert.time < now))
     alerts = [i.text for i in db.Alert.select().where(where)]
+    alerts = [lex.alert.show(text=i) for i in alerts]
     db.Alert.delete().where(where).execute()
     return alerts
 
 
-@functools.lru_cache(maxsize=20)
-def get_text_model(channel, user):
-    if user:
+###############################################################################
+# Gibber
+###############################################################################
+
+
+@functools.lru_cache(maxsize=32)
+def get_text_model(channel, user, quotes):
+    if quotes and user:
+        lines = db.Quote.find(channel=channel, user=user)
+    elif quotes:
+        lines = db.Quote.find(channel=channel)
+    elif user:
         lines = db.Message.find(channel=channel, user=user)
     else:
         lines = (
@@ -426,7 +463,7 @@ def get_text_model(channel, user):
 @core.command
 @parser.gibber
 @core.crosschannel
-def gibber(inp, user):
+def gibber(inp, user, quotes):
     """
     Generate a message using markov chains, hatbot-like.
 
@@ -443,8 +480,8 @@ def gibber(inp, user):
         db.Message.channel == inp.channel, db.Message.user == user)
     if user and not query.exists():
         return lex.gibber.no_such_user
-    model = get_text_model(inp.channel, user)
-    text = model.make_short_sentence(200)
+    model = get_text_model(inp.channel, user, quotes)
+    text = model.make_short_sentence(400)
     if not text:
         return lex.gibber.small_sample
     return lex.gibber.say(text=text)

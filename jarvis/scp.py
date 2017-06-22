@@ -133,7 +133,7 @@ def find_pages(
 
 def _page_search_base(inp, pages, *, summary, **kwargs):
     if not inp.text:
-        return lex.input.incorrect
+        return lex.search.noargs
     func = show_search_summary if summary else show_search_results
     return func(inp, find_pages(pages, **kwargs))
 

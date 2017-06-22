@@ -14,6 +14,9 @@ generics:
     index_error: Index out of range.
 error: Unexpected error has occurred. Please report this incident to anqxyr.
 cooldown: This command is on a cooldown and cannot be used yet.
+denied:
+    low_level: You lack the necessary permissions to perform this action.
+    not_in_channel: You are not allowed to use cross-channel commands in the channel you are not in. Please join the target channel and try again.
 ###############################################################################
 # Notes
 ###############################################################################
@@ -23,6 +26,7 @@ tell:
     no_new: No new tells.
     new: You have {{ count }} new messages.
 masstell:
+    arg_conflict: Argument conflict. Please refrain from using deprecated --users/--cc and --message/--text parameters.
     missing_args: Please specify recipients and message text.
 outbound:
     empty: You have no undelivered tells.
@@ -56,12 +60,17 @@ seen:
 alert:
     set: Alert set.
     past: Unable to set an alert in the past.
+    show: "Alert: {{ text }}"
+    echo: "{{ time }}: {{ text }}"
+    more: You have {{ count }} more alerts that were not displayed.
+    no_alerts: You do not have any alerts set.
 gibber:
     say: "{{ text }}"
     no_such_user: Haven't seen them.
     small_sample: The sample is not large enough to construct a text model.    
     denied: Gibs are disabled in this channel.
     self: Gibbing the bot is not allowed.
+    model: Please wait while I construct the text model...
 ###############################################################################
 # SCP
 ###############################################################################
@@ -70,6 +79,7 @@ unused:
     not_found: No empty slots with these criteria.
     count: Found {{ count }} unused slots.
 search:
+    noargs: You must supply at least one search argument.
     default: |
         {% if count >= 5 %}
             {{ results[:5]|map(attribute='title')|map('bold')|join(', ') }} and {{ count - 5 }} more...
@@ -128,6 +138,8 @@ convert:
     result: "{{ dimensionality|bold }} Converted {{ source }} to {{ value|bold }} {{ units|bold }}."
     conversion_error: "Failed to convert: {{ text }}"
     syntax_error: Input expression must be of format "<value> <unit> to <unit>".
+name:
+    person: "{{ [prefix, name, suffix]|reject|join(' ') }}"
 ###############################################################################
 # Websearch
 ###############################################################################

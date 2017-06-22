@@ -353,17 +353,44 @@ def tell(pr):
 @parser
 def masstell(pr):
     pr.add_argument(
+        'names',
+        type=lambda x: x.lower().rstrip(':,'),
+        nargs='*',
+        re='(?!^\|$)',
+        help="""IRC usernames of the users to whom the message is intended.
+                Space-separated. Commas are automatically stripped off.""")
+
+    pr.add_argument(
+        'separator',
+        re='\|',
+        nargs='?',
+        help="""The '|' character, used to separate the list of names from
+                the text of the tell.""")
+
+    pr.add_argument(
+        'text',
+        nargs='*',
+        action='join',
+        help="""Text of the tell, to be sent to all the specified users.""")
+
+    pr.add_argument(
         '--users', '--cc',
         type=lambda x: x.lower().rstrip(':,'),
         nargs='+',
         help="""IRC usernames of the users to whom the message is intended.
-                Space-separated. Commas are automatically stripped off.""")
+                Space-separated. Commas are automatically stripped off.
+
+                This is the depricated version of the argument. You should
+                use the 'names' positional argument instead.""")
 
     pr.add_argument(
         '--message', '--text',
         nargs='+',
         action='join',
-        help="""Text of the message.""")
+        help="""Text of the message.
+
+                This is the depricated version of the argument. You should
+                use the 'text' positional argument instead.""")
 
 
 @parser
@@ -469,6 +496,11 @@ def quote(pr):
         type=lambda x: x.lower().rstrip(',:'),
         help="""Name of the user whose quote is being deleted.""")
 
+    delete.add_argument(
+        'index',
+        type=int,
+        help="""Index of the quote to be deleted.""")
+
 
 @parser
 def memo(pr):
@@ -543,24 +575,30 @@ def rem(pr):
 
 @parser
 def alert(pr):
-    pr.add_argument(
+    aset = pr.subparser('set')
+
+    aset.add_argument(
         'date',
         type=arrow.get,
         nargs='?',
         help="""Date in YYYY-MM-DD format.""")
 
-    pr.add_argument(
+    aset.add_argument(
         'span',
         re='(\d+[dhm])+',
         help="""Time to wait before the alert, for example 2d3h4m.""")
 
-    pr.exclusive('date', 'span', required=True)
+    aset.exclusive('date', 'span', required=True)
 
-    pr.add_argument(
+    aset.add_argument(
         'message',
         nargs='+',
         action='join',
         help="""Alert text.""")
+
+    ###########################################################################
+
+    pr.subparser('echo')
 
 
 @parser
@@ -576,6 +614,10 @@ def gibber(pr):
         type=str.lower,
         nargs='?',
         help="""What would <user> say?""")
+
+    pr.add_argument(
+        '--quotes', '-q',
+        help="""Use quotes instead of history as source of the gib.""")
 
 
 ###############################################################################
@@ -783,6 +825,39 @@ def convert(pr):
                 after the decimal point. Negative precision values will
                 round the result value to the nearest ten, hundred, thousand,
                 etc.""")
+
+
+@parser
+def name(pr):
+    person = pr.subparser()
+
+    person.add_argument(
+        '--male', '-m',
+        help="""Generate male name.""")
+
+    person.add_argument(
+        '--female', '-f',
+        help="""Generate female name.""")
+
+    person.add_argument(
+        '--first', '--given', '-g',
+        help="""Only generate the first name.""")
+
+    person.add_argument(
+        '--last', '-l',
+        help="""Only generate the family name.""")
+
+    person.add_argument(
+        '--prefix', '-p',
+        help="""Add a prefix to the name.""")
+
+    person.add_argument(
+        '--suffix', '-s',
+        help="""Add a suffix to the name.""")
+
+    person.exclusive('male', 'female')
+    person.exclusive('first', 'last')
+
 
 ###############################################################################
 # Websearch

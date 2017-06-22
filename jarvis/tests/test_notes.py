@@ -60,11 +60,24 @@ def test_showtells_have_tells():
 
 
 def test_masstell():
-    assert (
-        run('.masstell --cc user1 user2 user3 user4 --text MASSTELL',
-            _user='masstell_user') ==
-        lex.tell.send)
+    assert (run(
+        '.masstell --cc user1 user2 user3 user4 --text MASSTELL',
+        _user='masstell_user') == lex.tell.send)
     assert run('.out', _user='masstell_user') == lex.outbound.count(count=4)
+
+
+def test_masstell_new_syntax():
+    assert run('.masstell user1 user2 user3 | new masstell') == lex.tell.send
+
+
+def test_masstell_syntax_mix():
+    assert run('.masstell | text --cc user1 user2') == lex.tell.send
+    assert run('.masstell user1 user2 --text more text') == lex.tell.send
+
+
+def test_masstell_arg_conflict():
+    assert (
+        run('.masstell user1 | text --cc user2') == lex.masstell.arg_conflict)
 
 
 def test_masstell_missing_args():
@@ -78,6 +91,7 @@ def test_masstell_missing_args():
 
 
 def test_outbound_empty():
+    run('.out -p')
     assert run('.out') == lex.outbound.empty
 
 
@@ -189,6 +203,10 @@ def test_quote_get_index():
     assert run('.q 4') == lex.quote.get(text='quote4')
 
 
+def test_quote_delete():
+    assert run('.q del user 4') == lex.quote.deleted(text='quote4')
+
+
 def test_quote_get_index_too_big():
     assert run('.q 20') == lex.quote.index_error
 
@@ -198,7 +216,7 @@ def test_quote_get_index_negative():
 
 
 def test_quote_get_user():
-    assert run('.q user') == lex.quote.get(user='user', total=4)
+    assert run('.q user') == lex.quote.get(user='user', total=3)
 
 
 def test_quote_get_nonexistent_user():
@@ -281,3 +299,35 @@ def test_memo_delete_not_found():
 
 def test_memo_count():
     assert run('.memo count') == lex.memo.count
+
+
+###############################################################################
+# Memos
+###############################################################################
+
+
+def test_alert_set():
+    assert run('.al set 2d first alert') == lex.alert.set
+
+
+def test_alert_echo_one():
+    assert run('.al echo') == lex.alert.echo(text='first alert')
+
+
+def test_alert_set_date():
+    assert run('.al set 2030-01-01 blahhhh') == lex.alert.set
+
+
+def test_alert_set_past():
+    assert run('.al set 2000-01-01 mmm') == lex.alert.past
+
+
+def test_alert_echo_multiple():
+    run('.al set 1d 1')
+    run('.al set 2d 2')
+    run('.al set 3d 3')
+    run('.al set 4d 4')
+    run('.al set 5d 5')
+    assert run('.al echo') == [
+        lex.alert.echo, lex.alert.echo, lex.alert.echo, lex.alert.echo,
+        lex.alert.more(count=3)]

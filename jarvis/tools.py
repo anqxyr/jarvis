@@ -7,6 +7,7 @@
 
 import arrow
 import bs4
+import faker
 import functools
 import pint
 import random
@@ -20,6 +21,7 @@ from . import core, parser, lex, __version__, utils
 
 BOOTTIME = arrow.now()
 UREG = pint.UnitRegistry(autoconvert_offset_to_baseunit=True)
+FAKE = faker.Faker()
 
 ###############################################################################
 # Internal Tools
@@ -353,6 +355,7 @@ def mylevel(inp):
 
 
 @core.command
+@core.alias('cv')
 @parser.convert
 def convert(inp, *, expression, precision):
     """
@@ -394,3 +397,42 @@ def convert(inp, *, expression, precision):
         value=value,
         dimensionality=result.dimensionality,
         units=result.units)
+
+
+###############################################################################
+# Names
+###############################################################################
+
+
+@core.command
+@parser.name
+def name(inp, mode, **kwargs):
+    """Proceduraly generate a name for something."""
+    return name.dispatch(inp, mode, **kwargs)
+
+
+@name.subcommand()
+def name_person(inp, *, male, female, first, last, prefix, suffix):
+    """
+    Generate a person's name.
+
+    By default generates full names of both genders.
+    """
+    nametype = 'first' if first else 'last' if last else ''
+    gender = 'male' if male else 'female' if female else ''
+    attr = '{}_name_{}'.format(nametype, gender).strip('_')
+    name = getattr(FAKE, attr)()
+
+    if prefix:
+        attr = 'prefix_{}'.format(gender).strip('_')
+        prefix = getattr(FAKE, attr)()
+    else:
+        prefix = None
+
+    if suffix:
+        attr = 'suffix_{}'.format(gender).strip('_')
+        suffix = getattr(FAKE, attr)()
+    else:
+        suffix = None
+
+    return lex.name.person(prefix=prefix, name=name, suffix=suffix)

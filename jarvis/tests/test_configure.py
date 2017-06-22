@@ -17,6 +17,10 @@ run = functools.partial(run, _channel='#conftest')
 ###############################################################################
 
 
+def test_configure_denied():
+    assert run('.conf memos', _level=1) == lex.denied.low_level
+
+
 def test_configure_memos_alphanumeric():
     assert run('.conf memos alphanumeric') == lex.configure.memos.alphanumeric
     assert run('.rem ??? test') == lex.memo.denied

@@ -171,3 +171,12 @@ def test_convert_syntax_error():
 
 def test_convert_rounding_error():
     assert run('.convert 10000 lbs to kg') != lex.convert.result(value=0)
+
+
+###############################################################################
+# Names
+###############################################################################
+
+
+def test_name_person():
+    assert run('.name') == lex.name.person

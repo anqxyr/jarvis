@@ -44,5 +44,6 @@ setuptools.setup(
         'tweepy',
         'wikipedia',
         'pint',
+        'faker',
     ],
 )

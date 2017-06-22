@@ -67,6 +67,10 @@ def test_search_simple():
     assert run('.s белки') == scp.show_page(page('scp-2797'))
 
 
+def test_search_no_args():
+    assert run('.s') == lex.search.noargs
+
+
 def test_search_case_insensitive():
     assert run('.s БЕЛКИ') == scp.show_page(page('scp-2797'))
 
