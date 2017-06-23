@@ -258,8 +258,8 @@ def crosschannel(func):
     @functools.wraps(func)
     def inner(inp, *args, channel, **kwargs):
         if channel:
-            #if channel not in inp.privileges:
-            #    return lex.denied.not_in_channel
+            if channel not in inp.privileges:
+                return lex.denied.not_in_channel
             inp.channel = channel
             inp.notice = True
         return func(inp, *args, **kwargs)

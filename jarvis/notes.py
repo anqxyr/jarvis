@@ -473,13 +473,15 @@ def gibber(inp, user, quotes):
     if not inp.config.gibber:
         return lex.gibber.denied
 
-    if user == core.config.irc.nick:
-        return lex.gibber.self
+    if not quotes:
+        if user == core.config.irc.nick:
+            return lex.gibber.self
 
-    query = db.Message.select().where(
-        db.Message.channel == inp.channel, db.Message.user == user)
-    if user and not query.exists():
-        return lex.gibber.no_such_user
+        query = db.Message.select().where(
+            db.Message.channel == inp.channel, db.Message.user == user)
+        if user and not query.exists():
+            return lex.gibber.no_such_user
+
     model = get_text_model(inp.channel, user, quotes)
     text = model.make_short_sentence(400)
     if not text:
