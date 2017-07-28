@@ -163,3 +163,7 @@ def test_kaktuskast_podcast_not_found():
 
 def test_kaktuskast_podcast():
     assert run('.kk crit 1') == lex.kaktuskast.long(date='2017-07-25')
+
+
+def test_kaktuskast_foundation():
+    assert run('.kk foundation 1')

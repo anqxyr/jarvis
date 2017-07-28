@@ -333,7 +333,12 @@ def _parse_kk(url):
         date = ' '.join(date.split())
         date = arrow.get(date, 'MMMM D, YYYY').format('YYYY-MM-DD')
         title = epi.find(class_='entry-title').text.strip()
-        index = int(re.findall('(?<=Ep\. )[0-9]+', title)[0])
+
+        index = re.findall('(?<=Ep\. )[0-9]+', title)
+        if not index:
+            index = re.findall('(?<=Episode )[0-9]+', title)
+        index = int(index[0])
+
         text = epi.find(class_='sqs-block-content').text
         url = epi.find(class_='entry-title').a['href']
         url = urllib.parse.urljoin('https://www.djkakt.us/', url)
