@@ -976,6 +976,22 @@ def steam(pr):
         help="""Title of the game to search for.""")
 
 
+@parser
+def kaktuskast(pr):
+    pr.add_argument(
+        'podcast',
+        nargs='?',
+        re='^[a-z].*',
+        type=str.lower,
+        help="""Partial name of the podcast to look for.
+                Defaults to Kaktuskast.""")
+
+    pr.add_argument(
+        'index',
+        nargs='?',
+        type=int,
+        help="""Index of the episode to look up.""")
+
 ###############################################################################
 # Images
 ###############################################################################

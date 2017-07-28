@@ -137,3 +137,29 @@ def test_twitter_lookup_linebreaks():
     assert (
         run('https://twitter.com/TwitterForNews/status/311909802462822400') ==
         lex.twitter_lookup(text='L I N E  B R E A K S  #newattwitter'))
+
+###############################################################################
+#
+###############################################################################
+
+
+def test_kaktuskast_default():
+    assert run('.kk') == [
+        lex.kaktuskast.short, lex.kaktuskast.short, lex.kaktuskast.short]
+
+
+def test_kaktuskast_index():
+    assert run('.kk 25') == lex.kaktuskast.long(
+        title='The KaktusKast Ep. 25 - 3000Kast')
+
+
+def test_kaktuskast_index_error():
+    assert run('.kk 4002') == lex.kaktuskast.index_error
+
+
+def test_kaktuskast_podcast_not_found():
+    assert run('.kk blahblah') == lex.kaktuskast.podcast_not_found
+
+
+def test_kaktuskast_podcast():
+    assert run('.kk crit 1') == lex.kaktuskast.long(date='2017-07-25')

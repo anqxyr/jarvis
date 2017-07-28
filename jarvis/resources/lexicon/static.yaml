@@ -48,7 +48,7 @@ quote:
     already_exists: Quote already exists.
     not_found: No quotes found.
     delete_not_found: "Unable to delete the quote: quote not found."
-    deleted: 'Deleted: "{{ text }}".'
+    deleted: 'Deleted: [{{ time }}] "{{ text }}".'
     index_error: "Unable to retrieve the quote: index out of range."
     denied: Quotes are disabled in this channel.
 seen:
@@ -172,6 +172,12 @@ urbandict:
     denied: Urban Dictionary is disabled in this channel.
 dictionary:
     not_found: No results found.
+kaktuskast:
+    short: "[{{ date }}] {{ title|bold }} - {{ url }}"
+    long: "[{{ date }}] {{ title|bold }} - {{ text }} - {{ url }}"
+    index_error: This podcast doesn't have that many episodes.
+    podcast_not_found: There are no podcasts with this name.
+
 ###############################################################################
 # Autoban
 ###############################################################################

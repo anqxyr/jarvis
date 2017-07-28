@@ -257,14 +257,14 @@ def delete_quote(inp, *, user, index):
     quote = db.Quote.find(user=user, channel=inp.channel)
     if not 0 < index - 1 < quote.count():
         return lex.quote.index_error
-    quote = quote[index - 1]
+    quote = quote.order_by(db.Quote.time)[index - 1]
 
     if not quote:
         return lex.quote.delete_not_found
 
-    text = quote.text
+    text, time = quote.text, quote.time
     quote.delete_instance()
-    return lex.quote.deleted(text=text)
+    return lex.quote.deleted(text=text, time=time)
 
 
 ###############################################################################

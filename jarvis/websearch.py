@@ -6,11 +6,13 @@
 
 import arrow
 import bs4
+import functools
 import googleapiclient.discovery
 import googleapiclient.errors
+import re
 import requests
 import wikipedia as wiki
-import functools
+import urllib.parse
 
 from . import core, parser, lex, tools, utils
 
@@ -267,10 +269,10 @@ def dictionary(inp, *, query):
     url = 'http://ninjawords.com/' + query
     soup = bs4.BeautifulSoup(requests.get(url).text, 'lxml')
     word = soup.find(class_='word')
-    
+
     if not word or not word.dl:
         return lex.dictionary.not_found
-    
+
     output = ['\x02{}\x02 - '.format(word.dt.text)]
     for line in word.dl('dd'):
         if 'article' in line['class']:
@@ -315,3 +317,66 @@ def tvtropes(inp, *, query):
     text = [i.text if hasattr(i, 'text') else i for i in text]
     text = [str(i).strip() for i in text]
     return '{} {}'.format(' '.join(text), baseurl.format('Main'))
+
+###############################################################################
+# Kaktuskast
+###############################################################################
+
+
+def _parse_kk(url):
+    url = 'https://www.djkakt.us/' + url
+    soup = bs4.BeautifulSoup(requests.get(url).text, 'lxml')
+
+    episodes = []
+    for epi in soup.find(class_='blog-list')('article'):
+        date = epi.find(class_='entry-dateline-link').text
+        date = ' '.join(date.split())
+        date = arrow.get(date, 'MMMM D, YYYY').format('YYYY-MM-DD')
+        title = epi.find(class_='entry-title').text.strip()
+        index = int(re.findall('(?<=Ep\. )[0-9]+', title)[0])
+        text = epi.find(class_='sqs-block-content').text
+        url = epi.find(class_='entry-title').a['href']
+        url = urllib.parse.urljoin('https://www.djkakt.us/', url)
+
+        episodes.append(utils.AttrDict(
+            date=date, title=title, index=index, text=text, url=url))
+
+    episodes = list(sorted(episodes, key=lambda x: x.date, reverse=True))
+    return episodes
+
+
+@core.command
+@core.alias('kk')
+@parser.kaktuskast
+@core.multiline
+def kaktuskast(inp, podcast, index):
+    """
+    Access djkakt.us podcasts.
+
+    If episode index is provided, returns the detailed description of the
+    episode. Otherwise, shows titles and links to the latest 3 episodes.
+    """
+    if not podcast:
+        episodes = _parse_kk('kaktuskast')
+    else:
+        podcasts = [
+            'kaktuskast', 'the-foundation', 'critical-procedures',
+            'social-commentary-podcast', 'ttrimmd']
+        for name in podcasts:
+            if podcast in name:
+                episodes = _parse_kk(name)
+                break
+        else:
+            yield lex.kaktuskast.podcast_not_found
+            return
+
+    if index:
+        candidates = [i for i in episodes if i.index == index]
+        if not candidates:
+            yield lex.kaktuskast.index_error
+            return
+        yield lex.kaktuskast.long(**candidates[0])
+    else:
+        for epi in episodes[:3]:
+            yield lex.kaktuskast.short(**epi)
+        tools.save_results(inp, episodes)
