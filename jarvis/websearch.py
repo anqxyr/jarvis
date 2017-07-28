@@ -379,4 +379,5 @@ def kaktuskast(inp, podcast, index):
     else:
         for epi in episodes[:3]:
             yield lex.kaktuskast.short(**epi)
+        episodes = [lex.kaktuskast.long(**e) for e in episodes]
         tools.save_results(inp, episodes)
