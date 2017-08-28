@@ -436,3 +436,17 @@ def name_person(inp, *, male, female, first, last, prefix, suffix):
         suffix = None
 
     return lex.name.person(prefix=prefix, name=name, suffix=suffix)
+
+
+###############################################################################
+# Say
+###############################################################################
+
+@core.command
+@parser.say
+def say(inp, channel, text):
+    if inp.user != 'anqxyr':
+        return
+
+    inp.raw(['PRIVMSG', channel], text)
+    return 'yup'

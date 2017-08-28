@@ -12,7 +12,7 @@ import jinja2
 import random as rand
 import re
 
-from . import core, ext, parser, lex, stats, tools
+from . import core, ext, parser, lex, stats, tools, utils
 
 ###############################################################################
 # Internal Methods
@@ -406,3 +406,64 @@ def staff(inp, staff={}):
                 return '[{}] {}'.format(cat, v)
 
     return lex.staff.not_found
+
+
+@functools.lru_cache()
+def _get_contests_data():
+    results = []
+    for row in core.wiki('contest-archive')._soup('tr'):
+        cells = row('td')
+
+        if cells[0]('a'):
+            cur = utils.AttrDict()
+            results.append(cur)
+
+            page = cells[0].a['href']
+            pages = [i for i in core.pages if i.url.endswith(page)]
+            if pages:
+                page = pages[0]
+            else:
+                continue
+
+            cur.name = page.title
+            cur.url = page.url
+            cur.date = page.created[:10]
+            cur.year = int(page.created[:4])
+            cur.host = cells[1].text
+            cur.winners = []
+
+        if cells[2]('a'):
+            page = cells[2].a['href']
+
+            pages = [i for i in core.pages if i.url.endswith(page)]
+            if pages:
+                cur.winners.append(pages[0])
+
+    return [i for i in results if i]
+
+
+@core.command
+@core.multiline
+@parser.contest
+def contest(inp, name, year):
+    """Display information about past contests."""
+    contests = _get_contests_data()
+
+    if name:
+        contests = [i for i in contests if name in i.name.lower()]
+
+    if year:
+        contests = [i for i in contests if year == i.year]
+
+    if len(contests) == 1:
+        contest = contests[0]
+        yield lex.contest.long(**contest)
+        for page in contest.winners:
+            yield lex.contest.winner(page=page)
+    elif contests:
+        contests = sorted(contests, key=lambda x: x.date, reverse=True)
+        contests = list(contests)[:3]
+        for contest in contests:
+            yield lex.contest.short(**contest)
+    else:
+        yield lex.contest.not_found

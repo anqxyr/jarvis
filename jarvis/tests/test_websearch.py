@@ -149,8 +149,9 @@ def test_kaktuskast_default():
 
 
 def test_kaktuskast_index():
-    assert run('.kk 25') == lex.kaktuskast.long(
-        title='The KaktusKast Ep. 25 - 3000Kast')
+    assert run('.kk 25') == [
+        lex.kaktuskast.short(title='The KaktusKast Ep. 25 - 3000Kast'),
+        lex.kaktuskast.text]
 
 
 def test_kaktuskast_index_error():
@@ -162,8 +163,23 @@ def test_kaktuskast_podcast_not_found():
 
 
 def test_kaktuskast_podcast():
-    assert run('.kk crit 1') == lex.kaktuskast.long(date='2017-07-25')
+    assert run('.kk crit 1') == [
+        lex.kaktuskast.short(date='2017-07-25'), lex.kaktuskast.text]
 
 
 def test_kaktuskast_foundation():
     assert run('.kk foundation 1')
+
+
+def test_kaktuskast_ttrimmd():
+    assert run('.kk trim 10') == [
+        lex.kaktuskast.short(date='2017-07-22'), lex.kaktuskast.text]
+
+
+def test_kaktuskast_title():
+    assert run('.kk thing 5') == [lex.kaktuskast.short, lex.kaktuskast.text]
+
+
+def test_kaktuskast_sm():
+    run('.kk')
+    assert run('.sm 1') == lex.kaktuskast.long

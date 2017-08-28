@@ -323,6 +323,18 @@ def tvtropes(inp, *, query):
 ###############################################################################
 
 
+def _extract_episode_index(title):
+    index = re.findall('(?<=Ep\. )[0-9]+', title)
+    if not index:
+        index = re.findall('(?<=Episode )[0-9]+', title)
+    if not index:
+        index = re.findall('(?<=TTRIMMD )[0-9]+', title)
+    try:
+        return int(index[0])
+    except:
+        return None
+
+
 def _parse_kk(url):
     url = 'https://www.djkakt.us/' + url
     soup = bs4.BeautifulSoup(requests.get(url).text, 'lxml')
@@ -334,10 +346,9 @@ def _parse_kk(url):
         date = arrow.get(date, 'MMMM D, YYYY').format('YYYY-MM-DD')
         title = epi.find(class_='entry-title').text.strip()
 
-        index = re.findall('(?<=Ep\. )[0-9]+', title)
+        index = _extract_episode_index(title)
         if not index:
-            index = re.findall('(?<=Episode )[0-9]+', title)
-        index = int(index[0])
+            continue
 
         text = epi.find(class_='sqs-block-content').text
         url = epi.find(class_='entry-title').a['href']
@@ -348,6 +359,23 @@ def _parse_kk(url):
 
     episodes = list(sorted(episodes, key=lambda x: x.date, reverse=True))
     return episodes
+
+
+def _find_podcast(substring):
+    podcasts = {
+        'kaktuskast': '',
+        'the-foundation': '',
+        'critical-procedures': '',
+        'social-commentary-podcast': 'SCP',
+        'ttrimmd': 'The Thing Randomini is Making Me Do'}
+
+    keys1 = list(podcasts.keys())
+    keys2 = [i.replace('-', ' ') for i in keys1]
+    keys3 = [i.lower() for i in podcasts.values()]
+    for keys in (keys1, keys2, keys3):
+        for key, true_key in zip(keys, keys1):
+            if substring in key:
+                return true_key
 
 
 @core.command
@@ -364,13 +392,9 @@ def kaktuskast(inp, podcast, index):
     if not podcast:
         episodes = _parse_kk('kaktuskast')
     else:
-        podcasts = [
-            'kaktuskast', 'the-foundation', 'critical-procedures',
-            'social-commentary-podcast', 'ttrimmd']
-        for name in podcasts:
-            if podcast in name:
-                episodes = _parse_kk(name)
-                break
+        podcast = _find_podcast(podcast)
+        if podcast:
+            episodes = _parse_kk(podcast)
         else:
             yield lex.kaktuskast.podcast_not_found
             return
@@ -380,7 +404,9 @@ def kaktuskast(inp, podcast, index):
         if not candidates:
             yield lex.kaktuskast.index_error
             return
-        yield lex.kaktuskast.long(**candidates[0])
+        post = candidates[0]
+        yield lex.kaktuskast.short(**post)
+        yield lex.kaktuskast.text(**post)
     else:
         for epi in episodes[:3]:
             yield lex.kaktuskast.short(**epi)

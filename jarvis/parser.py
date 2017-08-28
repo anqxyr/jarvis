@@ -743,6 +743,23 @@ def unused(pr):
     pr.exclusive('random', 'last', 'count')
 
 
+@parser
+def contest(pr):
+    pr.add_argument(
+        'name',
+        nargs='*',
+        action='join',
+        type=str.lower,
+        re='^[a-z].*',
+        help="""Find contests by partial or full name.""")
+
+    pr.add_argument(
+        'year',
+        nargs='?',
+        type=int,
+        help="""Find contests run in the given year.""")
+
+
 ###############################################################################
 # Tools
 ###############################################################################
@@ -858,6 +875,18 @@ def name(pr):
     person.exclusive('male', 'female')
     person.exclusive('first', 'last')
 
+
+@parser
+def say(pr):
+    pr.add_argument(
+        'channel',
+        type=str.lower,
+        re='#.+')
+
+    pr.add_argument(
+        'text',
+        nargs='+',
+        action='join')
 
 ###############################################################################
 # Websearch
@@ -980,9 +1009,10 @@ def steam(pr):
 def kaktuskast(pr):
     pr.add_argument(
         'podcast',
-        nargs='?',
+        nargs='*',
         re='^[a-z].*',
         type=str.lower,
+        action='join',
         help="""Partial name of the podcast to look for.
                 Defaults to Kaktuskast.""")
 
