@@ -20,7 +20,7 @@ setuptools.setup(
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 3.4'],
-    packages=['jarvis', 'jarvis/modules'],
+    packages=['jarvis', 'jarvis/modules', 'jarvis/commands'],
     package_data={'jarvis': [
         'lexicon.yaml',
         'resources/help.template',
