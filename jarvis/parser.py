@@ -676,46 +676,6 @@ def search(pr):
 
 
 @parser
-def unused(pr):
-    pr.add_argument(
-        '--random', '-r',
-        help="""Return a random slot.""")
-
-    pr.add_argument(
-        '--last', '-l',
-        help='Return the last slot.')
-
-    pr.add_argument(
-        '--count', '-c',
-        help="""Return the number of matching slots.""")
-
-    pr.add_argument(
-        '--prime', '-p',
-        help="""Limit matches to prime-numbered slots.""")
-
-    pr.add_argument(
-        '--palindrome', '-i',
-        help="""Limit matches to slots whose number is a palindrome.""")
-
-    pr.add_argument(
-        '--divisible', '-d',
-        nargs=1,
-        type=int,
-        help="""Limit matches to slots divisible by a given number.
-                For example, '.unused -d 100' will return slots that
-                end wtih 00.""")
-
-    pr.add_argument(
-        '--series', '-s',
-        nargs='+',
-        type=int,
-        re='[1-4]',
-        help="""Only check slots within the given series.""")
-
-    pr.exclusive('random', 'last', 'count')
-
-
-@parser
 def contest(pr):
     pr.add_argument(
         'name',
