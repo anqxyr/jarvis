@@ -1,3 +1,4 @@
 from . import (
     seen,
+    wikipedia,
     )

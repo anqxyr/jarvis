@@ -11,7 +11,7 @@ import googleapiclient.discovery
 import googleapiclient.errors
 import re
 import requests
-import wikipedia as wiki
+
 import urllib.parse
 
 from . import core, parser, lex, tools, utils
@@ -242,23 +242,6 @@ def steam(inp, title, _cache={}):
 
 
 ###############################################################################
-
-
-@core.command
-@core.alias('w')
-@parser.websearch
-def wikipedia(inp, *, query):
-    """Get wikipedia page about the topic."""
-    try:
-        page = wiki.page(query)
-    except wiki.exceptions.PageError:
-        return lex.wikipedia.not_found
-    except wiki.exceptions.DisambiguationError as e:
-        tools.save_results(inp, e.options, lambda x: wikipedia(inp, query=x))
-        return lex.unclear(options=e.options)
-
-    return lex.wikipedia.result(
-        title=page.title, url=page.url, text=page.content)
 
 
 @core.command
