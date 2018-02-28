@@ -411,7 +411,7 @@ def staff(inp):
         return lex.staff.noargs
 
     for user, (position, blurb) in parse_staff_list().items():
-        if inp.text.lower() in user:
+        if inp.text.lower() in user.lower():
             if blurb:
                 return lex.staff.active(position=position, blurb=blurb)
             else:
