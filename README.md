@@ -8,10 +8,6 @@ IRC bot for the scp-wiki related channels. Powered by pyscp and sopel.
 
 ## Changelog
 
-### 1.1.5
-
-* Numerous bugfixes, changes, and new commands, that went undocumented due to my poor bookkeeping habits.
-
 ### 1.1.1
 
 * Large number of new commands in the websearch module.
