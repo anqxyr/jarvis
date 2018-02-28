@@ -968,6 +968,16 @@ def duckduckgo(pr):
 
 
 @parser
+def steam(pr):
+    pr.add_argument(
+        'title',
+        nargs='+',
+        action='join',
+        type=str.lower,
+        help="""Title of the game to search for.""")
+
+
+@parser
 def kaktuskast(pr):
     pr.add_argument(
         'podcast',
