@@ -236,6 +236,12 @@ def test_quote_get_cross_channel():
         '.q #chan2', _channels=['#chan2']) == lex.quote.get(text='quote8')
 
 
+def test_quote_delete_last():
+    run('.q add user7719 this is the only quote')
+    assert run('.q del user7719 1') == lex.quote.deleted
+    assert run('.q user7719') == lex.quote.not_found
+
+
 ###############################################################################
 # Memos
 ###############################################################################

@@ -255,7 +255,7 @@ def delete_quote(inp, *, user, index):
     deleted memo for the logs.
     """
     quote = db.Quote.find(user=user, channel=inp.channel)
-    if not 0 < index - 1 < quote.count():
+    if not 0 <= index - 1 < quote.count():
         return lex.quote.index_error
     quote = quote.order_by(db.Quote.time)[index - 1]
 

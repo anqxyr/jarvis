@@ -111,6 +111,11 @@ contest:
     short: "[{{ date }}] {{ name|bold }} - {{ url }}"
     winner: "CONTEST WINNER - {{ page.title|bold }} - {{ page.url }}"
     not_found: Contest not found.
+staff:
+    noargs: "http://www.scp-wiki.net/meet-the-staff"
+    active: "[{{ position }}] {{ blurb }}"
+    not_found: "There aren't any staff by that name. Here are the staff: http://www.scp-wiki.net/meet-the-staff"
+    no_blurb: "{{ user }} - {{ position }}"
 ###############################################################################
 # Tools
 ###############################################################################

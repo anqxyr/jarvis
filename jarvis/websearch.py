@@ -364,7 +364,7 @@ def _parse_kk(url):
 def _find_podcast(substring):
     podcasts = {
         'kaktuskast': '',
-        'the-foundation': '',
+        'the-scp-foundation': '',
         'critical-procedures': '',
         'social-commentary-podcast': 'SCP',
         'ttrimmd': 'The Thing Randomini is Making Me Do'}

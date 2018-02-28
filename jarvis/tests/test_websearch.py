@@ -129,8 +129,9 @@ def test_steam_superhot():
 
 def test_twitter_lookup_simple():
     assert (
-        run('https://twitter.com/MeetAnimals/status/778453962970107904') ==
-        lex.twitter_lookup(name='Animal Life'))
+        run('https://twitter.com/scpwiki/status/859196218618064896') ==
+        lex.twitter_lookup(
+            text='The 3000s are open!  Welcome to the show. - EC'))
 
 
 def test_twitter_lookup_linebreaks():

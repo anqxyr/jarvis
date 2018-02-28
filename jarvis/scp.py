@@ -383,27 +383,39 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible, series):
     return lex.unused.found(slot=result)
 
 
+@functools.lru_cache()
+def parse_staff_list():
+    soup = core.wiki('meet-the-staff')._soup
+    panels = soup(class_='content-panel')
+    staff = {}
+
+    for idx, block in enumerate(('Admin', 'Mod', 'Operational')):
+        items = panels[idx + 1]('p')
+        staff.update({i.strong.text.lower(): (block, i.text) for i in items})
+
+    juniors = panels[4]('a')
+    staff.update({a.text: ('Junior Staff', None) for a in juniors})
+
+    for idx in (5, 6):
+        for position in panels[idx]('ul'):
+            name = position.find('strong').text.rstrip('s')
+            staff.update({a.text: (name, None) for a in position('a')})
+
+    return staff
+
+
 @core.command
-def staff(inp, staff={}):
+def staff(inp):
     """Display a blurb for the given staff member."""
     if not inp.text:
-        return 'http://www.scp-wiki.net/meet-the-staff'
+        return lex.staff.noargs
 
-    cats = {'Admin': 1, 'Mod': 2, 'Staff': 3}
-
-    if not staff:
-        for key in cats:
-            staff[key] = {}
-
-        soup = core.wiki('meet-the-staff')._soup
-        for k, v in cats.items():
-            for i in soup(class_='content-panel')[v]('p'):
-                staff[k][i.strong.text.lower()] = i.text
-
-    for cat in cats:
-        for k, v in staff[cat].items():
-            if inp.text.lower() in k:
-                return '[{}] {}'.format(cat, v)
+    for user, (position, blurb) in parse_staff_list().items():
+        if inp.text.lower() in user:
+            if blurb:
+                return lex.staff.active(position=position, blurb=blurb)
+            else:
+                return lex.staff.no_blurb(user=user, position=position)
 
     return lex.staff.not_found
 

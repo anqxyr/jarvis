@@ -129,3 +129,20 @@ def test_unused_count():
 
 def test_unused_series():
     assert run('.unused -c -s 1 2 3') == lex.unused.count(count=217)
+
+
+###############################################################################
+# Staff
+###############################################################################
+
+
+def test_staff_active():
+    assert run('.staff Roget') == lex.staff.active
+
+
+def test_staff_inactive():
+    assert run('.staff anqxyr') == lex.staff.no_blurb
+
+
+def test_staff_not_found():
+    assert run('.staff sjklfdfsa') == lex.staff.not_found
