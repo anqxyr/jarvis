@@ -133,6 +133,37 @@ def test_outbound_purge_case_insensitive():
 
 
 ###############################################################################
+# Seen
+###############################################################################
+
+
+def test_seen_simple():
+    run('1', _user='user3')
+    assert run('.seen user3') == lex.seen.last(user='user3', text='1')
+
+
+def test_seen_first():
+    run('1', _user='user4')
+    run('2', _user='user4')
+    assert run('.seen user4 -f') == lex.seen.first(user='user4', text='1')
+
+
+def test_seen_self():
+    assert run('.seen', core.config.irc.nick) == lex.seen.self
+
+
+def test_seen_case_insensitive():
+    assert run('.seen USER') == lex.seen.last(user='user')
+
+
+def test_seen_total():
+    assert run('.seen test-user -t') == lex.seen.total(user='test-user')
+
+
+def test_seen_never():
+    assert run('.seen -') == lex.seen.never
+
+###############################################################################
 # Quote
 ###############################################################################
 

@@ -11,5 +11,4 @@ from . import (
     websearch,
     autoban,
     images,
-    utils,
-    commands)
+    utils)

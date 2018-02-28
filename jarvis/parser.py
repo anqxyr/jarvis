@@ -412,6 +412,34 @@ def outbound(pr):
 
 
 @parser
+def seen(pr):
+    pr.add_argument(
+        '--first', '-f',
+        help="""Display the first recorded message said by the user.""")
+
+    pr.add_argument(
+        '--total', '-t',
+        help="""Display the total number of messages said by the user.""")
+
+    pr.add_argument(
+        '--date', '-d',
+        help="""Display exact date.""")
+
+    pr.exclusive('first', 'total')
+
+    pr.add_argument(
+        'channel',
+        re='#',
+        nargs='?',
+        help="""Switch to another channel.""")
+
+    pr.add_argument(
+        'user',
+        type=str.lower,
+        help='Username to look for.')
+
+
+@parser
 def quote(pr):
     pr.add_argument(
         'channel',
