@@ -737,7 +737,7 @@ def unused(pr):
         '--series', '-s',
         nargs='+',
         type=int,
-        re='[1-4]',
+        re='[1-5]',
         help="""Only check slots within the given series.""")
 
     pr.exclusive('random', 'last', 'count')
