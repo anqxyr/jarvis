@@ -350,7 +350,7 @@ def lastcreated(inp, **kwargs):
 @parser.unused
 def unused(inp, *, random, last, count, prime, palindrome, divisible, series):
     """Get the first unused scp slot."""
-    series = [0, 1, 2, 3] if not series else [i - 1 for i in set(series)]
+    series = [0, 1, 2, 3, 4] if not series else [i - 1 for i in set(series)]
     series = [i * 1000 for i in series]
     numbers = itertools.chain.from_iterable(
         range(i or 2, i + 1000) for i in series)
