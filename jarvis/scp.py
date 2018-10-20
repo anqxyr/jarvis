@@ -364,12 +364,12 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible, series, pa
     if divisible:
         numbers = [i for i in numbers if i % divisible == 0]
     if pattern:
-        pattern_dict = collections.defaultdict()
+        pattern_dict = collections.defaultdict(list)
         for index, letter in enumerate(pattern):
             pattern_dict[letter].append(index)
         
         def pattern_match(number):
-            number_dict = collections.defaultdict()
+            number_dict = collections.defaultdict(list)
             for index, digit in str(number):
                 number_dict[digit].append(index)
 
