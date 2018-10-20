@@ -373,7 +373,7 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible, series, pa
             for index, digit in enumerate(str(number)):
                 number_dict[digit].append(index)
 
-            return list(number_dict.values()) == list(patter_dict.values())
+            return list(number_dict.values()) == list(pattern_dict.values())
 
         numbers = [i for i in numbers if pattern_match(i)]
 
