@@ -732,6 +732,12 @@ def unused(pr):
         help="""Limit matches to slots divisible by a given number.
                 For example, '.unused -d 100' will return slots that
                 end wtih 00.""")
+    
+    pr.add_argument(
+        '--pattern', '-x',
+        nargs=1,
+        re='[a-z]{3,4}',
+        help="""Limit matches to slots that match the given pattern.""")
 
     pr.add_argument(
         '--series', '-s',
