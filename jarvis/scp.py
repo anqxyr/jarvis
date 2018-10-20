@@ -348,7 +348,7 @@ def lastcreated(inp, **kwargs):
 
 @core.command
 @parser.unused
-def unused(inp, *, random, last, count, prime, palindrome, divisible, series):
+def unused(inp, *, random, last, count, prime, palindrome, divisible, series, pattern):
     """Get the first unused scp slot."""
     series = [0, 1, 2, 3, 4] if not series else [i - 1 for i in set(series)]
     series = [i * 1000 for i in series]
@@ -362,6 +362,20 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible, series):
             i for i in numbers if str(i).zfill(3) == str(i).zfill(3)[::-1]]
     if divisible:
         numbers = [i for i in numbers if i % divisible == 0]
+    if pattern:
+        pattern_dict = collections.defaultdict()
+        for index, letter in enumerate(pattern):
+            pattern_dict[letter].append(index)
+        
+        def pattern_match(number):
+            number_dict = collections.defaultdict()
+            for index, digit in str(number):
+                number_dict[digit].append(index)
+
+            return list(number_dict.values()) == list(patter_dict.values())
+
+        numbers = [i for i in numbers if pattern_match(i)]
+
 
     slots = ['scp-{:03d}'.format(i) for i in numbers]
     used_slots = {p.name for p in core.pages}
