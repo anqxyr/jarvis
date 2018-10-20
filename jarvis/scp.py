@@ -370,7 +370,7 @@ def unused(inp, *, random, last, count, prime, palindrome, divisible, series, pa
         
         def pattern_match(number):
             number_dict = collections.defaultdict(list)
-            for index, digit in str(number):
+            for index, digit in enumerate(str(number)):
                 number_dict[digit].append(index)
 
             return list(number_dict.values()) == list(patter_dict.values())
