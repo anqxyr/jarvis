@@ -736,7 +736,8 @@ def unused(pr):
     pr.add_argument(
         '--pattern', '-x',
         nargs=1,
-        re='[a-z]{3,4}',
+        type=str.lower,
+        re='[A-Za-z]{3,4}',
         help="""Limit matches to slots that match the given pattern.""")
 
     pr.add_argument(
