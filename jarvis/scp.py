@@ -11,6 +11,7 @@ import itertools
 import jinja2
 import random as rand
 import re
+import collections
 
 from . import core, ext, parser, lex, stats, tools, utils
 
